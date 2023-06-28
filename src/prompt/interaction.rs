@@ -16,7 +16,7 @@ pub enum Event {
 pub trait PromptInteraction<R> {
     fn render(&mut self, state: &State<R>) -> String;
 
-    fn notify(&mut self, event: &Event) -> State<R>;
+    fn on(&mut self, event: &Event) -> State<R>;
 
     fn interact(&mut self) -> io::Result<R> {
         self.interact_on(&mut Term::stderr())
@@ -34,7 +34,6 @@ pub trait PromptInteraction<R> {
             let frame = self.render(&state);
 
             if frame != prev_frame {
-                // TODO: clear only the lines that have changed
                 term.clear_last_lines(prev_frame.lines().count())?;
                 term.write_all(frame.as_bytes())?;
                 term.flush()?;
@@ -55,7 +54,7 @@ pub trait PromptInteraction<R> {
                     state = State::Cancel;
                 }
                 other => {
-                    state = self.notify(&Event::Key(other));
+                    state = self.on(&Event::Key(other));
                 }
             }
         }

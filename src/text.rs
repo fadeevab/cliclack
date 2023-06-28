@@ -3,9 +3,11 @@ use std::io;
 
 use console::Key;
 
-use super::{
-    cursor::StringCursor,
-    interaction::{Event, PromptInteraction, State},
+use crate::{
+    prompt::{
+        cursor::StringCursor,
+        interaction::{Event, PromptInteraction, State},
+    },
     theme::{ClackTheme, Theme},
 };
 
@@ -47,7 +49,7 @@ impl Text {
 }
 
 impl PromptInteraction<String> for Text {
-    fn notify(&mut self, event: &Event) -> State<String> {
+    fn on(&mut self, event: &Event) -> State<String> {
         match event {
             Event::Key(key) => match key {
                 Key::Char(chr) if !chr.is_ascii_control() => {
@@ -64,6 +66,12 @@ impl PromptInteraction<String> for Text {
                 }
                 Key::ArrowRight => {
                     self.input.move_right();
+                }
+                Key::Home => {
+                    self.input.move_home();
+                }
+                Key::End => {
+                    self.input.move_end();
                 }
                 Key::Enter => {
                     if let Some(validator) = &self.validate {

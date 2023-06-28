@@ -32,6 +32,14 @@ impl StringCursor {
         }
     }
 
+    pub fn move_home(&mut self) {
+        self.cursor = 0;
+    }
+
+    pub fn move_end(&mut self) {
+        self.cursor = self.value.len();
+    }
+
     pub fn delete_left(&mut self) {
         if self.value.is_empty() {
             return;

@@ -1,6 +1,6 @@
 use console::{style, Emoji, Style};
 
-use crate::{cursor::StringCursor, interaction::State};
+use crate::prompt::{cursor::StringCursor, interaction::State};
 
 const S_STEP_ACTIVE: Emoji = Emoji("◆", "*");
 const S_STEP_CANCEL: Emoji = Emoji("■", "x");
@@ -46,7 +46,7 @@ impl<R> From<&State<R>> for ThemeState {
     }
 }
 
-fn theme_color(state: &ThemeState) -> Style {
+fn state_color(state: &ThemeState) -> Style {
     match state {
         ThemeState::Active => Style::new().cyan(),
         ThemeState::Cancel => Style::new().red(),
@@ -55,8 +55,8 @@ fn theme_color(state: &ThemeState) -> Style {
     }
 }
 
-fn symbol(state: &ThemeState) -> String {
-    let color = theme_color(state);
+fn state_symbol(state: &ThemeState) -> String {
+    let color = state_color(state);
     let green = Style::new().green();
 
     match state {
@@ -68,7 +68,7 @@ fn symbol(state: &ThemeState) -> String {
     .to_string()
 }
 
-fn cursor_with_style(cursor: &StringCursor, new_style: &Style) -> String {
+fn cursor_parts_with_style(cursor: &StringCursor, new_style: &Style) -> String {
     let (left, cursor, right) = cursor.split();
     format!(
         "{left}{cursor}{right}",
@@ -80,7 +80,7 @@ fn cursor_with_style(cursor: &StringCursor, new_style: &Style) -> String {
 
 pub trait Theme {
     fn format_intro(&self, title: &str) -> String {
-        let color = theme_color(&ThemeState::Submit);
+        let color = state_color(&ThemeState::Submit);
         format!(
             "{start_bar}  {title}\n{bar}",
             start_bar = color.apply_to(S_BAR_START),
@@ -89,12 +89,12 @@ pub trait Theme {
     }
 
     fn format_outro(&self, message: &str) -> String {
-        let color = theme_color(&ThemeState::Submit);
+        let color = state_color(&ThemeState::Submit);
         format!("{bar}  {message}\n", bar = color.apply_to(S_BAR_END))
     }
 
     fn format_cancel(&self, message: &str) -> String {
-        let color = theme_color(&ThemeState::Submit);
+        let color = state_color(&ThemeState::Submit);
         format!(
             "{bar}  {message}",
             bar = color.apply_to(S_BAR_END),
@@ -103,7 +103,10 @@ pub trait Theme {
     }
 
     fn format_header(&self, state: &ThemeState, prompt: &str) -> String {
-        format!("{state_symbol}  {prompt}\n", state_symbol = symbol(state))
+        format!(
+            "{state_symbol}  {prompt}\n",
+            state_symbol = state_symbol(state)
+        )
     }
 
     fn format_input(&self, state: &ThemeState, cursor: &StringCursor) -> String {
@@ -114,31 +117,31 @@ pub trait Theme {
         };
 
         let input = &match state {
-            ThemeState::Active | ThemeState::Error(_) => cursor_with_style(cursor, new_style),
+            ThemeState::Active | ThemeState::Error(_) => cursor_parts_with_style(cursor, new_style),
             _ => new_style.apply_to(cursor).to_string(),
         };
 
-        format!("{bar}  {input}\n", bar = theme_color(state).apply_to(S_BAR))
+        format!("{bar}  {input}\n", bar = state_color(state).apply_to(S_BAR))
     }
 
     fn format_placeholder(&self, state: &ThemeState, cursor: &StringCursor) -> String {
         let new_style = &Style::new().dim();
 
         let placeholder = &match state {
-            ThemeState::Active | ThemeState::Error(_) => cursor_with_style(cursor, new_style),
+            ThemeState::Active | ThemeState::Error(_) => cursor_parts_with_style(cursor, new_style),
             _ => new_style.apply_to(cursor).to_string(),
         };
 
         format!(
             "{bar}  {placeholder}\n",
-            bar = theme_color(state).apply_to(S_BAR)
+            bar = state_color(state).apply_to(S_BAR)
         )
     }
 
     fn format_footer(&self, state: &ThemeState) -> String {
         format!(
-            "{}\n", // '\n' can be lost by style applying, thus exclude from styling
-            theme_color(state).apply_to(match state {
+            "{}\n", // '\n' vanishes by style applying, thus exclude it from styling
+            state_color(state).apply_to(match state {
                 ThemeState::Active => format!("{S_BAR_END}"),
                 ThemeState::Cancel => format!("{S_BAR_END}  Operation cancelled."),
                 ThemeState::Submit => format!("{S_BAR}"),

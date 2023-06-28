@@ -1,5 +1,4 @@
-mod cursor;
-mod interaction;
+mod prompt;
 mod text;
 mod theme;
 
@@ -10,11 +9,8 @@ use theme::{ClackTheme, Theme};
 
 use crate::text::Text;
 
-fn term_write_line(line: String) -> io::Result<()> {
-    Term::stderr().write_line(&line)
-}
-
-pub use interaction::PromptInteraction;
+// Re-export the PromptInteraction trait
+pub use crate::prompt::interaction::PromptInteraction;
 
 pub struct GroupItem<F>
 where
@@ -22,6 +18,10 @@ where
 {
     name: String,
     action: F,
+}
+
+fn term_write_line(line: String) -> io::Result<()> {
+    Term::stderr().write_line(&line)
 }
 
 pub fn clear_screen() -> io::Result<()> {
