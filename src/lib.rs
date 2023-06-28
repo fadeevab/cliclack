@@ -3,12 +3,15 @@ mod interaction;
 mod text;
 mod theme;
 
-use crate::text::Text;
-use console::{style, Emoji, Term};
 use std::{collections::HashMap, fmt::Display, io};
 
-fn term_write_line(line: &str) -> io::Result<()> {
-    Term::stderr().write_line(line)
+use console::Term;
+use theme::{ClackTheme, Theme};
+
+use crate::text::Text;
+
+fn term_write_line(line: String) -> io::Result<()> {
+    Term::stderr().write_line(&line)
 }
 
 pub use interaction::PromptInteraction;
@@ -25,33 +28,16 @@ pub fn clear_screen() -> io::Result<()> {
     Term::stderr().clear_screen()
 }
 
-const S_BAR_START: Emoji = Emoji("┌", "T");
-const S_BAR: Emoji = Emoji("│", "|");
-const S_BAR_END: Emoji = Emoji("└", "—");
-
 pub fn intro<S: Display>(title: S) -> io::Result<()> {
-    term_write_line(&format!(
-        "{}  {}\n{}",
-        style(S_BAR_START).bright().black(),
-        title,
-        style(S_BAR).bright().black(),
-    ))
+    term_write_line(ClackTheme.format_intro(&title.to_string()))
 }
 
 pub fn outro<S: Display>(message: S) -> io::Result<()> {
-    term_write_line(&format!(
-        "{}  {}",
-        style(S_BAR_END).bright().black(),
-        message
-    ))
+    term_write_line(ClackTheme.format_outro(&message.to_string()))
 }
 
 pub fn cancel<S: Display>(message: S) -> io::Result<()> {
-    term_write_line(&format!(
-        "{}  {}",
-        style(S_BAR_END).bright().black(),
-        style(message).red()
-    ))
+    term_write_line(ClackTheme.format_cancel(&message.to_string()))
 }
 
 pub fn text<S: Display>(prompt: S) -> Text {

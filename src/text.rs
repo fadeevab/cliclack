@@ -6,13 +6,12 @@ use console::Key;
 use super::{
     cursor::StringCursor,
     interaction::{Event, PromptInteraction, State},
-    theme::{ClackTheme, Theme, ThemeState},
+    theme::{ClackTheme, Theme},
 };
 
 type ValidatorFn = Box<dyn Fn(&str) -> Result<(), String>>;
 
 pub struct Text {
-    theme: Box<dyn Theme>,
     prompt: String,
     placeholder: StringCursor,
     input: StringCursor,
@@ -21,12 +20,7 @@ pub struct Text {
 
 impl Text {
     pub fn new(prompt: impl Display) -> Self {
-        Self::with_theme(prompt, ClackTheme)
-    }
-
-    pub fn with_theme(prompt: impl Display, theme: impl Theme + 'static) -> Self {
         Self {
-            theme: Box::new(theme),
             prompt: prompt.to_string(),
             placeholder: StringCursor::default(),
             input: StringCursor::default(),
@@ -87,15 +81,13 @@ impl PromptInteraction<String> for Text {
     }
 
     fn render(&mut self, state: &State<String>) -> String {
-        let state: &ThemeState = &state.into();
-
-        let line1 = self.theme.format_header(state, &self.prompt);
+        let line1 = ClackTheme.format_header(&state.into(), &self.prompt);
         let line2 = if self.input.is_empty() {
-            self.theme.format_placeholder(state, &self.placeholder)
+            ClackTheme.format_placeholder(&state.into(), &self.placeholder)
         } else {
-            self.theme.format_input(state, &self.input)
+            ClackTheme.format_input(&state.into(), &self.input)
         };
-        let line3 = self.theme.format_footer(state);
+        let line3 = ClackTheme.format_footer(&state.into());
 
         line1 + &line2 + &line3
     }

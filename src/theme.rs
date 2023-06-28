@@ -46,7 +46,7 @@ impl<R> From<&State<R>> for ThemeState {
     }
 }
 
-fn color(state: &ThemeState) -> Style {
+fn theme_color(state: &ThemeState) -> Style {
     match state {
         ThemeState::Active => Style::new().cyan(),
         ThemeState::Cancel => Style::new().red(),
@@ -56,7 +56,7 @@ fn color(state: &ThemeState) -> Style {
 }
 
 fn symbol(state: &ThemeState) -> String {
-    let color = color(state);
+    let color = theme_color(state);
     let green = Style::new().green();
 
     match state {
@@ -79,6 +79,29 @@ fn cursor_with_style(cursor: &StringCursor, new_style: &Style) -> String {
 }
 
 pub trait Theme {
+    fn format_intro(&self, title: &str) -> String {
+        let color = theme_color(&ThemeState::Submit);
+        format!(
+            "{start_bar}  {title}\n{bar}",
+            start_bar = color.apply_to(S_BAR_START),
+            bar = color.apply_to(S_BAR),
+        )
+    }
+
+    fn format_outro(&self, message: &str) -> String {
+        let color = theme_color(&ThemeState::Submit);
+        format!("{bar}  {message}\n", bar = color.apply_to(S_BAR_END))
+    }
+
+    fn format_cancel(&self, message: &str) -> String {
+        let color = theme_color(&ThemeState::Submit);
+        format!(
+            "{bar}  {message}",
+            bar = color.apply_to(S_BAR_END),
+            message = style(message).red()
+        )
+    }
+
     fn format_header(&self, state: &ThemeState, prompt: &str) -> String {
         format!("{state_symbol}  {prompt}\n", state_symbol = symbol(state))
     }
@@ -95,7 +118,7 @@ pub trait Theme {
             _ => new_style.apply_to(cursor).to_string(),
         };
 
-        format!("{bar}  {input}\n", bar = color(state).apply_to(S_BAR))
+        format!("{bar}  {input}\n", bar = theme_color(state).apply_to(S_BAR))
     }
 
     fn format_placeholder(&self, state: &ThemeState, cursor: &StringCursor) -> String {
@@ -106,13 +129,16 @@ pub trait Theme {
             _ => new_style.apply_to(cursor).to_string(),
         };
 
-        format!("{bar}  {placeholder}\n", bar = color(state).apply_to(S_BAR))
+        format!(
+            "{bar}  {placeholder}\n",
+            bar = theme_color(state).apply_to(S_BAR)
+        )
     }
 
     fn format_footer(&self, state: &ThemeState) -> String {
         format!(
             "{}\n", // '\n' can be lost by style applying, thus exclude from styling
-            color(state).apply_to(match state {
+            theme_color(state).apply_to(match state {
                 ThemeState::Active => format!("{S_BAR_END}"),
                 ThemeState::Cancel => format!("{S_BAR_END}  Operation cancelled."),
                 ThemeState::Submit => format!("{S_BAR}"),
