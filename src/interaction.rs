@@ -27,8 +27,6 @@ pub trait PromptInteraction<R> {
             return Err(io::ErrorKind::NotConnected.into());
         }
 
-        term.hide_cursor()?;
-
         let mut state = State::Active;
         let mut prev_frame = String::new();
 
@@ -40,6 +38,8 @@ pub trait PromptInteraction<R> {
                 term.clear_last_lines(prev_frame.lines().count())?;
                 term.write_all(frame.as_bytes())?;
                 term.flush()?;
+
+                prev_frame = frame;
             }
 
             if let State::Submit(result) = state {
@@ -49,8 +49,6 @@ pub trait PromptInteraction<R> {
             if let State::Cancel = state {
                 return Err(io::ErrorKind::Interrupted.into());
             }
-
-            prev_frame = frame;
 
             match term.read_key()? {
                 Key::Escape => {

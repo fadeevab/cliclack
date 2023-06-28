@@ -3,17 +3,16 @@ use std::io;
 
 use console::Key;
 
-use crate::cursor::StringCursor;
-use crate::interaction::{Event, State};
-
 use super::{
-    interaction::PromptInteraction,
-    theme::{ClackTheme, Theme},
+    cursor::StringCursor,
+    interaction::{Event, PromptInteraction, State},
+    theme::{ClackTheme, Theme, ThemeState},
 };
 
 type ValidatorFn = Box<dyn Fn(&str) -> Result<(), String>>;
 
 pub struct Text {
+    theme: Box<dyn Theme>,
     prompt: String,
     placeholder: StringCursor,
     input: StringCursor,
@@ -21,8 +20,13 @@ pub struct Text {
 }
 
 impl Text {
-    pub fn new<S: Display>(prompt: S) -> Self {
+    pub fn new(prompt: impl Display) -> Self {
+        Self::with_theme(prompt, ClackTheme)
+    }
+
+    pub fn with_theme(prompt: impl Display, theme: impl Theme + 'static) -> Self {
         Self {
+            theme: Box::new(theme),
             prompt: prompt.to_string(),
             placeholder: StringCursor::default(),
             input: StringCursor::default(),
@@ -83,6 +87,16 @@ impl PromptInteraction<String> for Text {
     }
 
     fn render(&mut self, state: &State<String>) -> String {
-        ClackTheme.render_text(state, &self.prompt, &self.input, &self.placeholder)
+        let state: &ThemeState = &state.into();
+
+        let line1 = self.theme.format_header(state, &self.prompt);
+        let line2 = if self.input.is_empty() {
+            self.theme.format_placeholder(state, &self.placeholder)
+        } else {
+            self.theme.format_input(state, &self.input)
+        };
+        let line3 = self.theme.format_footer(state);
+
+        line1 + &line2 + &line3
     }
 }
