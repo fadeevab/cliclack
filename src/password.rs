@@ -16,7 +16,7 @@ type ValidatorFn = Box<dyn Fn(&str) -> Result<(), String>>;
 pub struct Password {
     prompt: String,
     input: StringCursor,
-    mask: String,
+    mask: char,
     validate: Option<ValidatorFn>,
 }
 
@@ -30,8 +30,8 @@ impl Password {
         }
     }
 
-    pub fn mask(mut self, mask: impl Display) -> Self {
-        self.mask = mask.to_string();
+    pub fn mask(mut self, mask: char) -> Self {
+        self.mask = mask;
         self
     }
 
@@ -58,6 +58,21 @@ impl PromptInteraction<String> for Password {
                 Key::Backspace => {
                     self.input.delete_left();
                 }
+                Key::Del => {
+                    self.input.delete_right();
+                }
+                Key::ArrowLeft => {
+                    self.input.move_left();
+                }
+                Key::ArrowRight => {
+                    self.input.move_right();
+                }
+                Key::Home => {
+                    self.input.move_home();
+                }
+                Key::End => {
+                    self.input.move_end();
+                }
                 Key::Enter => {
                     if let Some(validator) = &self.validate {
                         if let Err(err) = validator(&self.input.to_string()) {
@@ -74,8 +89,13 @@ impl PromptInteraction<String> for Password {
     }
 
     fn render(&mut self, state: &State<String>) -> String {
+        let mut masked = self.input.clone();
+        for chr in masked.iter_mut() {
+            *chr = self.mask;
+        }
+
         let line1 = ClackTheme.format_header(&state.into(), &self.prompt);
-        let line2 = ClackTheme.format_password(&state.into(), &self.input, &self.mask);
+        let line2 = ClackTheme.format_input(&state.into(), &masked);
         let line3 = ClackTheme.format_footer(&state.into());
 
         line1 + &line2 + &line3

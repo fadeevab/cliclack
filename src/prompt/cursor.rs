@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter, Result};
 
 use zeroize::ZeroizeOnDrop;
 
-#[derive(Default, ZeroizeOnDrop)]
+#[derive(Default, ZeroizeOnDrop, Clone)]
 pub struct StringCursor {
     value: Vec<char>,
     cursor: usize,
@@ -81,8 +81,8 @@ impl StringCursor {
         (left, cursor, right)
     }
 
-    pub fn iter(&self) -> impl Iterator<Item = &char> {
-        self.value.iter()
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut char> {
+        self.value.iter_mut()
     }
 }
 

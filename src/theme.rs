@@ -77,6 +77,13 @@ pub trait Theme {
         }
     }
 
+    fn placeholder_style(&self, state: &ThemeState) -> Style {
+        match state {
+            ThemeState::Cancel => Style::new().hidden(),
+            _ => Style::new().dim(),
+        }
+    }
+
     fn cursor_with_style(&self, cursor: &StringCursor, new_style: &Style) -> String {
         let (left, cursor, right) = cursor.split();
         format!(
@@ -87,8 +94,8 @@ pub trait Theme {
         )
     }
 
-    fn password_mask(&self) -> String {
-        S_PASSWORD_MASK.to_string()
+    fn password_mask(&self) -> char {
+        S_PASSWORD_MASK.to_string().chars().next().unwrap()
     }
 
     fn format_intro(&self, title: &str) -> String {
@@ -148,7 +155,7 @@ pub trait Theme {
     }
 
     fn format_placeholder(&self, state: &ThemeState, cursor: &StringCursor) -> String {
-        let new_style = &Style::new().dim();
+        let new_style = &self.placeholder_style(state);
 
         let placeholder = &match state {
             ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
@@ -159,16 +166,6 @@ pub trait Theme {
         format!(
             "{bar}  {placeholder}\n",
             bar = self.state_color(state).apply_to(S_BAR)
-        )
-    }
-
-    fn format_password(&self, state: &ThemeState, cursor: &StringCursor, mask: &str) -> String {
-        let new_style = &self.input_style(state);
-
-        format!(
-            "{bar}  {input}\n",
-            bar = self.state_color(state).apply_to(S_BAR),
-            input = new_style.apply_to(cursor.iter().map(|_| mask).collect::<String>())
         )
     }
 }
