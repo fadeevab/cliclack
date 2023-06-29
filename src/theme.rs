@@ -69,6 +69,14 @@ pub trait Theme {
         .to_string()
     }
 
+    fn input_style(&self, state: &ThemeState) -> Style {
+        match state {
+            ThemeState::Cancel => Style::new().dim().strikethrough(),
+            ThemeState::Submit => Style::new().dim(),
+            _ => Style::new(),
+        }
+    }
+
     fn cursor_with_style(&self, cursor: &StringCursor, new_style: &Style) -> String {
         let (left, cursor, right) = cursor.split();
         format!(
@@ -77,6 +85,10 @@ pub trait Theme {
             cursor = style(cursor).reverse(),
             right = new_style.apply_to(right)
         )
+    }
+
+    fn password_mask(&self) -> String {
+        S_PASSWORD_MASK.to_string()
     }
 
     fn format_intro(&self, title: &str) -> String {
@@ -109,12 +121,20 @@ pub trait Theme {
         )
     }
 
+    fn format_footer(&self, state: &ThemeState) -> String {
+        format!(
+            "{}\n", // '\n' vanishes by style applying, thus exclude it from styling
+            self.state_color(state).apply_to(match state {
+                ThemeState::Active => format!("{S_BAR_END}"),
+                ThemeState::Cancel => format!("{S_BAR_END}  Operation cancelled."),
+                ThemeState::Submit => format!("{S_BAR}"),
+                ThemeState::Error(err) => format!("{S_BAR_END}  {err}"),
+            })
+        )
+    }
+
     fn format_input(&self, state: &ThemeState, cursor: &StringCursor) -> String {
-        let new_style = &match state {
-            ThemeState::Cancel => Style::new().dim().strikethrough(),
-            ThemeState::Submit => Style::new().dim(),
-            _ => Style::new(),
-        };
+        let new_style = &self.input_style(state);
 
         let input = &match state {
             ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
@@ -132,6 +152,7 @@ pub trait Theme {
 
         let placeholder = &match state {
             ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
+            ThemeState::Cancel => "".to_string(),
             _ => new_style.apply_to(cursor).to_string(),
         };
 
@@ -141,15 +162,13 @@ pub trait Theme {
         )
     }
 
-    fn format_footer(&self, state: &ThemeState) -> String {
+    fn format_password(&self, state: &ThemeState, cursor: &StringCursor, mask: &str) -> String {
+        let new_style = &self.input_style(state);
+
         format!(
-            "{}\n", // '\n' vanishes by style applying, thus exclude it from styling
-            self.state_color(state).apply_to(match state {
-                ThemeState::Active => format!("{S_BAR_END}"),
-                ThemeState::Cancel => format!("{S_BAR_END}  Operation cancelled."),
-                ThemeState::Submit => format!("{S_BAR}"),
-                ThemeState::Error(err) => format!("{S_BAR_END}  {err}"),
-            })
+            "{bar}  {input}\n",
+            bar = self.state_color(state).apply_to(S_BAR),
+            input = new_style.apply_to(cursor.iter().map(|_| mask).collect::<String>())
         )
     }
 }

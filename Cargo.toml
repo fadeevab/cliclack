@@ -5,8 +5,9 @@ version = "0.1.0"
 
 [dependencies]
 console = "0.15.7"
-dialoguer = { path = "../../dialoguer" }
 once_cell = "1.18.0"
+textwrap = "0.16.0"
+zeroize = { version = "1.6.0", features = ["derive"] }
 
 [dev-dependencies]
 console = "0.15.7"

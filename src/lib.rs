@@ -1,3 +1,4 @@
+mod password;
 mod prompt;
 mod text;
 mod theme;
@@ -5,6 +6,7 @@ mod theme;
 use std::{collections::HashMap, fmt::Display, io};
 
 use console::Term;
+use password::Password;
 use theme::{ClackTheme, Theme};
 
 use crate::text::Text;
@@ -12,12 +14,11 @@ use crate::text::Text;
 // Re-export the PromptInteraction trait
 pub use crate::prompt::interaction::PromptInteraction;
 
-pub struct GroupItem<F>
-where
-    F: FnOnce(&HashMap<String, String>) -> io::Result<String>,
-{
+type ItemFn = fn(&HashMap<String, String>) -> io::Result<String>;
+
+pub struct GroupItem {
     name: String,
-    action: F,
+    action: Box<ItemFn>,
 }
 
 fn term_write_line(line: String) -> io::Result<()> {
@@ -44,20 +45,18 @@ pub fn text<S: Display>(prompt: S) -> Text {
     Text::new(prompt)
 }
 
-pub fn item<S: ToString, F>(name: S, action: F) -> GroupItem<F>
-where
-    F: FnOnce(&HashMap<String, String>) -> io::Result<String>,
-{
+pub fn password<S: Display>(prompt: S) -> Password {
+    Password::new(prompt)
+}
+
+pub fn item(name: impl Display, action: ItemFn) -> GroupItem {
     GroupItem {
         name: name.to_string(),
-        action,
+        action: Box::new(action),
     }
 }
 
-pub fn group<F>(items: Vec<GroupItem<F>>) -> io::Result<HashMap<String, String>>
-where
-    F: FnOnce(&HashMap<String, String>) -> io::Result<String>,
-{
+pub fn group(items: Vec<GroupItem>) -> io::Result<HashMap<String, String>> {
     let mut result = HashMap::new();
 
     for GroupItem { name, action } in items {

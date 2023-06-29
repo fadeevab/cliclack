@@ -13,6 +13,22 @@ pub enum Event {
     Key(Key),
 }
 
+/// Wraps text to fit the terminal width.
+fn wrap(text: &str, width: usize) -> String {
+    use textwrap::{core::Word, fill, Options, WordSeparator};
+
+    fill(
+        text,
+        Options::new(width).word_separator(
+            // Workaround to prevent textwrap from splitting words by spaces
+            // which breaks the layout of the prompt. Instead, we treat
+            // each line as a single word which forces wrapping it hardly
+            // at the end of the terminal width.
+            WordSeparator::Custom(|line| Box::new(vec![Word::from(line)].into_iter())),
+        ),
+    )
+}
+
 pub trait PromptInteraction<R> {
     fn render(&mut self, state: &State<R>) -> String;
 
@@ -27,11 +43,13 @@ pub trait PromptInteraction<R> {
             return Err(io::ErrorKind::NotConnected.into());
         }
 
+        term.hide_cursor()?;
+
         let mut state = State::Active;
         let mut prev_frame = String::new();
 
         loop {
-            let frame = self.render(&state);
+            let frame = wrap(&self.render(&state), term.size().1 as usize);
 
             if frame != prev_frame {
                 term.clear_last_lines(prev_frame.lines().count())?;
