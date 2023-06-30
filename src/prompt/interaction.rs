@@ -49,10 +49,12 @@ pub trait PromptInteraction<R> {
         let mut prev_frame = String::new();
 
         loop {
-            let frame = wrap(&self.render(&state), term.size().1 as usize);
+            let frame = self.render(&state);
 
             if frame != prev_frame {
-                term.clear_last_lines(prev_frame.lines().count())?;
+                let prev_frame_check = wrap(&prev_frame, term.size().1 as usize);
+
+                term.clear_last_lines(prev_frame_check.lines().count())?;
                 term.write_all(frame.as_bytes())?;
                 term.flush()?;
 

@@ -27,6 +27,7 @@ fn term_write_line(line: String) -> io::Result<()> {
 }
 
 pub fn clear_screen() -> io::Result<()> {
+    Term::stdout().clear_screen()?;
     Term::stderr().clear_screen()
 }
 
