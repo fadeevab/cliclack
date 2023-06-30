@@ -2,6 +2,7 @@ mod password;
 mod prompt;
 mod text;
 mod theme;
+mod validate;
 
 use std::{collections::HashMap, fmt::Display, io};
 

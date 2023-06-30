@@ -9,11 +9,11 @@ fn main() -> std::io::Result<()> {
         claquer::item("path", |_| {
             claquer::text("Where should we create your project?")
                 .placeholder("./sparkling-solid")
-                .validate(|input: &str| {
+                .validate(|input: &String| {
                     if input.is_empty() {
-                        Err("Please enter a path.".into())
+                        Err("Please enter a path.")
                     } else if !input.starts_with("./") {
-                        Err("Please enter a relative path".into())
+                        Err("Please enter a relative path")
                     } else {
                         Ok(())
                     }

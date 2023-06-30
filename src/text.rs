@@ -9,15 +9,16 @@ use crate::{
         interaction::{Event, PromptInteraction, State},
     },
     theme::{ClackTheme, Theme},
+    validate::Validate,
 };
 
-type ValidatorFn = Box<dyn Fn(&str) -> Result<(), String>>;
+type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
 pub struct Text {
     prompt: String,
     placeholder: StringCursor,
     input: StringCursor,
-    validate: Option<ValidatorFn>,
+    validate: Option<ValidationCallback>,
 }
 
 impl Text {
@@ -35,11 +36,14 @@ impl Text {
         self
     }
 
-    pub fn validate<F>(mut self, validator: F) -> Self
+    pub fn validate<V>(mut self, validator: V) -> Self
     where
-        F: Fn(&str) -> Result<(), String> + 'static,
+        V: Validate<String> + 'static,
+        V::Err: ToString,
     {
-        self.validate = Some(Box::new(validator));
+        self.validate = Some(Box::new(move |input: &String| {
+            validator.validate(input).map_err(|err| err.to_string())
+        }));
         self
     }
 
