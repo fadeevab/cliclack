@@ -1,5 +1,6 @@
-use std::fmt::Display;
+use std::fmt::Debug;
 use std::io;
+use std::{fmt::Display, str::FromStr};
 
 use console::Key;
 
@@ -47,17 +48,25 @@ impl Text {
         self
     }
 
-    pub fn interact(&mut self) -> io::Result<String> {
-        <Self as PromptInteraction<String>>::interact(self)
+    pub fn interact<T>(&mut self) -> io::Result<T>
+    where
+        T: FromStr,
+        <T as FromStr>::Err: Debug,
+    {
+        <Self as PromptInteraction<T>>::interact(self)
     }
 }
 
-impl PromptInteraction<String> for Text {
+impl<T> PromptInteraction<T> for Text
+where
+    T: FromStr,
+    <T as FromStr>::Err: Debug,
+{
     fn input(&mut self) -> Option<&mut StringCursor> {
         Some(&mut self.input)
     }
 
-    fn on(&mut self, event: &Event) -> State<String> {
+    fn on(&mut self, event: &Event) -> State {
         let Event::Key(key) = event;
 
         if *key == Key::Enter {
@@ -72,7 +81,7 @@ impl PromptInteraction<String> for Text {
         State::Active
     }
 
-    fn render(&mut self, state: &State<String>) -> String {
+    fn render(&mut self, state: &State) -> String {
         let line1 = ClackTheme.format_header(&state.into(), &self.prompt);
         let line2 = if self.input.is_empty() {
             ClackTheme.format_placeholder(&state.into(), &self.placeholder)

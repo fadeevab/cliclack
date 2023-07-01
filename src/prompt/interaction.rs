@@ -1,11 +1,15 @@
 use console::{Key, Term};
-use std::io::{self, Write};
+use std::{
+    fmt::Debug,
+    io::{self, Write},
+    str::FromStr,
+};
 
 use super::cursor::StringCursor;
 
-pub enum State<R> {
+pub enum State {
     Active,
-    Submit(R),
+    Submit(String),
     Cancel,
     Error(String),
 }
@@ -31,20 +35,24 @@ fn wrap(text: &str, width: usize) -> String {
     )
 }
 
-pub trait PromptInteraction<R> {
-    fn render(&mut self, state: &State<R>) -> String;
+pub trait PromptInteraction<T>
+where
+    T: FromStr,
+    <T as FromStr>::Err: Debug,
+{
+    fn render(&mut self, state: &State) -> String;
 
-    fn on(&mut self, event: &Event) -> State<R>;
+    fn on(&mut self, event: &Event) -> State;
 
     fn input(&mut self) -> Option<&mut StringCursor> {
         None
     }
 
-    fn interact(&mut self) -> io::Result<R> {
+    fn interact(&mut self) -> io::Result<T> {
         self.interact_on(&mut Term::stderr())
     }
 
-    fn interact_on(&mut self, term: &mut Term) -> io::Result<R> {
+    fn interact_on(&mut self, term: &mut Term) -> io::Result<T> {
         if !term.is_term() {
             return Err(io::ErrorKind::NotConnected.into());
         }
@@ -68,7 +76,13 @@ pub trait PromptInteraction<R> {
             }
 
             if let State::Submit(result) = state {
-                return Ok(result);
+                match result.parse::<T>() {
+                    Ok(value) => return Ok(value),
+                    Err(e) => {
+                        state = State::Error(format!("Invalid input: {:?}", e));
+                        continue;
+                    }
+                }
             }
 
             if let State::Cancel = state {

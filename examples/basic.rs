@@ -5,6 +5,10 @@ fn main() -> std::io::Result<()> {
 
     claquer::intro(style(" create-app ").on_cyan().black())?;
 
+    let _: u8 = claquer::text("Input a number (not greater than 256)")
+        .placeholder("0")
+        .interact()?;
+
     claquer::group(vec![
         claquer::item("path", |_| {
             claquer::text("Where should we create your project?")

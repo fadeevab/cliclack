@@ -35,8 +35,8 @@ pub enum ThemeState {
     Error(String),
 }
 
-impl<R> From<&State<R>> for ThemeState {
-    fn from(state: &State<R>) -> Self {
+impl From<&State> for ThemeState {
+    fn from(state: &State) -> Self {
         match state {
             State::Active => Self::Active,
             State::Cancel => Self::Cancel,

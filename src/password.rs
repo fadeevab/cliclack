@@ -57,7 +57,7 @@ impl PromptInteraction<String> for Password {
         Some(&mut self.input)
     }
 
-    fn on(&mut self, event: &Event) -> State<String> {
+    fn on(&mut self, event: &Event) -> State {
         let Event::Key(key) = event;
 
         if *key == Key::Enter {
@@ -72,7 +72,7 @@ impl PromptInteraction<String> for Password {
         State::Active
     }
 
-    fn render(&mut self, state: &State<String>) -> String {
+    fn render(&mut self, state: &State) -> String {
         let mut masked = self.input.clone();
         for chr in masked.iter_mut() {
             *chr = self.mask;
