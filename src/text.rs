@@ -1,4 +1,3 @@
-use std::fmt::Debug;
 use std::io;
 use std::{fmt::Display, str::FromStr};
 
@@ -50,7 +49,6 @@ impl Text {
     pub fn interact<T>(&mut self) -> io::Result<T>
     where
         T: FromStr,
-        <T as FromStr>::Err: Debug,
     {
         <Self as PromptInteraction<T>>::interact(self)
     }
@@ -59,7 +57,6 @@ impl Text {
 impl<T> PromptInteraction<T> for Text
 where
     T: FromStr,
-    <T as FromStr>::Err: Debug,
 {
     fn input(&mut self) -> Option<&mut StringCursor> {
         Some(&mut self.input)

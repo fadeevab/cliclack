@@ -1,6 +1,5 @@
 use console::{Key, Term};
 use std::{
-    fmt::Debug,
     io::{self, Write},
     str::FromStr,
 };
@@ -38,7 +37,6 @@ fn wrap(text: &str, width: usize) -> String {
 pub trait PromptInteraction<T>
 where
     T: FromStr,
-    <T as FromStr>::Err: Debug,
 {
     fn render(&mut self, state: &State) -> String;
 
@@ -78,8 +76,8 @@ where
             if let State::Submit(result) = state {
                 match result.parse::<T>() {
                     Ok(value) => return Ok(value),
-                    Err(e) => {
-                        state = State::Error(format!("Invalid input: {:?}", e));
+                    Err(_) => {
+                        state = State::Error("Invalid value format".to_string());
                         continue;
                     }
                 }
