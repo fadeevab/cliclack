@@ -9,15 +9,16 @@ use crate::{
         interaction::{Event, PromptInteraction, State},
     },
     theme::{ClackTheme, Theme},
+    validate::Validate,
 };
 
-type ValidatorFn = Box<dyn Fn(&str) -> Result<(), String>>;
+type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
 pub struct Password {
     prompt: String,
     input: StringCursor,
     mask: char,
-    validate: Option<ValidatorFn>,
+    validate: Option<ValidationCallback>,
 }
 
 impl Password {
@@ -35,11 +36,14 @@ impl Password {
         self
     }
 
-    pub fn validate<F>(mut self, validator: F) -> Self
+    pub fn validate<V>(mut self, validator: V) -> Self
     where
-        F: Fn(&str) -> Result<(), String> + 'static,
+        V: Validate<String> + 'static,
+        V::Err: ToString,
     {
-        self.validate = Some(Box::new(validator));
+        self.validate = Some(Box::new(move |input: &String| {
+            validator.validate(input).map_err(|err| err.to_string())
+        }));
         self
     }
 
@@ -49,40 +53,20 @@ impl Password {
 }
 
 impl PromptInteraction<String> for Password {
+    fn input(&mut self) -> Option<&mut StringCursor> {
+        Some(&mut self.input)
+    }
+
     fn on(&mut self, event: &Event) -> State<String> {
-        match event {
-            Event::Key(key) => match key {
-                Key::Char(chr) if !chr.is_ascii_control() => {
-                    self.input.insert(*chr);
+        let Event::Key(key) = event;
+
+        if *key == Key::Enter {
+            if let Some(validator) = &self.validate {
+                if let Err(err) = validator(&self.input.to_string()) {
+                    return State::Error(err);
                 }
-                Key::Backspace => {
-                    self.input.delete_left();
-                }
-                Key::Del => {
-                    self.input.delete_right();
-                }
-                Key::ArrowLeft => {
-                    self.input.move_left();
-                }
-                Key::ArrowRight => {
-                    self.input.move_right();
-                }
-                Key::Home => {
-                    self.input.move_home();
-                }
-                Key::End => {
-                    self.input.move_end();
-                }
-                Key::Enter => {
-                    if let Some(validator) = &self.validate {
-                        if let Err(err) = validator(&self.input.to_string()) {
-                            return State::Error(err);
-                        }
-                    }
-                    return State::Submit(self.input.to_string());
-                }
-                _ => {}
-            },
+            }
+            return State::Submit(self.input.to_string());
         }
 
         State::Active

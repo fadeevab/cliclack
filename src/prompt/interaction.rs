@@ -1,6 +1,8 @@
 use console::{Key, Term};
 use std::io::{self, Write};
 
+use super::cursor::StringCursor;
+
 pub enum State<R> {
     Active,
     Submit(R),
@@ -33,6 +35,10 @@ pub trait PromptInteraction<R> {
     fn render(&mut self, state: &State<R>) -> String;
 
     fn on(&mut self, event: &Event) -> State<R>;
+
+    fn input(&mut self) -> Option<&mut StringCursor> {
+        None
+    }
 
     fn interact(&mut self) -> io::Result<R> {
         self.interact_on(&mut Term::stderr())
@@ -69,7 +75,36 @@ pub trait PromptInteraction<R> {
                 return Err(io::ErrorKind::Interrupted.into());
             }
 
-            match term.read_key()? {
+            let key = term.read_key()?;
+
+            if let Some(cursor) = self.input() {
+                match key {
+                    Key::Char(chr) if !chr.is_ascii_control() => {
+                        cursor.insert(chr);
+                    }
+                    Key::Backspace => {
+                        cursor.delete_left();
+                    }
+                    Key::Del => {
+                        cursor.delete_right();
+                    }
+                    Key::ArrowLeft => {
+                        cursor.move_left();
+                    }
+                    Key::ArrowRight => {
+                        cursor.move_right();
+                    }
+                    Key::Home => {
+                        cursor.move_home();
+                    }
+                    Key::End => {
+                        cursor.move_end();
+                    }
+                    _ => {}
+                }
+            }
+
+            match key {
                 Key::Escape => {
                     state = State::Cancel;
                 }
