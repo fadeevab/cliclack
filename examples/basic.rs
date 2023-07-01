@@ -5,10 +5,6 @@ fn main() -> std::io::Result<()> {
 
     claquer::intro(style(" create-app ").on_cyan().black())?;
 
-    let _: u8 = claquer::text("Input a number (not greater than 256)")
-        .placeholder("0")
-        .interact()?;
-
     claquer::group(vec![
         claquer::item("path", |_| {
             claquer::text("Where should we create your project?")
@@ -30,13 +26,15 @@ fn main() -> std::io::Result<()> {
         claquer::item("type", |result| {
             let path = result.get("path").unwrap();
             claquer::select(format!("Pick a project type within '{path}'"))
-                .item("ts", "TypeScript", None::<&str>)
-                .item("js", "JavaScript", None::<&str>)
-                .item("coffee", "CoffeeScript", Some("oh no"))
+                .item("ts", "TypeScript", "")
+                .item("js", "JavaScript", "")
+                .item("coffee", "CoffeeScript", "oh no")
                 .interact()
                 .map(|result| result.to_string())
         }),
     ])?;
+
+    let _: u8 = claquer::text("Input a number (not greater than 256)").interact()?;
 
     claquer::outro(format!(
         "Problems? {}",

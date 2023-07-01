@@ -183,7 +183,7 @@ pub trait Theme {
         state: &ThemeState,
         selected: bool,
         label: &str,
-        hint: Option<&String>,
+        hint: &str,
     ) -> String {
         match state {
             ThemeState::Cancel | ThemeState::Submit if !selected => return String::new(),
@@ -201,18 +201,18 @@ pub trait Theme {
         }
         .to_string();
 
-        let hint = if let Some(hint) = hint {
-            inactive_style.apply_to(format!("({})", hint)).to_string()
-        } else {
-            String::new()
+        let hint = match state {
+            ThemeState::Active | ThemeState::Error(_) if !hint.is_empty() && selected => {
+                inactive_style.apply_to(format!("({})", hint)).to_string()
+            }
+            _ => String::new(),
         };
 
         format!(
             "{bar}  {radio}{space1}{label}{space2}{hint}\n",
             bar = self.state_color(state).apply_to(S_BAR),
             space1 = if radio.is_empty() { "" } else { " " },
-            space2 = if label.is_empty() { "" } else { " " },
-            hint = if selected { hint } else { String::new() }
+            space2 = if label.is_empty() { "" } else { " " }
         )
     }
 }

@@ -12,7 +12,7 @@ use crate::{
 pub struct SelectItem<T: Default> {
     value: T,
     label: String,
-    hint: Option<String>,
+    hint: String,
 }
 
 #[derive(Default)]
@@ -30,11 +30,11 @@ impl<T: Default + Clone> Select<T> {
         }
     }
 
-    pub fn item(mut self, value: T, label: impl Display, hint: Option<impl Display>) -> Self {
+    pub fn item(mut self, value: T, label: impl Display, hint: impl Display) -> Self {
         self.items.push(SelectItem {
             value,
             label: label.to_string(),
-            hint: hint.map(|x| x.to_string()),
+            hint: hint.to_string(),
         });
         self
     }
@@ -75,7 +75,7 @@ impl<T: Default + Clone> PromptInteraction<T> for Select<T> {
                 &state.into(),
                 self.cursor == i,
                 &item.label,
-                item.hint.as_ref(),
+                &item.hint,
             ));
         }
         let line3 = ClackTheme.format_footer(&state.into());
