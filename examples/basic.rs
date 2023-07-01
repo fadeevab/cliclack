@@ -25,7 +25,7 @@ fn main() -> std::io::Result<()> {
                 .interact()
         }),
         claquer::item("password", |_| {
-            claquer::password("Provide a password").interact()
+            claquer::password("Provide a password").mask('●').interact()
         }),
     ])?;
 

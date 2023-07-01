@@ -14,10 +14,11 @@ use crate::{
 
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
+#[derive(Default)]
 pub struct Password {
     prompt: String,
-    input: StringCursor,
     mask: char,
+    input: StringCursor,
     validate: Option<ValidationCallback>,
 }
 
@@ -25,9 +26,8 @@ impl Password {
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
-            input: StringCursor::default(),
             mask: ClackTheme.password_mask(),
-            validate: None,
+            ..Default::default()
         }
     }
 

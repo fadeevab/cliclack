@@ -15,6 +15,7 @@ use crate::{
 
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
+#[derive(Default)]
 pub struct Text {
     prompt: String,
     placeholder: StringCursor,
@@ -26,9 +27,7 @@ impl Text {
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
-            placeholder: StringCursor::default(),
-            input: StringCursor::default(),
-            validate: None,
+            ..Default::default()
         }
     }
 
