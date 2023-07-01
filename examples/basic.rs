@@ -25,7 +25,16 @@ fn main() -> std::io::Result<()> {
                 .interact()
         }),
         claquer::item("password", |_| {
-            claquer::password("Provide a password").mask('●').interact()
+            claquer::password("Provide a password").mask('▪').interact()
+        }),
+        claquer::item("type", |result| {
+            let path = result.get("path").unwrap();
+            claquer::select(format!("Pick a project type within '{path}'"))
+                .item("ts", "TypeScript", None::<&str>)
+                .item("js", "JavaScript", None::<&str>)
+                .item("coffee", "CoffeeScript", Some("oh no"))
+                .interact()
+                .map(|result| result.to_string())
         }),
     ])?;
 

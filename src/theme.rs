@@ -35,8 +35,8 @@ pub enum ThemeState {
     Error(String),
 }
 
-impl From<&State> for ThemeState {
-    fn from(state: &State) -> Self {
+impl<T> From<&State<T>> for ThemeState {
+    fn from(state: &State<T>) -> Self {
         match state {
             State::Active => Self::Active,
             State::Cancel => Self::Cancel,
@@ -65,6 +65,15 @@ pub trait Theme {
             ThemeState::Cancel => color.apply_to(S_STEP_CANCEL),
             ThemeState::Submit => green.apply_to(S_STEP_SUBMIT),
             ThemeState::Error(_) => color.apply_to(S_STEP_ERROR),
+        }
+        .to_string()
+    }
+
+    fn radio_symbol(&self, state: &ThemeState, selected: bool) -> String {
+        match state {
+            ThemeState::Active if selected => style(S_RADIO_ACTIVE).green(),
+            ThemeState::Active if !selected => style(S_RADIO_INACTIVE).dim(),
+            _ => style(Emoji("", "")),
         }
         .to_string()
     }
@@ -166,6 +175,44 @@ pub trait Theme {
         format!(
             "{bar}  {placeholder}\n",
             bar = self.state_color(state).apply_to(S_BAR)
+        )
+    }
+
+    fn format_select_item(
+        &self,
+        state: &ThemeState,
+        selected: bool,
+        label: &str,
+        hint: Option<&String>,
+    ) -> String {
+        match state {
+            ThemeState::Cancel | ThemeState::Submit if !selected => return String::new(),
+            _ => {}
+        }
+
+        let radio = self.radio_symbol(state, selected);
+        let input_style = &self.input_style(state);
+        let inactive_style = &self.placeholder_style(state);
+
+        let label = if selected {
+            input_style.apply_to(label)
+        } else {
+            inactive_style.apply_to(label)
+        }
+        .to_string();
+
+        let hint = if let Some(hint) = hint {
+            inactive_style.apply_to(format!("({})", hint)).to_string()
+        } else {
+            String::new()
+        };
+
+        format!(
+            "{bar}  {radio}{space1}{label}{space2}{hint}\n",
+            bar = self.state_color(state).apply_to(S_BAR),
+            space1 = if radio.is_empty() { "" } else { " " },
+            space2 = if label.is_empty() { "" } else { " " },
+            hint = if selected { hint } else { String::new() }
         )
     }
 }

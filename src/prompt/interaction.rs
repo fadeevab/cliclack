@@ -1,14 +1,11 @@
 use console::{Key, Term};
-use std::{
-    io::{self, Write},
-    str::FromStr,
-};
+use std::io::{self, Write};
 
 use super::cursor::StringCursor;
 
-pub enum State {
+pub enum State<T> {
     Active,
-    Submit(String),
+    Submit(T),
     Cancel,
     Error(String),
 }
@@ -34,13 +31,10 @@ fn wrap(text: &str, width: usize) -> String {
     )
 }
 
-pub trait PromptInteraction<T>
-where
-    T: FromStr,
-{
-    fn render(&mut self, state: &State) -> String;
+pub trait PromptInteraction<T> {
+    fn render(&mut self, state: &State<T>) -> String;
 
-    fn on(&mut self, event: &Event) -> State;
+    fn on(&mut self, event: &Event) -> State<T>;
 
     fn input(&mut self) -> Option<&mut StringCursor> {
         None
@@ -74,13 +68,7 @@ where
             }
 
             if let State::Submit(result) = state {
-                match result.parse::<T>() {
-                    Ok(value) => return Ok(value),
-                    Err(_) => {
-                        state = State::Error("Invalid value format".to_string());
-                        continue;
-                    }
-                }
+                return Ok(result);
             }
 
             if let State::Cancel = state {

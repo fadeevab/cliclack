@@ -62,7 +62,7 @@ where
         Some(&mut self.input)
     }
 
-    fn on(&mut self, event: &Event) -> State {
+    fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
         if *key == Key::Enter {
@@ -71,13 +71,19 @@ where
                     return State::Error(err);
                 }
             }
-            return State::Submit(self.input.to_string());
+
+            match self.input.to_string().parse::<T>() {
+                Ok(value) => return State::Submit(value),
+                Err(_) => {
+                    return State::Error("Invalid value format".to_string());
+                }
+            }
         }
 
         State::Active
     }
 
-    fn render(&mut self, state: &State) -> String {
+    fn render(&mut self, state: &State<T>) -> String {
         let line1 = ClackTheme.format_header(&state.into(), &self.prompt);
         let line2 = if self.input.is_empty() {
             ClackTheme.format_placeholder(&state.into(), &self.placeholder)

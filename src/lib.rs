@@ -1,5 +1,6 @@
 mod password;
 mod prompt;
+mod select;
 mod text;
 mod theme;
 mod validate;
@@ -8,6 +9,7 @@ use std::{collections::HashMap, fmt::Display, io};
 
 use console::Term;
 use password::Password;
+use select::Select;
 use theme::{ClackTheme, Theme};
 
 use crate::text::Text;
@@ -49,6 +51,10 @@ pub fn text<S: Display>(prompt: S) -> Text {
 
 pub fn password<S: Display>(prompt: S) -> Password {
     Password::new(prompt)
+}
+
+pub fn select<S: Display, T: Default + Clone>(prompt: S) -> Select<T> {
+    Select::new(prompt)
 }
 
 pub fn item(name: impl Display, action: ItemFn) -> GroupItem {
