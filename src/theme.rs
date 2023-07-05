@@ -78,6 +78,25 @@ pub trait Theme {
         .to_string()
     }
 
+    fn checkbox_symbol(&self, state: &ThemeState, selected: bool, active: bool) -> String {
+        match state {
+            ThemeState::Active if selected => style(S_CHECKBOX_SELECTED).green(),
+            ThemeState::Active if active && !selected => style(S_CHECKBOX_ACTIVE).cyan(),
+            ThemeState::Active if !active && !selected => style(S_CHECKBOX_INACTIVE).dim(),
+            _ => style(Emoji("", "")),
+        }
+        .to_string()
+    }
+
+    fn checkbox_style(&self, state: &ThemeState, selected: bool, active: bool) -> Style {
+        match state {
+            ThemeState::Cancel if selected => Style::new().dim().strikethrough(),
+            ThemeState::Submit if selected => Style::new().dim(),
+            _ if !active => Style::new().dim(),
+            _ => Style::new(),
+        }
+    }
+
     fn input_style(&self, state: &ThemeState) -> Style {
         match state {
             ThemeState::Cancel => Style::new().dim().strikethrough(),
@@ -212,6 +231,39 @@ pub trait Theme {
             "{bar}  {radio}{space1}{label}{space2}{hint}\n",
             bar = self.state_color(state).apply_to(S_BAR),
             space1 = if radio.is_empty() { "" } else { " " },
+            space2 = if label.is_empty() { "" } else { " " }
+        )
+    }
+
+    fn format_multiselect_item(
+        &self,
+        state: &ThemeState,
+        selected: bool, // when item is selected/checked
+        active: bool,   // when cursors highlights item
+        label: &str,
+        hint: &str,
+    ) -> String {
+        match state {
+            ThemeState::Cancel | ThemeState::Submit if !selected => return String::new(),
+            _ => {}
+        }
+
+        let checkbox = self.checkbox_symbol(state, selected, active);
+        let label_style = self.checkbox_style(state, selected, active);
+        let hint_style = self.placeholder_style(state);
+        let label = label_style.apply_to(label).to_string();
+
+        let hint = match state {
+            ThemeState::Active | ThemeState::Error(_) if !hint.is_empty() && active => {
+                hint_style.apply_to(format!("({})", hint)).to_string()
+            }
+            _ => String::new(),
+        };
+
+        format!(
+            "{bar}  {checkbox}{space1}{label}{space2}{hint}\n",
+            bar = self.state_color(state).apply_to(S_BAR),
+            space1 = if checkbox.is_empty() { "" } else { " " },
             space2 = if label.is_empty() { "" } else { " " }
         )
     }

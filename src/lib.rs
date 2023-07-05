@@ -1,3 +1,4 @@
+mod multiselect;
 mod password;
 mod prompt;
 mod select;
@@ -5,9 +6,10 @@ mod text;
 mod theme;
 mod validate;
 
-use std::{collections::HashMap, fmt::Display, io};
+use std::{fmt::Display, io};
 
 use console::Term;
+use multiselect::MultiSelect;
 use password::Password;
 use select::Select;
 use theme::{ClackTheme, Theme};
@@ -16,13 +18,6 @@ use crate::text::Text;
 
 // Re-export the PromptInteraction trait
 pub use crate::prompt::interaction::PromptInteraction;
-
-type ItemFn = fn(&HashMap<String, String>) -> io::Result<String>;
-
-pub struct GroupItem {
-    name: String,
-    action: Box<ItemFn>,
-}
 
 fn term_write_line(line: String) -> io::Result<()> {
     Term::stderr().write_line(&line)
@@ -53,24 +48,10 @@ pub fn password<S: Display>(prompt: S) -> Password {
     Password::new(prompt)
 }
 
-pub fn select<S: Display, T: Default + Clone>(prompt: S) -> Select<T> {
+pub fn select<S: Display, T: Default + Clone + Eq>(prompt: S) -> Select<T> {
     Select::new(prompt)
 }
 
-pub fn item(name: impl Display, action: ItemFn) -> GroupItem {
-    GroupItem {
-        name: name.to_string(),
-        action: Box::new(action),
-    }
-}
-
-pub fn group(items: Vec<GroupItem>) -> io::Result<HashMap<String, String>> {
-    let mut result = HashMap::new();
-
-    for GroupItem { name, action } in items {
-        let ret: String = action(&result)?;
-        result.insert(name, ret);
-    }
-
-    Ok(result)
+pub fn multiselect<S: Display, T: Default + Clone + Eq>(prompt: S) -> MultiSelect<T> {
+    MultiSelect::new(prompt)
 }
