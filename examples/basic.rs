@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
         .interact()?;
 
     let _kind = claquer::select(format!("Pick a project type within '{path}'"))
-        .initial_value("js")
+        .initial_value("ts")
         .item("ts", "TypeScript", "")
         .item("js", "JavaScript", "")
         .item("coffee", "CoffeeScript", "oh no")
@@ -38,6 +38,8 @@ fn main() -> std::io::Result<()> {
         .interact()?;
 
     let _: u8 = claquer::text("Input a number (not greater than 256)").interact()?;
+
+    let _confirmation = claquer::confirm("Install dependencies?").interact()?;
 
     claquer::outro(format!(
         "Problems? {}",

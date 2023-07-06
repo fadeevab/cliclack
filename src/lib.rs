@@ -1,3 +1,4 @@
+mod confirm;
 mod multiselect;
 mod password;
 mod prompt;
@@ -54,4 +55,8 @@ pub fn select<S: Display, T: Default + Clone + Eq>(prompt: S) -> Select<T> {
 
 pub fn multiselect<S: Display, T: Default + Clone + Eq>(prompt: S) -> MultiSelect<T> {
     MultiSelect::new(prompt)
+}
+
+pub fn confirm<S: Display>(prompt: S) -> confirm::Confirm {
+    confirm::Confirm::new(prompt)
 }

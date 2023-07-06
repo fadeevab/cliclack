@@ -197,13 +197,7 @@ pub trait Theme {
         )
     }
 
-    fn format_select_item(
-        &self,
-        state: &ThemeState,
-        selected: bool,
-        label: &str,
-        hint: &str,
-    ) -> String {
+    fn radio_item(&self, state: &ThemeState, selected: bool, label: &str, hint: &str) -> String {
         match state {
             ThemeState::Cancel | ThemeState::Submit if !selected => return String::new(),
             _ => {}
@@ -228,10 +222,23 @@ pub trait Theme {
         };
 
         format!(
-            "{bar}  {radio}{space1}{label}{space2}{hint}\n",
-            bar = self.state_color(state).apply_to(S_BAR),
+            "{radio}{space1}{label}{space2}{hint}",
             space1 = if radio.is_empty() { "" } else { " " },
             space2 = if label.is_empty() { "" } else { " " }
+        )
+    }
+
+    fn format_select_item(
+        &self,
+        state: &ThemeState,
+        selected: bool,
+        label: &str,
+        hint: &str,
+    ) -> String {
+        format!(
+            "{bar}  {radio_item}\n",
+            bar = self.state_color(state).apply_to(S_BAR),
+            radio_item = self.radio_item(state, selected, label, hint)
         )
     }
 
@@ -265,6 +272,23 @@ pub trait Theme {
             bar = self.state_color(state).apply_to(S_BAR),
             space1 = if checkbox.is_empty() { "" } else { " " },
             space2 = if label.is_empty() { "" } else { " " }
+        )
+    }
+
+    fn format_confirm(&self, state: &ThemeState, confirm: bool) -> String {
+        let yes = self.radio_item(state, confirm, "Yes", "");
+        let no = self.radio_item(state, !confirm, "No", "");
+
+        let inactive_style = &self.placeholder_style(state);
+
+        let divider = match state {
+            ThemeState::Active => inactive_style.apply_to(" / ").to_string(),
+            _ => "".to_string(),
+        };
+
+        format!(
+            "{bar}  {yes}{divider}{no}\n",
+            bar = self.state_color(state).apply_to(S_BAR),
         )
     }
 }
