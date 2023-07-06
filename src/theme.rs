@@ -235,6 +235,11 @@ pub trait Theme {
         label: &str,
         hint: &str,
     ) -> String {
+        match state {
+            ThemeState::Cancel | ThemeState::Submit if !selected => return String::new(),
+            _ => {}
+        }
+
         format!(
             "{bar}  {radio_item}\n",
             bar = self.state_color(state).apply_to(S_BAR),
@@ -242,7 +247,7 @@ pub trait Theme {
         )
     }
 
-    fn format_multiselect_item(
+    fn checkbox_item(
         &self,
         state: &ThemeState,
         selected: bool, // when item is selected/checked
@@ -268,10 +273,29 @@ pub trait Theme {
         };
 
         format!(
-            "{bar}  {checkbox}{space1}{label}{space2}{hint}\n",
-            bar = self.state_color(state).apply_to(S_BAR),
+            "{checkbox}{space1}{label}{space2}{hint}",
             space1 = if checkbox.is_empty() { "" } else { " " },
             space2 = if label.is_empty() { "" } else { " " }
+        )
+    }
+
+    fn format_multiselect_item(
+        &self,
+        state: &ThemeState,
+        selected: bool, // when item is selected/checked
+        active: bool,   // when cursors highlights item
+        label: &str,
+        hint: &str,
+    ) -> String {
+        match state {
+            ThemeState::Cancel | ThemeState::Submit if !selected => return String::new(),
+            _ => {}
+        }
+
+        format!(
+            "{bar}  {checkbox_item}\n",
+            bar = self.state_color(state).apply_to(S_BAR),
+            checkbox_item = self.checkbox_item(state, selected, active, label, hint),
         )
     }
 
@@ -280,7 +304,6 @@ pub trait Theme {
         let no = self.radio_item(state, !confirm, "No", "");
 
         let inactive_style = &self.placeholder_style(state);
-
         let divider = match state {
             ThemeState::Active => inactive_style.apply_to(" / ").to_string(),
             _ => "".to_string(),
