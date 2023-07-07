@@ -6,13 +6,16 @@ mod select;
 mod text;
 mod theme;
 mod validate;
+mod spinner;
 
 use std::{fmt::Display, io};
 
+use confirm::Confirm;
 use console::Term;
 use multiselect::MultiSelect;
 use password::Password;
 use select::Select;
+use spinner::Spinner;
 use theme::{ClackTheme, Theme};
 
 use crate::text::Text;
@@ -57,6 +60,10 @@ pub fn multiselect<S: Display, T: Default + Clone + Eq>(prompt: S) -> MultiSelec
     MultiSelect::new(prompt)
 }
 
-pub fn confirm<S: Display>(prompt: S) -> confirm::Confirm {
-    confirm::Confirm::new(prompt)
+pub fn confirm<S: Display>(prompt: S) -> Confirm {
+    Confirm::new(prompt)
+}
+
+pub fn spinner() -> Spinner {
+    Spinner::default()
 }

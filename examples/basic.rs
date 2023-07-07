@@ -1,3 +1,5 @@
+use std::{thread, time::Duration};
+
 use console::style;
 
 fn main() -> std::io::Result<()> {
@@ -39,7 +41,14 @@ fn main() -> std::io::Result<()> {
 
     let _: u8 = claquer::text("Input a number (not greater than 256)").interact()?;
 
-    let _confirmation = claquer::confirm("Install dependencies?").interact()?;
+    let install = claquer::confirm("Install dependencies?").interact()?;
+
+    if install {
+        let mut spinner = claquer::spinner();
+        spinner.start("Installing via pnpm");
+        thread::sleep(Duration::from_secs(5));
+        spinner.stop("Installed via pnpm");
+    }
 
     claquer::outro(format!(
         "Problems? {}",

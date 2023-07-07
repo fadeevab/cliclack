@@ -28,6 +28,8 @@ const S_SUCCESS: Emoji = Emoji("◆", "*");
 const S_WARN: Emoji = Emoji("▲", "!");
 const S_ERROR: Emoji = Emoji("■", "x");
 
+const S_SPINNER: Emoji = Emoji("◒◐◓◑", "•oO0");
+
 pub enum ThemeState {
     Active,
     Cancel,
@@ -313,6 +315,14 @@ pub trait Theme {
             "{bar}  {yes}{divider}{no}\n",
             bar = self.state_color(state).apply_to(S_BAR),
         )
+    }
+
+    fn format_spinner(&self) -> String {
+        "{spinner:.magenta} {msg}".into()
+    }
+
+    fn spinner_chars(&self) -> String {
+        S_SPINNER.to_string()
     }
 }
 
