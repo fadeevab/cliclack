@@ -131,7 +131,7 @@ pub trait Theme {
     fn format_intro(&self, title: &str) -> String {
         let color = self.state_color(&ThemeState::Submit);
         format!(
-            "{start_bar}  {title}\n{bar}",
+            "{start_bar}  {title}\n{bar}\n",
             start_bar = color.apply_to(S_BAR_START),
             bar = color.apply_to(S_BAR),
         )
@@ -139,13 +139,17 @@ pub trait Theme {
 
     fn format_outro(&self, message: &str) -> String {
         let color = self.state_color(&ThemeState::Submit);
-        format!("{bar}  {message}\n", bar = color.apply_to(S_BAR_END))
+        format!(
+            "{bar}\n{bar_end}  {message}\n",
+            bar = color.apply_to(S_BAR),
+            bar_end = color.apply_to(S_BAR_END)
+        )
     }
 
     fn format_cancel(&self, message: &str) -> String {
         let color = self.state_color(&ThemeState::Submit);
         format!(
-            "{bar}  {message}",
+            "{bar}  {message}\n",
             bar = color.apply_to(S_BAR_END),
             message = style(message).red()
         )
@@ -323,6 +327,45 @@ pub trait Theme {
 
     fn spinner_chars(&self) -> String {
         S_SPINNER.to_string()
+    }
+
+    fn format_note(&self, prompt: &str, message: &str) -> String {
+        let message = format!("\n{message}\n");
+        let width = 2 + message
+            .split('\n')
+            .fold(0usize, |acc, line| line.chars().count().max(acc))
+            .max(prompt.chars().count());
+
+        let symbol = self.state_symbol(&ThemeState::Submit);
+        let bar_color = self.state_color(&ThemeState::Submit);
+        let text_color = self.input_style(&ThemeState::Submit);
+
+        let header = format!(
+            "{symbol}  {prompt} {horizontal_bar}{corner}\n",
+            horizontal_bar =
+                bar_color.apply_to(S_BAR_H.to_string().repeat(width - prompt.chars().count())),
+            corner = bar_color.apply_to(S_CORNER_TOP_RIGHT),
+        );
+        let body = message
+            .lines()
+            .map(|line| {
+                format!(
+                    "{bar}  {line}{spaces}{bar}\n",
+                    bar = bar_color.apply_to(S_BAR),
+                    line = text_color.apply_to(line),
+                    spaces = " ".repeat(width - line.chars().count() + 1)
+                )
+            })
+            .collect::<String>();
+
+        let footer = bar_color
+            .apply_to(format!(
+                "{S_CONNECT_LEFT}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n",
+                horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
+            ))
+            .to_string();
+
+        header + &body + &footer
     }
 }
 

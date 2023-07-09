@@ -50,6 +50,13 @@ fn main() -> std::io::Result<()> {
         spinner.stop("Installed via pnpm");
     }
 
+    let next_steps = format!(
+        "{path}\n{pnpm_install}pnpm dev\n",
+        pnpm_install = if install { "" } else { "pnpm install\n" }
+    );
+
+    claquer::note("Next steps.", next_steps)?;
+
     claquer::outro(format!(
         "Problems? {}",
         style("https://example.com/issues").cyan().underlined()

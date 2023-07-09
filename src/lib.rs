@@ -3,12 +3,13 @@ mod multiselect;
 mod password;
 mod prompt;
 mod select;
+mod spinner;
 mod text;
 mod theme;
 mod validate;
-mod spinner;
 
-use std::{fmt::Display, io};
+use std::fmt::Display;
+use std::io;
 
 use confirm::Confirm;
 use console::Term;
@@ -23,8 +24,8 @@ use crate::text::Text;
 // Re-export the PromptInteraction trait
 pub use crate::prompt::interaction::PromptInteraction;
 
-fn term_write_line(line: String) -> io::Result<()> {
-    Term::stderr().write_line(&line)
+fn term_write(line: String) -> io::Result<()> {
+    Term::stderr().write_str(&line)
 }
 
 pub fn clear_screen() -> io::Result<()> {
@@ -32,38 +33,42 @@ pub fn clear_screen() -> io::Result<()> {
     Term::stderr().clear_screen()
 }
 
-pub fn intro<S: Display>(title: S) -> io::Result<()> {
-    term_write_line(ClackTheme.format_intro(&title.to_string()))
+pub fn intro(title: impl Display) -> io::Result<()> {
+    term_write(ClackTheme.format_intro(&title.to_string()))
 }
 
-pub fn outro<S: Display>(message: S) -> io::Result<()> {
-    term_write_line(ClackTheme.format_outro(&message.to_string()))
+pub fn outro(message: impl Display) -> io::Result<()> {
+    term_write(ClackTheme.format_outro(&message.to_string()))
 }
 
-pub fn cancel<S: Display>(message: S) -> io::Result<()> {
-    term_write_line(ClackTheme.format_cancel(&message.to_string()))
+pub fn cancel(message: impl Display) -> io::Result<()> {
+    term_write(ClackTheme.format_cancel(&message.to_string()))
 }
 
-pub fn text<S: Display>(prompt: S) -> Text {
+pub fn text(prompt: impl Display) -> Text {
     Text::new(prompt)
 }
 
-pub fn password<S: Display>(prompt: S) -> Password {
+pub fn password(prompt: impl Display) -> Password {
     Password::new(prompt)
 }
 
-pub fn select<S: Display, T: Default + Clone + Eq>(prompt: S) -> Select<T> {
+pub fn select<T: Default + Clone + Eq>(prompt: impl Display) -> Select<T> {
     Select::new(prompt)
 }
 
-pub fn multiselect<S: Display, T: Default + Clone + Eq>(prompt: S) -> MultiSelect<T> {
+pub fn multiselect<T: Default + Clone + Eq>(prompt: impl Display) -> MultiSelect<T> {
     MultiSelect::new(prompt)
 }
 
-pub fn confirm<S: Display>(prompt: S) -> Confirm {
+pub fn confirm(prompt: impl Display) -> Confirm {
     Confirm::new(prompt)
 }
 
 pub fn spinner() -> Spinner {
     Spinner::default()
+}
+
+pub fn note(prompt: impl Display, message: impl Display) -> io::Result<()> {
+    term_write(ClackTheme.format_note(&prompt.to_string(), &message.to_string()))
 }
