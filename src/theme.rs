@@ -49,7 +49,7 @@ impl<T> From<&State<T>> for ThemeState {
 }
 
 pub trait Theme {
-    fn state_color(&self, state: &ThemeState) -> Style {
+    fn bar_color(&self, state: &ThemeState) -> Style {
         match state {
             ThemeState::Active => Style::new().cyan(),
             ThemeState::Cancel => Style::new().red(),
@@ -59,7 +59,7 @@ pub trait Theme {
     }
 
     fn state_symbol(&self, state: &ThemeState) -> String {
-        let color = self.state_color(state);
+        let color = self.bar_color(state);
         let green = Style::new().green();
 
         match state {
@@ -88,6 +88,32 @@ pub trait Theme {
             _ => style(Emoji("", "")),
         }
         .to_string()
+    }
+
+    fn message_symbol(&self) -> String {
+        self.bar_color(&ThemeState::Submit)
+            .apply_to(S_CONNECT_LEFT)
+            .to_string()
+    }
+
+    fn info_symbol(&self) -> String {
+        style(S_INFO).blue().to_string()
+    }
+
+    fn warning_symbol(&self) -> String {
+        style(S_WARN).yellow().to_string()
+    }
+
+    fn error_symbol(&self) -> String {
+        style(S_ERROR).red().to_string()
+    }
+
+    fn success_symbol(&self) -> String {
+        style(S_SUCCESS).green().to_string()
+    }
+
+    fn step_symbol(&self) -> String {
+        style(S_STEP_SUBMIT).green().to_string()
     }
 
     fn checkbox_style(&self, state: &ThemeState, selected: bool, active: bool) -> Style {
@@ -129,7 +155,7 @@ pub trait Theme {
     }
 
     fn format_intro(&self, title: &str) -> String {
-        let color = self.state_color(&ThemeState::Submit);
+        let color = self.bar_color(&ThemeState::Submit);
         format!(
             "{start_bar}  {title}\n{bar}\n",
             start_bar = color.apply_to(S_BAR_START),
@@ -138,7 +164,7 @@ pub trait Theme {
     }
 
     fn format_outro(&self, message: &str) -> String {
-        let color = self.state_color(&ThemeState::Submit);
+        let color = self.bar_color(&ThemeState::Submit);
         format!(
             "{bar}\n{bar_end}  {message}\n",
             bar = color.apply_to(S_BAR),
@@ -147,7 +173,7 @@ pub trait Theme {
     }
 
     fn format_cancel(&self, message: &str) -> String {
-        let color = self.state_color(&ThemeState::Submit);
+        let color = self.bar_color(&ThemeState::Submit);
         format!(
             "{bar}  {message}\n",
             bar = color.apply_to(S_BAR_END),
@@ -165,7 +191,7 @@ pub trait Theme {
     fn format_footer(&self, state: &ThemeState) -> String {
         format!(
             "{}\n", // '\n' vanishes by style applying, thus exclude it from styling
-            self.state_color(state).apply_to(match state {
+            self.bar_color(state).apply_to(match state {
                 ThemeState::Active => format!("{S_BAR_END}"),
                 ThemeState::Cancel => format!("{S_BAR_END}  Operation cancelled."),
                 ThemeState::Submit => format!("{S_BAR}"),
@@ -184,7 +210,7 @@ pub trait Theme {
 
         format!(
             "{bar}  {input}\n",
-            bar = self.state_color(state).apply_to(S_BAR)
+            bar = self.bar_color(state).apply_to(S_BAR)
         )
     }
 
@@ -199,7 +225,7 @@ pub trait Theme {
 
         format!(
             "{bar}  {placeholder}\n",
-            bar = self.state_color(state).apply_to(S_BAR)
+            bar = self.bar_color(state).apply_to(S_BAR)
         )
     }
 
@@ -248,7 +274,7 @@ pub trait Theme {
 
         format!(
             "{bar}  {radio_item}\n",
-            bar = self.state_color(state).apply_to(S_BAR),
+            bar = self.bar_color(state).apply_to(S_BAR),
             radio_item = self.radio_item(state, selected, label, hint)
         )
     }
@@ -300,7 +326,7 @@ pub trait Theme {
 
         format!(
             "{bar}  {checkbox_item}\n",
-            bar = self.state_color(state).apply_to(S_BAR),
+            bar = self.bar_color(state).apply_to(S_BAR),
             checkbox_item = self.checkbox_item(state, selected, active, label, hint),
         )
     }
@@ -317,12 +343,20 @@ pub trait Theme {
 
         format!(
             "{bar}  {yes}{divider}{no}\n",
-            bar = self.state_color(state).apply_to(S_BAR),
+            bar = self.bar_color(state).apply_to(S_BAR),
         )
     }
 
-    fn format_spinner(&self) -> String {
-        "{spinner:.magenta} {msg}".into()
+    fn format_spinner_start(&self) -> String {
+        "{spinner:.magenta}  {msg}".into()
+    }
+
+    fn format_spinner_stop(&self) -> String {
+        format!(
+            "{symbol}  {{msg}}\n{bar}\n",
+            symbol = self.state_symbol(&ThemeState::Submit),
+            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
+        )
     }
 
     fn spinner_chars(&self) -> String {
@@ -337,7 +371,7 @@ pub trait Theme {
             .max(prompt.chars().count());
 
         let symbol = self.state_symbol(&ThemeState::Submit);
-        let bar_color = self.state_color(&ThemeState::Submit);
+        let bar_color = self.bar_color(&ThemeState::Submit);
         let text_color = self.input_style(&ThemeState::Submit);
 
         let header = format!(
@@ -366,6 +400,25 @@ pub trait Theme {
             .to_string();
 
         header + &body + &footer
+    }
+
+    fn format_log(&self, text: &str, symbol: &str) -> String {
+        let mut parts = vec![];
+        let mut lines = text.lines().chain("\n".lines());
+
+        if let Some(first) = lines.next() {
+            parts.push(format!("{symbol}  {first}"));
+        }
+
+        for line in lines {
+            parts.push(format!(
+                "{bar}  {line}",
+                bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
+            ));
+        }
+
+        parts.push("".into());
+        parts.join("\n")
     }
 }
 

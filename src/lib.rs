@@ -72,3 +72,35 @@ pub fn spinner() -> Spinner {
 pub fn note(prompt: impl Display, message: impl Display) -> io::Result<()> {
     term_write(ClackTheme.format_note(&prompt.to_string(), &message.to_string()))
 }
+
+pub mod log {
+    use super::*;
+
+    fn log(text: impl Display, symbol: impl Display) -> io::Result<()> {
+        term_write(ClackTheme.format_log(&text.to_string(), &symbol.to_string()))
+    }
+
+    pub fn message(text: impl Display) -> io::Result<()> {
+        log(text, ClackTheme.message_symbol())
+    }
+
+    pub fn info(text: impl Display) -> io::Result<()> {
+        log(text, ClackTheme.info_symbol())
+    }
+
+    pub fn warning(message: impl Display) -> io::Result<()> {
+        log(message, ClackTheme.warning_symbol())
+    }
+
+    pub fn error(message: impl Display) -> io::Result<()> {
+        log(message, ClackTheme.error_symbol())
+    }
+
+    pub fn success(message: impl Display) -> io::Result<()> {
+        log(message, ClackTheme.success_symbol())
+    }
+
+    pub fn step(message: impl Display) -> io::Result<()> {
+        log(message, ClackTheme.step_symbol())
+    }
+}
