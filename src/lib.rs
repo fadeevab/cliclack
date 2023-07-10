@@ -11,15 +11,15 @@ mod validate;
 use std::fmt::Display;
 use std::io;
 
-use confirm::Confirm;
 use console::Term;
-use multiselect::MultiSelect;
-use password::Password;
-use select::Select;
-use spinner::Spinner;
-use theme::{ClackTheme, Theme};
 
-use crate::text::Text;
+pub use confirm::Confirm;
+pub use multiselect::MultiSelect;
+pub use password::Password;
+pub use select::Select;
+pub use spinner::Spinner;
+pub use text::Input;
+pub use theme::{ClackTheme, Theme};
 
 // Re-export the PromptInteraction trait
 pub use crate::prompt::interaction::PromptInteraction;
@@ -41,12 +41,12 @@ pub fn outro(message: impl Display) -> io::Result<()> {
     term_write(ClackTheme.format_outro(&message.to_string()))
 }
 
-pub fn cancel(message: impl Display) -> io::Result<()> {
+pub fn outro_cancel(message: impl Display) -> io::Result<()> {
     term_write(ClackTheme.format_cancel(&message.to_string()))
 }
 
-pub fn text(prompt: impl Display) -> Text {
-    Text::new(prompt)
+pub fn input(prompt: impl Display) -> Input {
+    Input::new(prompt)
 }
 
 pub fn password(prompt: impl Display) -> Password {
@@ -73,14 +73,14 @@ pub fn note(prompt: impl Display, message: impl Display) -> io::Result<()> {
     term_write(ClackTheme.format_note(&prompt.to_string(), &message.to_string()))
 }
 
-pub mod log {
+pub mod notice {
     use super::*;
 
     fn log(text: impl Display, symbol: impl Display) -> io::Result<()> {
         term_write(ClackTheme.format_log(&text.to_string(), &symbol.to_string()))
     }
 
-    pub fn message(text: impl Display) -> io::Result<()> {
+    pub fn remark(text: impl Display) -> io::Result<()> {
         log(text, ClackTheme.message_symbol())
     }
 

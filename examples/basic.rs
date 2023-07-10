@@ -7,7 +7,7 @@ fn main() -> std::io::Result<()> {
 
     clacky::intro(style(" create-app ").on_cyan().black())?;
 
-    let path: String = clacky::text("Where should we create your project?")
+    let path: String = clacky::input("Where should we create your project?")
         .placeholder("./sparkling-solid")
         .validate(|input: &String| {
             if input.is_empty() {
@@ -39,7 +39,7 @@ fn main() -> std::io::Result<()> {
         .item("gh-action", "GitHub Action", "")
         .interact()?;
 
-    let _: u8 = clacky::text("Input a number (not greater than 256)").interact()?;
+    let _: u8 = clacky::input("Input a number (not greater than 256)").interact()?;
 
     let install = clacky::confirm("Install dependencies?").interact()?;
 
@@ -62,14 +62,14 @@ fn main() -> std::io::Result<()> {
         style("https://example.com/issues").cyan().underlined()
     ))?;
 
-    clacky::intro(style(" log example ").on_cyan().black())?;
-    clacky::log::message("This is a message")?;
-    clacky::log::warning("This is a warning")?;
-    clacky::log::error("This is an error")?;
-    clacky::log::success("This is a success")?;
-    clacky::log::info("This is an info")?;
-    clacky::log::step("This is a step")?;
-    clacky::cancel("Like it's cancelled (instead of outro)")?;
+    clacky::intro(style(" notice ").on_cyan().black())?;
+    clacky::notice::remark("This is a simple message")?;
+    clacky::notice::warning("This is a warning")?;
+    clacky::notice::error("This is an error")?;
+    clacky::notice::success("This is a success")?;
+    clacky::notice::info("This is an info")?;
+    clacky::notice::step("This is a step")?;
+    clacky::outro_cancel("Like it's cancelled")?;
 
     Ok(())
 }

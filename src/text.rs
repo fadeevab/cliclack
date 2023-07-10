@@ -15,14 +15,14 @@ use crate::{
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
 #[derive(Default)]
-pub struct Text {
+pub struct Input {
     prompt: String,
     placeholder: StringCursor,
     input: StringCursor,
     validate: Option<ValidationCallback>,
 }
 
-impl Text {
+impl Input {
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
@@ -54,7 +54,7 @@ impl Text {
     }
 }
 
-impl<T> PromptInteraction<T> for Text
+impl<T> PromptInteraction<T> for Input
 where
     T: FromStr,
 {
