@@ -90,7 +90,7 @@ pub trait Theme {
         .to_string()
     }
 
-    fn message_symbol(&self) -> String {
+    fn remark_symbol(&self) -> String {
         self.bar_color(&ThemeState::Submit)
             .apply_to(S_CONNECT_LEFT)
             .to_string()

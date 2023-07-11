@@ -81,7 +81,7 @@ pub mod log {
     }
 
     pub fn remark(text: impl Display) -> io::Result<()> {
-        log(text, ClackTheme.message_symbol())
+        log(text, ClackTheme.remark_symbol())
     }
 
     pub fn info(text: impl Display) -> io::Result<()> {
