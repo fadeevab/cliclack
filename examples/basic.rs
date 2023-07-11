@@ -62,14 +62,5 @@ fn main() -> std::io::Result<()> {
         style("https://example.com/issues").cyan().underlined()
     ))?;
 
-    clacky::intro(style(" notice ").on_cyan().black())?;
-    clacky::notice::remark("This is a simple message")?;
-    clacky::notice::warning("This is a warning")?;
-    clacky::notice::error("This is an error")?;
-    clacky::notice::success("This is a success")?;
-    clacky::notice::info("This is an info")?;
-    clacky::notice::step("This is a step")?;
-    clacky::outro_cancel("Like it's cancelled")?;
-
     Ok(())
 }

@@ -73,7 +73,7 @@ pub fn note(prompt: impl Display, message: impl Display) -> io::Result<()> {
     term_write(ClackTheme.format_note(&prompt.to_string(), &message.to_string()))
 }
 
-pub mod notice {
+pub mod log {
     use super::*;
 
     fn log(text: impl Display, symbol: impl Display) -> io::Result<()> {
