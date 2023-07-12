@@ -14,6 +14,21 @@ use crate::{
 
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
+/// A prompt that accepts a single line of text input.
+///
+/// # Example
+///
+/// ```
+/// use cliclack::Input;
+///
+/// # fn test() -> std::io::Result<()> {
+/// let input: String = Input::new("Tea or coffee?")
+///     .placeholder("Yes")
+///     .interact()?;
+/// # Ok(())
+/// # }
+/// # test().ok();
+/// ```
 #[derive(Default)]
 pub struct Input {
     prompt: String,

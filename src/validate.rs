@@ -1,3 +1,4 @@
+/// Converts different types of external closures into internal validation functions.
 pub trait Validate<T> {
     type Err;
 

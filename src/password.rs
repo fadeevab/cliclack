@@ -14,6 +14,7 @@ use crate::{
 
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
+/// A prompt that masks the input.
 #[derive(Default)]
 pub struct Password {
     prompt: String,

@@ -24,7 +24,6 @@ const S_CONNECT_LEFT: Emoji = Emoji("├", "+");
 const S_CORNER_BOTTOM_RIGHT: Emoji = Emoji("╯", "+");
 
 const S_INFO: Emoji = Emoji("●", "•");
-const S_SUCCESS: Emoji = Emoji("◆", "*");
 const S_WARN: Emoji = Emoji("▲", "!");
 const S_ERROR: Emoji = Emoji("■", "x");
 
@@ -108,11 +107,11 @@ pub trait Theme {
         style(S_ERROR).red().to_string()
     }
 
-    fn success_symbol(&self) -> String {
-        style(S_SUCCESS).green().to_string()
+    fn active_symbol(&self) -> String {
+        style(S_STEP_ACTIVE).green().to_string()
     }
 
-    fn step_symbol(&self) -> String {
+    fn submit_symbol(&self) -> String {
         style(S_STEP_SUBMIT).green().to_string()
     }
 
@@ -422,6 +421,6 @@ pub trait Theme {
     }
 }
 
-pub struct ClackTheme;
+pub(crate) struct ClackTheme;
 
 impl Theme for ClackTheme {}

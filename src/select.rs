@@ -15,6 +15,7 @@ pub struct RadioButton<T: Default> {
     pub hint: String,
 }
 
+/// A prompt that asks for one selection from a list of options.
 #[derive(Default)]
 pub struct Select<T: Default> {
     prompt: String,

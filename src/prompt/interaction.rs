@@ -31,19 +31,32 @@ fn wrap(text: &str, width: usize) -> String {
     )
 }
 
+/// A component that renders itself as a prompt and handles user input.
+///
+/// Two methods are mandatory to implement:
+/// [`render()`](PromptInteraction::render) and [`on()`](PromptInteraction::on).
+///
+/// Interaction with the user starts with [`interact()`](PromptInteraction::interact).
 pub trait PromptInteraction<T> {
+    /// Renders the prompt according to the interaction state.
     fn render(&mut self, state: &State<T>) -> String;
 
+    /// Handles user input.
     fn on(&mut self, event: &Event) -> State<T>;
 
+    /// Returns the cursor object which is going to be manipulated and modified
+    /// during the user interaction.
     fn input(&mut self) -> Option<&mut StringCursor> {
         None
     }
 
+    /// Starts the interaction with the user via stderr.
     fn interact(&mut self) -> io::Result<T> {
         self.interact_on(&mut Term::stderr())
     }
 
+    /// Starts the interaction with the user via the given terminal.
+    /// This is a common boilerplate code.
     fn interact_on(&mut self, term: &mut Term) -> io::Result<T> {
         if !term.is_term() {
             return Err(io::ErrorKind::NotConnected.into());

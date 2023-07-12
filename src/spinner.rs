@@ -4,6 +4,9 @@ use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::theme::{ClackTheme, Theme};
 
+/// A spinner that renders progress indication.
+///
+/// Implemented via theming of [`indicatif::ProgressBar`](https://docs.rs/indicatif).
 pub struct Spinner {
     spinner: ProgressBar,
 }

@@ -8,6 +8,7 @@ use crate::{
     theme::{ClackTheme, Theme},
 };
 
+/// A prompt that asks for a yes or no confirmation.
 #[derive(Default)]
 pub struct Confirm {
     prompt: String,

@@ -16,6 +16,7 @@ pub struct Checkbox<T: Default> {
     pub selected: bool,
 }
 
+/// A prompt that asks for one or more selections from a list of options.
 #[derive(Default)]
 pub struct MultiSelect<T: Default> {
     prompt: String,
