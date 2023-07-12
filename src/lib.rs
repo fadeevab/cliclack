@@ -1,10 +1,10 @@
 mod confirm;
+mod input;
 mod multiselect;
 mod password;
 mod prompt;
 mod select;
 mod spinner;
-mod text;
 mod theme;
 mod validate;
 
@@ -14,11 +14,11 @@ use std::io;
 use console::Term;
 
 pub use confirm::Confirm;
+pub use input::Input;
 pub use multiselect::MultiSelect;
 pub use password::Password;
 pub use select::Select;
 pub use spinner::Spinner;
-pub use text::Input;
 pub use theme::{ClackTheme, Theme};
 
 // Re-export the PromptInteraction trait
@@ -28,19 +28,23 @@ fn term_write(line: String) -> io::Result<()> {
     Term::stderr().write_str(&line)
 }
 
+/// Clears the terminal.
 pub fn clear_screen() -> io::Result<()> {
     Term::stdout().clear_screen()?;
     Term::stderr().clear_screen()
 }
 
+/// Prints the first message of the prompts sequence.
 pub fn intro(title: impl Display) -> io::Result<()> {
     term_write(ClackTheme.format_intro(&title.to_string()))
 }
 
+/// Prints the last message of the prompts sequence.
 pub fn outro(message: impl Display) -> io::Result<()> {
     term_write(ClackTheme.format_outro(&message.to_string()))
 }
 
+/// Prints the last message of the prompts sequence with a failure style.
 pub fn outro_cancel(message: impl Display) -> io::Result<()> {
     term_write(ClackTheme.format_cancel(&message.to_string()))
 }
