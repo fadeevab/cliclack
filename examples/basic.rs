@@ -3,11 +3,11 @@ use std::{thread, time::Duration};
 use console::style;
 
 fn main() -> std::io::Result<()> {
-    clacky::clear_screen()?;
+    cliclack::clear_screen()?;
 
-    clacky::intro(style(" create-app ").on_cyan().black())?;
+    cliclack::intro(style(" create-app ").on_cyan().black())?;
 
-    let path: String = clacky::input("Where should we create your project?")
+    let path: String = cliclack::input("Where should we create your project?")
         .placeholder("./sparkling-solid")
         .validate(|input: &String| {
             if input.is_empty() {
@@ -20,18 +20,18 @@ fn main() -> std::io::Result<()> {
         })
         .interact()?;
 
-    let _password = clacky::password("Provide a password")
+    let _password = cliclack::password("Provide a password")
         .mask('▪')
         .interact()?;
 
-    let _kind = clacky::select(format!("Pick a project type within '{path}'"))
+    let _kind = cliclack::select(format!("Pick a project type within '{path}'"))
         .initial_value("ts")
         .item("ts", "TypeScript", "")
         .item("js", "JavaScript", "")
         .item("coffee", "CoffeeScript", "oh no")
         .interact()?;
 
-    let _tools = clacky::multiselect("Select additional tools")
+    let _tools = cliclack::multiselect("Select additional tools")
         .initial_values(vec!["prettier", "eslint"])
         .item("prettier", "Prettier", "recommended")
         .item("eslint", "ESLint", "recommended")
@@ -39,12 +39,12 @@ fn main() -> std::io::Result<()> {
         .item("gh-action", "GitHub Action", "")
         .interact()?;
 
-    let _: u8 = clacky::input("Input a number (not greater than 256)").interact()?;
+    let _: u8 = cliclack::input("Input a number (not greater than 256)").interact()?;
 
-    let install = clacky::confirm("Install dependencies?").interact()?;
+    let install = cliclack::confirm("Install dependencies?").interact()?;
 
     if install {
-        let mut spinner = clacky::spinner();
+        let mut spinner = cliclack::spinner();
         spinner.start("Installing via pnpm");
         thread::sleep(Duration::from_secs(5));
         spinner.stop("Installed via pnpm");
@@ -55,9 +55,9 @@ fn main() -> std::io::Result<()> {
         pnpm_install = if install { "" } else { "pnpm install\n" }
     );
 
-    clacky::note("Next steps.", next_steps)?;
+    cliclack::note("Next steps.", next_steps)?;
 
-    clacky::outro(format!(
+    cliclack::outro(format!(
         "Problems? {}\n",
         style("https://example.com/issues").cyan().underlined()
     ))?;
