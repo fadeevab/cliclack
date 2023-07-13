@@ -23,19 +23,23 @@ pub struct MultiSelect<T: Default> {
     items: Vec<Checkbox<T>>,
     cursor: usize,
     initial_values: Option<Vec<T>>,
+    required: bool,
 }
 
 impl<T> MultiSelect<T>
 where
     T: Default + Clone + Eq,
 {
+    /// Creates a new [`MultiSelect`] prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
+            required: true,
             ..Default::default()
         }
     }
 
+    /// Adds an item to the list of options.
     pub fn item(mut self, value: T, label: impl Display, hint: impl Display) -> Self {
         self.items.push(Checkbox {
             value,
@@ -46,11 +50,20 @@ where
         self
     }
 
+    /// Sets the initially selected values.
     pub fn initial_values(mut self, value: Vec<T>) -> Self {
         self.initial_values = Some(value);
         self
     }
 
+    /// Sets whether the input is required. Default: `true` (at least
+    /// 1 selected item).
+    pub fn required(mut self, required: bool) -> Self {
+        self.required = required;
+        self
+    }
+
+    /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<Vec<T>> {
         if let Some(initial_values) = &self.initial_values {
             for mut item in self.items.iter_mut() {
@@ -88,6 +101,11 @@ impl<T: Default + Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                     .filter(|item| item.selected)
                     .map(|item| item.value.clone())
                     .collect::<Vec<_>>();
+
+                if selected_items.is_empty() && self.required {
+                    return State::Error("Input required".to_string());
+                }
+
                 return State::Submit(selected_items);
             }
             _ => {}

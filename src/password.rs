@@ -62,6 +62,10 @@ impl PromptInteraction<String> for Password {
         let Event::Key(key) = event;
 
         if *key == Key::Enter {
+            if self.input.is_empty() {
+                return State::Error("Input required".to_string());
+            }
+
             if let Some(validator) = &self.validate {
                 if let Err(err) = validator(&self.input.to_string()) {
                     return State::Error(err);

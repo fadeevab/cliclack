@@ -32,24 +32,47 @@ type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 #[derive(Default)]
 pub struct Input {
     prompt: String,
-    placeholder: StringCursor,
     input: StringCursor,
+    input_required: bool,
+    default: Option<String>,
+    placeholder: StringCursor,
     validate: Option<ValidationCallback>,
 }
 
 impl Input {
+    /// Creates a new input prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
+            input_required: true,
             ..Default::default()
         }
     }
 
+    /// Sets the placeholder (hint) text for the input.
     pub fn placeholder(mut self, placeholder: &str) -> Self {
         self.placeholder.extend(placeholder);
         self
     }
 
+    /// Sets the default value for the input and also a hint (placeholder) if one is not already set.
+    ///
+    /// [`Input::placeholder`] overrides a hint set by `default()`, however, default value
+    /// is used is no value has been supplied.
+    pub fn default_input(mut self, value: &str) -> Self {
+        self.default = Some(value.into());
+        self
+    }
+
+    /// Sets whether the input is required. Default: `true`.
+    ///
+    /// [`Input::default_input`] is used if no value is supplied.
+    pub fn required(mut self, required: bool) -> Self {
+        self.input_required = required;
+        self
+    }
+
+    /// Sets a validation callback for the input.
     pub fn validate<V>(mut self, validator: V) -> Self
     where
         V: Validate<String> + 'static,
@@ -61,10 +84,17 @@ impl Input {
         self
     }
 
+    /// Starts the prompt interaction.
     pub fn interact<T>(&mut self) -> io::Result<T>
     where
         T: FromStr,
     {
+        if self.placeholder.is_empty() {
+            if let Some(default) = &self.default {
+                self.placeholder.extend(default);
+                self.placeholder.extend(" (default)");
+            }
+        }
         <Self as PromptInteraction<T>>::interact(self)
     }
 }
@@ -81,6 +111,14 @@ where
         let Event::Key(key) = event;
 
         if *key == Key::Enter {
+            if self.input.is_empty() {
+                if let Some(default) = &self.default {
+                    self.input.extend(default);
+                } else if self.input_required {
+                    return State::Error("Input required".to_string());
+                }
+            }
+
             if let Some(validator) = &self.validate {
                 if let Err(err) = validator(&self.input.to_string()) {
                     return State::Error(err);

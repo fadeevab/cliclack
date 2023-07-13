@@ -81,9 +81,17 @@ pub trait Theme {
 
     fn checkbox_symbol(&self, state: &ThemeState, selected: bool, active: bool) -> String {
         match state {
-            ThemeState::Active if selected => style(S_CHECKBOX_SELECTED).green(),
-            ThemeState::Active if active && !selected => style(S_CHECKBOX_ACTIVE).cyan(),
-            ThemeState::Active if !active && !selected => style(S_CHECKBOX_INACTIVE).dim(),
+            ThemeState::Active | ThemeState::Error(_) => {
+                if selected {
+                    style(S_CHECKBOX_SELECTED).green()
+                } else if active && !selected {
+                    style(S_CHECKBOX_ACTIVE).cyan()
+                } else if !active && !selected {
+                    style(S_CHECKBOX_INACTIVE).dim()
+                } else {
+                    style(Emoji("", ""))
+                }
+            }
             _ => style(Emoji("", "")),
         }
         .to_string()
