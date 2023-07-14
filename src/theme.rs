@@ -358,9 +358,9 @@ pub trait Theme {
         "{spinner:.magenta}  {msg}".into()
     }
 
-    fn format_spinner_stop(&self) -> String {
+    fn format_spinner_stop(&self, msg: &str) -> String {
         format!(
-            "{symbol}  {{msg}}\n{bar}\n",
+            "{symbol}  {msg}\n{bar}",
             symbol = self.state_symbol(&ThemeState::Submit),
             bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
         )
