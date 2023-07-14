@@ -4,7 +4,7 @@ version = "0.1.0"
 
 authors = ["Alexander Fadeev <fadeevab.com@gmail.com>"]
 categories = ["command-line-interface"]
-description = "Beautiful opinionated CLI prompts for Rust ported from @clack/prompts npm package."
+description = "Beautiful, minimal, opinionated CLI prompts inspired by the Clack NPM package."
 edition = "2021"
 keywords = ["cli", "command-line", "terminal", "console"]
 license = "MIT"
