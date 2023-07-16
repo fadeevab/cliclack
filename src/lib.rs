@@ -11,7 +11,7 @@
 //!    [`multiselect`](fn@multiselect), and [`spinner`](fn@spinner) prompts.<br>
 //! 🧱 [`log`] submodule allows printing styled non-interactive messages.<br>
 //!
-//! <img src="https://github.com/fadeevab/cliclack/blob/main/media/cliclack-demo.gif" width="50%">
+//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-demo.gif" width="50%">
 //!
 //! # Usage
 //!

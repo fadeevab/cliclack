@@ -4,6 +4,9 @@
 
 <h2 align="center">Effortlessly build beautiful command-line apps with Rust 🦀✨</h2>
 
+Beautiful, minimal, opinionated CLI prompts inspired by the
+[@clack/prompts](https://www.npmjs.com/package/@clack/prompts) `npm` package.
+
 ```sh
 cargo add cliclack
 ```
