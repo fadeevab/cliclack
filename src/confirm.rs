@@ -9,6 +9,11 @@ use crate::{
 };
 
 /// A prompt that asks for a yes or no confirmation.
+///
+/// * Move arrows to change the selection.
+/// * `Enter` to confirm.
+/// * `Y/y` for immediate "yes" answer.
+/// * `N/n` for immediate "no" answer.
 #[derive(Default)]
 pub struct Confirm {
     prompt: String,
@@ -17,6 +22,7 @@ pub struct Confirm {
 }
 
 impl Confirm {
+    /// Creates a new confirmation prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
@@ -24,11 +30,13 @@ impl Confirm {
         }
     }
 
+    /// Sets the initially selected value (yes or no).
     pub fn initial_value(mut self, initial_value: bool) -> Self {
         self.initial_value = initial_value;
         self
     }
 
+    /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<bool> {
         <Self as PromptInteraction<bool>>::interact(self)
     }

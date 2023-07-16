@@ -24,6 +24,7 @@ pub struct Password {
 }
 
 impl Password {
+    /// Creates a new password prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
@@ -32,11 +33,13 @@ impl Password {
         }
     }
 
+    /// Sets the mask character. E.g. `*` or `•`.
     pub fn mask(mut self, mask: char) -> Self {
         self.mask = mask;
         self
     }
 
+    /// Sets the validation callback.
     pub fn validate<V>(mut self, validator: V) -> Self
     where
         V: Validate<String> + 'static,
@@ -48,6 +51,7 @@ impl Password {
         self
     }
 
+    /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<String> {
         <Self as PromptInteraction<String>>::interact(self)
     }

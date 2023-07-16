@@ -1,7 +1,11 @@
 /// Converts different types of external closures into internal validation functions.
+///
+/// A generic implementation for Fn(&T) -> Result<(), E> is provided to facilitate development.
 pub trait Validate<T> {
+    /// The return error type.
     type Err;
 
+    /// Requires the implementor to validate the input.
     fn validate(&self, input: &T) -> Result<(), Self::Err>;
 }
 

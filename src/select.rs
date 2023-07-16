@@ -28,6 +28,7 @@ impl<T> Select<T>
 where
     T: Default + Clone + Eq,
 {
+    /// Creates a new selection prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
@@ -35,6 +36,7 @@ where
         }
     }
 
+    /// Adds an item to the selection prompt.
     pub fn item(mut self, value: T, label: impl Display, hint: impl Display) -> Self {
         self.items.push(RadioButton {
             value,
@@ -44,11 +46,13 @@ where
         self
     }
 
+    /// Sets the initially selected item by value.
     pub fn initial_value(mut self, value: T) -> Self {
         self.initial_value = Some(value);
         self
     }
 
+    /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<T> {
         for (i, item) in self.items.iter().enumerate() {
             if let Some(initial_value) = &self.initial_value {

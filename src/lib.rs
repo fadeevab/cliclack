@@ -11,7 +11,7 @@
 //!    [`multiselect`](fn@multiselect), and [`spinner`](fn@spinner) prompts.<br>
 //! 🧱 [`log`] submodule allows printing styled non-interactive messages.<br>
 //!
-//! <img src="./cliclack-demo.gif" width="40%">
+//! <img src="https://github.com/fadeevab/cliclack/blob/main/media/cliclack-demo.gif" width="50%">
 //!
 //! # Usage
 //!
@@ -150,6 +150,9 @@
 //! # }
 //! # test().ok(); // Ignoring I/O runtime errors.
 //! ```
+
+#![forbid(unsafe_code)]
+#![warn(missing_docs, unused_qualifications)]
 
 mod confirm;
 mod input;
