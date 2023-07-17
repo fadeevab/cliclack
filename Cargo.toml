@@ -1,6 +1,6 @@
 [package]
 name = "cliclack"
-version = "0.1.3"
+version = "0.1.4"
 
 authors = ["Alexander Fadeev <fadeevab.com@gmail.com>"]
 categories = ["command-line-interface"]
@@ -8,7 +8,7 @@ description = "Beautiful, minimal, opinionated CLI prompts inspired by the Clack
 documentation = "https://docs.rs/cliclack"
 edition = "2021"
 homepage = "https://github.com/fadeevab/cliclack"
-keywords = ["cli", "command-line", "terminal", "console"]
+keywords = ["prompt", "cli", "command-line", "terminal", "console"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/fadeevab/cliclack"
