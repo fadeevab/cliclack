@@ -25,3 +25,42 @@ cargo run --example log
 <div align="center">
   <img alt="CliClack Example" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-demo.gif" width="420" />
 </div>
+
+### Setup
+
+The `intro` and `outro`/`outro_cancel` functions will
+print a message to begin and end a prompt session respectively.
+
+```rust
+use cliclack::{intro, outro};
+
+intro("create-my-app")?;
+// Do stuff
+outro("You're all set!")?;
+```
+
+### Input
+
+The input prompt accepts a single line of text trying to parse it into a target type.
+
+```rust
+use cliclack::input;
+
+let path: String = input("Where should we create your project?")
+    .placeholder("./sparkling-solid")
+    .validate(|input: &String| {
+        if input.is_empty() {
+            Err("Please enter a path.")
+        } else if !input.starts_with("./") {
+            Err("Please enter a relative path")
+        } else {
+            Ok(())
+        }
+    })
+    .interact()?;
+```
+
+### See more
+
+- [Documentation](https://docs.rs/cliclack)
+- [Examples](https://github.com/fadeevab/cliclack/tree/main/examples)
