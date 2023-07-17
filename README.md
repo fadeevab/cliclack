@@ -4,6 +4,10 @@
 
 <h2 align="center">Effortlessly build beautiful command-line apps with Rust 🦀✨</h2>
 
+[![crates.io](https://img.shields.io/crates/v/cliclack.svg)](https://crates.io/crates/cliclack)
+[![docs.rs](https://docs.rs/cliclack/badge.svg)](https://docs.rs/cliclack/)
+[![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/fadeevab/cliclack/blob/main/LICENSE)
+
 Beautiful, minimal, opinionated CLI prompts inspired by the
 [@clack/prompts](https://www.npmjs.com/package/@clack/prompts) `npm` package.
 
