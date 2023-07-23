@@ -4,6 +4,7 @@
 
 <h2 align="center">Effortlessly build beautiful command-line apps with Rust 🦀✨</h2>
 
+[![github.com](https://img.shields.io/badge/cliclack-blue?logo=github&labelColor=black)](https://github.com/fadeevab/cliclack)
 [![crates.io](https://img.shields.io/crates/v/cliclack.svg)](https://crates.io/crates/cliclack)
 [![docs.rs](https://docs.rs/cliclack/badge.svg)](https://docs.rs/cliclack/)
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/fadeevab/cliclack/blob/main/LICENSE)
@@ -20,7 +21,6 @@ cargo add cliclack
 ```sh
 cargo run --example basic
 cargo run --example log
-cargo run --example theme
 ```
 
 <div align="center">
@@ -64,6 +64,18 @@ let path: String = input("Where should we create your project?")
     })
     .interact()?;
 ```
+
+### 🎨 Theme
+
+A custom theme can be applied for UI rendering. An example of theme customization:
+
+```sh
+cargo run --example theme
+```
+
+<div align="center">
+  <img alt="CliClack Magenta Theme" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-theme.png" width="400" />
+</div>
 
 ### See more
 

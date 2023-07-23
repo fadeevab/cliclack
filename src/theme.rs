@@ -55,11 +55,27 @@ impl<T> From<&State<T>> for ThemeState {
     }
 }
 
-/// The theme trait with the default implementation of the original
-/// [@Clack/prompts](https://www.npmjs.com/package/@clack/prompts) theme.
+/// Defines rendering of the visual elements. By default, it implements the
+/// original [@Clack/prompts](https://www.npmjs.com/package/@clack/prompts) theme.
 ///
-/// Many of formatting (rendering) methods keep only selected/submitted items
-/// and hide the rest.
+/// ```
+/// /// The default @clack/prompts theme is literally implemented like this.
+/// impl Theme for ClackTheme {}
+/// ```
+///
+/// In order to customize the theme, implement the [`Theme`] trait, and redefine
+/// the required methods:
+///
+/// ```
+/// impl Theme for MagentaTheme {
+///     fn state_symbol_color(&self, _state: &ThemeState) -> Style {
+///         Style::new().magenta()
+///     }
+/// }
+/// ```
+///
+/// Many theme methods render the visual elements differently depending on the
+/// current rendering state. The state is passed to the theme methods as an argument.
 pub trait Theme {
     /// Returns the color of the vertical side bar.
     fn bar_color(&self, state: &ThemeState) -> Style {
