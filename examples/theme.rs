@@ -28,15 +28,6 @@ fn main() -> std::io::Result<()> {
 
     let path: String = input("Where should we create your project?")
         .placeholder("./right-here")
-        .validate(|input: &String| {
-            if input.is_empty() {
-                Err("Please enter a path.")
-            } else if !input.starts_with("./") {
-                Err("Please enter a relative path")
-            } else {
-                Ok(())
-            }
-        })
         .interact()?;
 
     log::info(format!("Project path: {path}"))?;
