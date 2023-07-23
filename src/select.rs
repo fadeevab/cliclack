@@ -5,7 +5,7 @@ use console::Key;
 
 use crate::{
     prompt::interaction::{Event, PromptInteraction, State},
-    theme::{ClackTheme, Theme},
+    theme::THEME,
 };
 
 #[derive(Default)]
@@ -89,18 +89,20 @@ impl<T: Default + Clone> PromptInteraction<T> for Select<T> {
     }
 
     fn render(&mut self, state: &State<T>) -> String {
-        let line1 = ClackTheme.format_header(&state.into(), &self.prompt);
+        let theme = THEME.lock().unwrap();
+
+        let line1 = theme.format_header(&state.into(), &self.prompt);
 
         let mut line2 = String::new();
         for (i, item) in self.items.iter().enumerate() {
-            line2.push_str(&ClackTheme.format_select_item(
+            line2.push_str(&theme.format_select_item(
                 &state.into(),
                 self.cursor == i,
                 &item.label,
                 &item.hint,
             ));
         }
-        let line3 = ClackTheme.format_footer(&state.into());
+        let line3 = theme.format_footer(&state.into());
 
         line1 + &line2 + &line3
     }

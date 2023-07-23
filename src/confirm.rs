@@ -5,7 +5,7 @@ use console::Key;
 
 use crate::{
     prompt::interaction::{Event, PromptInteraction, State},
-    theme::{ClackTheme, Theme},
+    theme::THEME,
 };
 
 /// A prompt that asks for a yes or no confirmation.
@@ -66,9 +66,10 @@ impl PromptInteraction<bool> for Confirm {
     }
 
     fn render(&mut self, state: &State<bool>) -> String {
-        let line1 = ClackTheme.format_header(&state.into(), &self.prompt);
-        let line2 = ClackTheme.format_confirm(&state.into(), self.input);
-        let line3 = ClackTheme.format_footer(&state.into());
+        let theme = THEME.lock().unwrap();
+        let line1 = theme.format_header(&state.into(), &self.prompt);
+        let line2 = theme.format_confirm(&state.into(), self.input);
+        let line3 = theme.format_footer(&state.into());
 
         line1 + &line2 + &line3
     }

@@ -8,7 +8,7 @@ use crate::{
         cursor::StringCursor,
         interaction::{Event, PromptInteraction, State},
     },
-    theme::{ClackTheme, Theme},
+    theme::THEME,
     validate::Validate,
 };
 
@@ -28,7 +28,7 @@ impl Password {
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
-            mask: ClackTheme.password_mask(),
+            mask: THEME.lock().unwrap().password_mask(),
             ..Default::default()
         }
     }
@@ -87,9 +87,11 @@ impl PromptInteraction<String> for Password {
             *chr = self.mask;
         }
 
-        let line1 = ClackTheme.format_header(&state.into(), &self.prompt);
-        let line2 = ClackTheme.format_input(&state.into(), &masked);
-        let line3 = ClackTheme.format_footer(&state.into());
+        let theme = THEME.lock().unwrap();
+
+        let line1 = theme.format_header(&state.into(), &self.prompt);
+        let line2 = theme.format_input(&state.into(), &masked);
+        let line3 = theme.format_footer(&state.into());
 
         line1 + &line2 + &line3
     }

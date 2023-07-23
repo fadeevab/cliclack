@@ -20,11 +20,16 @@ cargo add cliclack
 ```sh
 cargo run --example basic
 cargo run --example log
+cargo run --example theme
 ```
 
 <div align="center">
   <img alt="CliClack Example" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-demo.gif" width="420" />
 </div>
+
+💎 Fancy minimal UI<br>
+✅ Simple API<br>
+🎨 Theme support<br>
 
 ### Setup
 

@@ -5,11 +5,12 @@
 //! [original @clack](https://www.npmjs.com/package/@clack/prompts).
 //!
 //! 💎 Fancy minimal UI.<br>
-//! ✅ Simple API<br>
+//! ✅ Simple API.<br>
 //! 🧱 Comes with [`input`](fn@input), [`password`](fn@password),
 //!    [`confirm`](fn@confirm), [`select`](fn@select),
 //!    [`multiselect`](fn@multiselect), and [`spinner`](fn@spinner) prompts.<br>
 //! 🧱 [`log`] submodule allows printing styled non-interactive messages.<br>
+//! 🎨 Customizable [`Theme`] rendering.<br>
 //!
 //! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-demo.gif" width="50%">
 //!
@@ -150,6 +151,48 @@
 //! # }
 //! # test().ok(); // Ignoring I/O runtime errors.
 //! ```
+//!
+//! ## Logging
+//!
+//! Plain text output without any interaction.
+//!
+//! ```
+//! # fn test() -> std::io::Result<()> {
+//! use cliclack::log;
+//!
+//! log::info("Hello, world!")?;
+//! log::warning("Something is wrong")?;
+//! log::error("Something is terribly wrong")?;
+//! # Ok(())
+//! # }
+//! # test().ok(); // Ignoring I/O runtime errors.
+//! ```
+//!
+//! ## Theme customization
+//!
+//! ```
+//! # fn test() -> std::io::Result<()> {
+//! use cliclack::{set_theme, Theme, ThemeState};
+//!
+//! struct MagentaTheme;
+//!
+//! impl Theme for MagentaTheme {
+//!     fn state_symbol_color(&self, _state: &ThemeState) -> console::Style {
+//!        console::Style::new().magenta()
+//!    }
+//! }
+//!
+//! set_theme(MagentaTheme);
+//! # Ok(())
+//! # }
+//! # test().ok(); // Ignoring I/O runtime errors.
+//! ```
+//!
+//! See `examples/theme.rs` for a complete example.
+//!
+//! ```bash
+//! cargo run --example theme
+//! ```
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs, unused_qualifications)]
@@ -168,7 +211,10 @@ use console::Term;
 use std::fmt::Display;
 use std::io;
 
-use theme::{ClackTheme, Theme};
+use theme::THEME;
+
+// 🎨 Re-export of the theme API.
+pub use theme::{reset_theme, set_theme, Theme, ThemeState};
 
 pub use confirm::Confirm;
 pub use input::Input;
@@ -190,17 +236,22 @@ pub fn clear_screen() -> io::Result<()> {
 
 /// Prints a header of the prompt sequence.
 pub fn intro(title: impl Display) -> io::Result<()> {
-    term_write(ClackTheme.format_intro(&title.to_string()))
+    term_write(THEME.lock().unwrap().format_intro(&title.to_string()))
 }
 
 /// Prints a footer of the prompt sequence.
 pub fn outro(message: impl Display) -> io::Result<()> {
-    term_write(ClackTheme.format_outro(&message.to_string()))
+    term_write(THEME.lock().unwrap().format_outro(&message.to_string()))
 }
 
 /// Prints a footer of the prompt sequence with a failure style.
 pub fn outro_cancel(message: impl Display) -> io::Result<()> {
-    term_write(ClackTheme.format_cancel(&message.to_string()))
+    term_write(
+        THEME
+            .lock()
+            .unwrap()
+            .format_outro_cancel(&message.to_string()),
+    )
 }
 
 /// Constructs a new [`Input`] prompt.
@@ -247,7 +298,12 @@ pub fn spinner() -> Spinner {
 
 /// Prints a note message.
 pub fn note(prompt: impl Display, message: impl Display) -> io::Result<()> {
-    term_write(ClackTheme.format_note(&prompt.to_string(), &message.to_string()))
+    term_write(
+        THEME
+            .lock()
+            .unwrap()
+            .format_note(&prompt.to_string(), &message.to_string()),
+    )
 }
 
 /// Non-interactive information messages of different styles.
@@ -255,36 +311,47 @@ pub mod log {
     use super::*;
 
     fn log(text: impl Display, symbol: impl Display) -> io::Result<()> {
-        term_write(ClackTheme.format_log(&text.to_string(), &symbol.to_string()))
+        term_write(
+            THEME
+                .lock()
+                .unwrap()
+                .format_log(&text.to_string(), &symbol.to_string()),
+        )
     }
 
     /// Prints a remark message.
     pub fn remark(text: impl Display) -> io::Result<()> {
-        log(text, ClackTheme.remark_symbol())
+        let symbol = THEME.lock().unwrap().remark_symbol();
+        log(text, symbol)
     }
 
     /// Prints an info message.
     pub fn info(text: impl Display) -> io::Result<()> {
-        log(text, ClackTheme.info_symbol())
+        let symbol = THEME.lock().unwrap().info_symbol();
+        log(text, symbol)
     }
 
     /// Prints a warning message.
     pub fn warning(message: impl Display) -> io::Result<()> {
-        log(message, ClackTheme.warning_symbol())
+        let symbol = THEME.lock().unwrap().warning_symbol();
+        log(message, symbol)
     }
 
     /// Prints an error message.
     pub fn error(message: impl Display) -> io::Result<()> {
-        log(message, ClackTheme.error_symbol())
+        let symbol = THEME.lock().unwrap().error_symbol();
+        log(message, symbol)
     }
 
     /// Prints a success message.
     pub fn success(message: impl Display) -> io::Result<()> {
-        log(message, ClackTheme.active_symbol())
+        let symbol = THEME.lock().unwrap().active_symbol();
+        log(message, symbol)
     }
 
     /// Prints a submitted step message.
     pub fn step(message: impl Display) -> io::Result<()> {
-        log(message, ClackTheme.submit_symbol())
+        let symbol = THEME.lock().unwrap().submit_symbol();
+        log(message, symbol)
     }
 }

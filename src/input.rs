@@ -8,7 +8,7 @@ use crate::{
         cursor::StringCursor,
         interaction::{Event, PromptInteraction, State},
     },
-    theme::{ClackTheme, Theme},
+    theme::THEME,
     validate::Validate,
 };
 
@@ -137,13 +137,15 @@ where
     }
 
     fn render(&mut self, state: &State<T>) -> String {
-        let line1 = ClackTheme.format_header(&state.into(), &self.prompt);
+        let theme = THEME.lock().unwrap();
+
+        let line1 = theme.format_header(&state.into(), &self.prompt);
         let line2 = if self.input.is_empty() {
-            ClackTheme.format_placeholder(&state.into(), &self.placeholder)
+            theme.format_placeholder(&state.into(), &self.placeholder)
         } else {
-            ClackTheme.format_input(&state.into(), &self.input)
+            theme.format_input(&state.into(), &self.input)
         };
-        let line3 = ClackTheme.format_footer(&state.into());
+        let line3 = theme.format_footer(&state.into());
 
         line1 + &line2 + &line3
     }
