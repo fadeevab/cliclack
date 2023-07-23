@@ -9,8 +9,8 @@
 //! 🧱 Comes with [`input`](fn@input), [`password`](fn@password),
 //!    [`confirm`](fn@confirm), [`select`](fn@select),
 //!    [`multiselect`](fn@multiselect), and [`spinner`](fn@spinner) prompts.<br>
-//! 🧱 [`log`] submodule allows printing styled non-interactive messages.<br>
-//! 🎨 Customizable [`Theme`] rendering.<br>
+//! 🧱 Styled non-interactive messages with [`log`] submodule.<br>
+//! 🎨 [`Theme`] support.<br>
 //!
 //! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-demo.gif" width="50%">
 //!
@@ -168,7 +168,9 @@
 //! # test().ok(); // Ignoring I/O runtime errors.
 //! ```
 //!
-//! ## Theme customization
+//! ## Theme
+//!
+//! Custom UI is supported via the [`Theme`] trait.
 //!
 //! ```
 //! # fn test() -> std::io::Result<()> {

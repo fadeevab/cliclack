@@ -63,15 +63,23 @@ impl<T> From<&State<T>> for ThemeState {
 /// impl Theme for ClackTheme {}
 /// ```
 ///
-/// In order to customize the theme, implement the [`Theme`] trait, and redefine
+/// In order to create a custom theme, implement the [`Theme`] trait, and redefine
 /// the required methods:
 ///
 /// ```
+/// struct MagentaTheme;
+///
 /// impl Theme for MagentaTheme {
 ///     fn state_symbol_color(&self, _state: &ThemeState) -> Style {
 ///         Style::new().magenta()
 ///     }
 /// }
+/// ```
+///
+/// Then, set the theme with [`set_theme`] function.
+///
+/// ```
+/// set_theme(MagentaTheme);
 /// ```
 ///
 /// Many theme methods render the visual elements differently depending on the
@@ -536,6 +544,8 @@ pub(crate) static THEME: Lazy<Mutex<Box<dyn Theme + Send + Sync>>> =
     Lazy::new(|| Mutex::new(Box::new(ClackTheme)));
 
 /// Sets the global theme, which is used by all prompts.
+///
+/// See [`reset_theme`] for returning to the default theme.
 pub fn set_theme<T: Theme + Sync + Send + 'static>(theme: T) {
     *THEME.lock().unwrap() = Box::new(theme);
 }
