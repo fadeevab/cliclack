@@ -38,9 +38,7 @@ impl Confirm {
 
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<bool> {
-        if self.initial_value {
-            self.input = true;
-        }
+        self.input = self.initial_value;
         <Self as PromptInteraction<bool>>::interact(self)
     }
 }
