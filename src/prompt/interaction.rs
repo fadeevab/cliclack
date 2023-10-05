@@ -56,14 +56,20 @@ pub trait PromptInteraction<T> {
     }
 
     /// Starts the interaction with the user via the given terminal.
-    /// This is a common boilerplate code.
     fn interact_on(&mut self, term: &mut Term) -> io::Result<T> {
         if !term.is_term() {
             return Err(io::ErrorKind::NotConnected.into());
         }
 
         term.hide_cursor()?;
+        let result = self.interact_on_prepared(term);
+        term.show_cursor()?;
+        result
+    }
 
+    /// Starts the interaction with the user via the prepared terminal.
+    /// This is a common boilerplate code.
+    fn interact_on_prepared(&mut self, term: &mut Term) -> io::Result<T> {
         let mut state = State::Active;
         let mut prev_frame = String::new();
 
