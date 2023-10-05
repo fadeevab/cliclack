@@ -66,7 +66,7 @@ where
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<Vec<T>> {
         if let Some(initial_values) = &self.initial_values {
-            for mut item in self.items.iter_mut() {
+            for item in self.items.iter_mut() {
                 if initial_values.contains(&item.value) {
                     item.selected = true;
                 }
