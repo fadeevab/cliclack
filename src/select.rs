@@ -46,6 +46,14 @@ where
         self
     }
 
+    /// Adds multiple items to the list of options.
+    pub fn items(mut self, items: &[(T, impl Display, impl Display)]) -> Self {
+        for (value, label, hint) in items {
+            self = self.item(value.clone(), label, hint);
+        }
+        self
+    }
+
     /// Sets the initially selected item by value.
     pub fn initial_value(mut self, value: T) -> Self {
         self.initial_value = Some(value);
