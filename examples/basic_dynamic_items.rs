@@ -7,7 +7,7 @@ fn main() -> std::io::Result<()> {
 
     // This is the only difference between this snippet and examples/basic.rs
     // You can supply your items dynamically, i.e. from a database or API.
-    let items_for_select = &[
+    let items_for_select = vec![
         ("ts", "TypeScript", ""),
         ("js", "JavaScript", ""),
         ("coffee", "CoffeeScript", "oh no"),
@@ -15,7 +15,7 @@ fn main() -> std::io::Result<()> {
 
     let _selected_dynamic_item = cliclack::select(format!("Pick a project type"))
         .initial_value("ts")
-        .items(items_for_select)
+        .items(&items_for_select)
         .interact()?;
 
     let items_for_multiselect = &[
