@@ -59,6 +59,9 @@ impl<T> From<&State<T>> for ThemeState {
 /// original [@Clack/prompts](https://www.npmjs.com/package/@clack/prompts) theme.
 ///
 /// ```
+/// # use cliclack::*;
+/// # struct ClackTheme;
+/// #
 /// /// The default @clack/prompts theme is literally implemented like this.
 /// impl Theme for ClackTheme {}
 /// ```
@@ -67,6 +70,9 @@ impl<T> From<&State<T>> for ThemeState {
 /// the required methods:
 ///
 /// ```
+/// # use console::Style;
+/// # use cliclack::*;
+/// #
 /// struct MagentaTheme;
 ///
 /// impl Theme for MagentaTheme {
@@ -79,6 +85,10 @@ impl<T> From<&State<T>> for ThemeState {
 /// Then, set the theme with [`set_theme`] function.
 ///
 /// ```
+/// # use cliclack::*;
+/// # struct MagentaTheme;
+/// # impl Theme for MagentaTheme {}
+/// #
 /// set_theme(MagentaTheme);
 /// ```
 ///
