@@ -13,7 +13,7 @@ fn main() -> std::io::Result<()> {
         ("coffee", "CoffeeScript", "oh no"),
     ];
 
-    let _selected_dynamic_item = cliclack::select(format!("Pick a project type"))
+    let _selected_dynamic_item = cliclack::select("Pick a project type")
         .initial_value("ts")
         .items(&items_for_select)
         .interact()?;

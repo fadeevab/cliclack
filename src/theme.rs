@@ -487,6 +487,7 @@ pub trait Theme {
                 bar_color.apply_to(S_BAR_H.to_string().repeat(width - prompt.chars().count())),
             corner = bar_color.apply_to(S_CORNER_TOP_RIGHT),
         );
+        #[allow(clippy::format_collect)]
         let body = message
             .lines()
             .map(|line| {
