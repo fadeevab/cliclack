@@ -86,50 +86,38 @@ pub trait PromptInteraction<T> {
                 prev_frame = frame;
             }
 
-            if let State::Submit(result) = state {
-                return Ok(result);
+            match state {
+                State::Submit(result) => return Ok(result),
+                State::Cancel => return Err(io::ErrorKind::Interrupted.into()),
+                _ => {}
             }
 
-            if let State::Cancel = state {
-                return Err(io::ErrorKind::Interrupted.into());
-            }
+            match term.read_key() {
+                Ok(Key::Escape) => state = State::Cancel,
 
-            let key = term.read_key()?;
+                Ok(key) => {
+                    if let Some(cursor) = self.input() {
+                        match key {
+                            Key::Char(chr) if !chr.is_ascii_control() => cursor.insert(chr),
+                            Key::Backspace => cursor.delete_left(),
+                            Key::Del => cursor.delete_right(),
+                            Key::ArrowLeft => cursor.move_left(),
+                            Key::ArrowRight => cursor.move_right(),
+                            Key::Home => cursor.move_home(),
+                            Key::End => cursor.move_end(),
+                            _ => {}
+                        }
+                    }
 
-            if let Some(cursor) = self.input() {
-                match key {
-                    Key::Char(chr) if !chr.is_ascii_control() => {
-                        cursor.insert(chr);
-                    }
-                    Key::Backspace => {
-                        cursor.delete_left();
-                    }
-                    Key::Del => {
-                        cursor.delete_right();
-                    }
-                    Key::ArrowLeft => {
-                        cursor.move_left();
-                    }
-                    Key::ArrowRight => {
-                        cursor.move_right();
-                    }
-                    Key::Home => {
-                        cursor.move_home();
-                    }
-                    Key::End => {
-                        cursor.move_end();
-                    }
-                    _ => {}
+                    state = self.on(&Event::Key(key));
                 }
-            }
 
-            match key {
-                Key::Escape => {
-                    state = State::Cancel;
-                }
-                other => {
-                    state = self.on(&Event::Key(other));
-                }
+                // Handle Ctrl-C as a cancel event.
+                Err(e) if e.kind() == io::ErrorKind::Interrupted => state = State::Cancel,
+
+                // Don't handle other errors, just break the loop and propagate
+                // them.
+                Err(e) => return Err(e),
             }
         }
     }

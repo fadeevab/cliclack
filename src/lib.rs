@@ -35,8 +35,8 @@
 //! ## Cancellation
 //!
 //! `Esc` cancels the prompt sequence with a nice message.
-//! `Ctrl+C` interrupts the session abruptly, it's handled inside of the
-//! `Term` crate and cannot be easily caught and rendered fancy.
+//! `Ctrl+C` will be handled gracefully (same as `Esc`) if you set up a Ctrl+C
+//! handler, eg. with the `ctrlc` crate.
 //!
 //! # Components
 //!
@@ -226,8 +226,8 @@ pub use select::Select;
 pub use spinner::Spinner;
 pub use validate::Validate;
 
-fn term_write(line: String) -> io::Result<()> {
-    Term::stderr().write_str(&line)
+fn term_write(line: impl Display) -> io::Result<()> {
+    Term::stderr().write_str(line.to_string().as_str())
 }
 
 /// Clears the terminal.
