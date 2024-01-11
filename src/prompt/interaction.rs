@@ -50,6 +50,12 @@ pub trait PromptInteraction<T> {
         None
     }
 
+    /// Whether features like Alt-Backspace and Alt-ArrowLeft/Right are allowed.
+    /// Word editing is disabled for password prompts, for example.
+    fn allow_word_editing(&self) -> bool {
+        true
+    }
+
     /// Starts the interaction with the user via stderr.
     fn interact(&mut self) -> io::Result<T> {
         self.interact_on(&mut Term::stderr())
@@ -96,6 +102,7 @@ pub trait PromptInteraction<T> {
                 Ok(Key::Escape) => state = State::Cancel,
 
                 Ok(key) => {
+                    let word_editing = self.allow_word_editing();
                     if let Some(cursor) = self.input() {
                         match key {
                             Key::Char(chr) if !chr.is_ascii_control() => cursor.insert(chr),
@@ -105,6 +112,23 @@ pub trait PromptInteraction<T> {
                             Key::ArrowRight => cursor.move_right(),
                             Key::Home => cursor.move_home(),
                             Key::End => cursor.move_end(),
+
+                            // Alt-Backspace
+                            Key::Char('\u{17}') if word_editing => cursor.delete_word_left(),
+
+                            // Alt-ArrowLeft
+                            Key::UnknownEscSeq(ref chars)
+                                if word_editing && chars.as_slice() == ['b'] =>
+                            {
+                                cursor.move_word_left()
+                            }
+                            // Alt-ArrowRight
+                            Key::UnknownEscSeq(ref chars)
+                                if word_editing && chars.as_slice() == ['f'] =>
+                            {
+                                cursor.move_word_right()
+                            }
+
                             _ => {}
                         }
                     }

@@ -62,6 +62,12 @@ impl PromptInteraction<String> for Password {
         Some(&mut self.input)
     }
 
+    fn allow_word_editing(&self) -> bool {
+        // Disallow word editing for password prompts so as not to reveal
+        // password structure.
+        false
+    }
+
     fn on(&mut self, event: &Event) -> State<String> {
         let Event::Key(key) = event;
 
