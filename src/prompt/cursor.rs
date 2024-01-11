@@ -8,6 +8,27 @@ pub struct StringCursor {
     cursor: usize,
 }
 
+/// Returns the indices of the first character of each word in the given string,
+/// as well as the indices of the start and end of the string. The returned
+/// indices are sorted in ascending order.
+fn word_jump_indices(value: &[char]) -> Vec<usize> {
+    let mut indices = vec![0];
+    let mut in_word = false;
+
+    for (i, ch) in value.iter().enumerate() {
+        if ch.is_whitespace() {
+            in_word = false;
+        } else if !in_word {
+            indices.push(i);
+            in_word = true;
+        }
+    }
+
+    indices.push(value.len());
+
+    indices
+}
+
 impl StringCursor {
     pub fn is_empty(&self) -> bool {
         self.value.is_empty()
@@ -31,6 +52,24 @@ impl StringCursor {
     pub fn move_right(&mut self) {
         if self.cursor < self.value.len() {
             self.cursor += 1;
+        }
+    }
+
+    pub fn move_word_left(&mut self) {
+        if self.cursor > 0 {
+            let jumps = word_jump_indices(&self.value);
+            let ix = jumps.binary_search(&self.cursor).unwrap_or_else(|i| i);
+            self.cursor = jumps[std::cmp::max(ix - 1, 0)];
+        }
+    }
+
+    pub fn move_word_right(&mut self) {
+        if self.cursor < self.value.len() {
+            let jumps = word_jump_indices(&self.value);
+            let ix = jumps
+                .binary_search(&self.cursor)
+                .map_or_else(|i| i, |i| i + 1);
+            self.cursor = jumps[std::cmp::min(ix, jumps.len() - 1)];
         }
     }
 
@@ -60,6 +99,17 @@ impl StringCursor {
 
         if self.cursor < self.value.len() {
             self.value.remove(self.cursor);
+        }
+    }
+
+    pub fn delete_word_left(&mut self) {
+        if self.cursor > 0 {
+            let jumps = word_jump_indices(&self.value);
+            let ix = jumps.binary_search(&self.cursor).unwrap_or_else(|x| x);
+            let start = jumps[std::cmp::max(ix - 1, 0)];
+            let end = self.cursor;
+            self.value.drain(start..end);
+            self.cursor = start;
         }
     }
 
