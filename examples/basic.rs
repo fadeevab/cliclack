@@ -52,7 +52,11 @@ fn main() -> std::io::Result<()> {
 
     let next_steps = format!(
         "{path}\n{pnpm_install}pnpm dev\n",
-        pnpm_install = if install { "" } else { "pnpm install\n" }
+        pnpm_install = if install {
+            "".to_string()
+        } else {
+            style("pnpm install").magenta().to_string() + &style(" # 🚀").dim().to_string() + "\n"
+        }
     );
 
     cliclack::note("Next steps.", next_steps)?;

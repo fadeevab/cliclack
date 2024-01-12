@@ -2,6 +2,7 @@ use std::sync::Mutex;
 
 use console::{style, Emoji, Style};
 use once_cell::sync::Lazy;
+use textwrap::core::display_width;
 
 use crate::prompt::{cursor::StringCursor, interaction::State};
 
@@ -484,8 +485,8 @@ pub trait Theme {
         let message = format!("\n{message}\n");
         let width = 2 + message
             .split('\n')
-            .fold(0usize, |acc, line| line.chars().count().max(acc))
-            .max(prompt.chars().count());
+            .fold(0usize, |acc, line| display_width(line).max(acc))
+            .max(display_width(prompt));
 
         let symbol = self.state_symbol(&ThemeState::Submit);
         let bar_color = self.bar_color(&ThemeState::Submit);
@@ -505,7 +506,7 @@ pub trait Theme {
                     "{bar}  {line}{spaces}{bar}\n",
                     bar = bar_color.apply_to(S_BAR),
                     line = text_color.apply_to(line),
-                    spaces = " ".repeat(width - line.chars().count() + 1)
+                    spaces = " ".repeat(width - display_width(line) + 1)
                 )
             })
             .collect::<String>();
