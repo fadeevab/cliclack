@@ -1,13 +1,8 @@
 use console::style;
 
 fn main() -> std::io::Result<()> {
-    // Set a no-op Ctrl-C handler so that Ctrl-C results in a
-    // `term.read_key()` error instead of terminating the process. You can skip
-    // this step if you have your own Ctrl-C handler already set up.
-    //
-    // We cannot (easily) handle this at the library level due to
-    // https://github.com/Detegr/rust-ctrlc/issues/106#issuecomment-1887793468.
-    ctrlc::set_handler(move || {}).expect("Error setting Ctrl-C handler");
+    // Set a no-op Ctrl-C to make it behave as `Esc` (see the basic example).
+    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
 
     cliclack::clear_screen()?;
 
