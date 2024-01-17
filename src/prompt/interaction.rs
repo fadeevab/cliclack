@@ -114,19 +114,19 @@ pub trait PromptInteraction<T> {
                             Key::End => cursor.move_end(),
 
                             // Alt-Backspace
-                            Key::Char('\u{17}') if word_editing => cursor.delete_word_left(),
+                            Key::Char('\u{17}') if word_editing => cursor.delete_word_to_the_left(),
 
                             // Alt-ArrowLeft
                             Key::UnknownEscSeq(ref chars)
                                 if word_editing && chars.as_slice() == ['b'] =>
                             {
-                                cursor.move_word_left()
+                                cursor.move_left_by_word()
                             }
                             // Alt-ArrowRight
                             Key::UnknownEscSeq(ref chars)
                                 if word_editing && chars.as_slice() == ['f'] =>
                             {
-                                cursor.move_word_right()
+                                cursor.move_right_by_word()
                             }
 
                             _ => {}
