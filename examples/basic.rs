@@ -68,7 +68,7 @@ fn main() -> std::io::Result<()> {
         }
     );
 
-    cliclack::note("Next steps.", next_steps)?;
+    cliclack::note("Next steps. 🌲🍉🐓", next_steps)?;
 
     cliclack::outro(format!(
         "Problems? {}\n",
