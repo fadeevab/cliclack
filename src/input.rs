@@ -110,27 +110,24 @@ where
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
-        if *key == Key::Enter {
-            if self.input.is_empty() {
-                if let Some(default) = &self.default {
-                    self.input.extend(default);
-                } else if self.input_required {
-                    return State::Error("Input required".to_string());
-                }
+        if *key == Key::Enter && self.input.is_empty() {
+            if let Some(default) = &self.default {
+                self.input.extend(default);
+            } else if self.input_required {
+                return State::Error("Input required".to_string());
             }
+        }
 
-            if let Some(validator) = &self.validate {
-                if let Err(err) = validator(&self.input.to_string()) {
-                    return State::Error(err);
-                }
+        if let Some(validator) = &self.validate {
+            if let Err(err) = validator(&self.input.to_string()) {
+                return State::Error(err);
             }
+        }
 
-            match self.input.to_string().parse::<T>() {
-                Ok(value) => return State::Submit(value),
-                Err(_) => {
-                    return State::Error("Invalid value format".to_string());
-                }
-            }
+        match self.input.to_string().parse::<T>() {
+            Ok(value) if *key == Key::Enter => return State::Submit(value),
+            Err(_) => return State::Error("Invalid value format".to_string()),
+            _ => {}
         }
 
         State::Active

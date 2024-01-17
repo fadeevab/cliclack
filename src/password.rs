@@ -71,16 +71,17 @@ impl PromptInteraction<String> for Password {
     fn on(&mut self, event: &Event) -> State<String> {
         let Event::Key(key) = event;
 
+        if let Some(validator) = &self.validate {
+            if let Err(err) = validator(&self.input.to_string()) {
+                return State::Error(err);
+            }
+        }
+
         if *key == Key::Enter {
             if self.input.is_empty() {
                 return State::Error("Input required".to_string());
             }
 
-            if let Some(validator) = &self.validate {
-                if let Err(err) = validator(&self.input.to_string()) {
-                    return State::Error(err);
-                }
-            }
             return State::Submit(self.input.to_string());
         }
 
