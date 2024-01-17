@@ -1,5 +1,5 @@
 use console::{Key, Term};
-use std::io::{self, Write};
+use std::io::{self, Read, Write};
 
 use super::cursor::StringCursor;
 
@@ -116,19 +116,34 @@ pub trait PromptInteraction<T> {
                             // Alt-Backspace
                             Key::Char('\u{17}') if word_editing => cursor.delete_word_to_the_left(),
 
-                            // Alt-ArrowLeft
-                            Key::UnknownEscSeq(ref chars)
-                                if word_editing && chars.as_slice() == ['b'] =>
-                            {
-                                cursor.move_left_by_word()
+                            // Alt/Ctrl
+                            Key::UnknownEscSeq(ref chars) if word_editing => {
+                                match chars.as_slice() {
+                                    // Alt | Ctrl-Backspace
+                                    ['\u{7f}'] => cursor.delete_word_to_the_left(),
+                                    // Alt-ArrowLeft | Alt-b
+                                    ['b'] => cursor.move_left_by_word(),
+                                    // Alt-ArrowRight | Alt-f
+                                    ['f'] => cursor.move_right_by_word(),
+                                    // Alt | Ctrl
+                                    ['[', '1', ';'] => {
+                                        let mut two_chars = [0; 2];
+                                        term.read_exact(&mut two_chars)?;
+                                        match two_chars {
+                                            // Alt | Ctrl-ArrowLeft
+                                            [b'3', b'D'] | [b'5', b'D'] => {
+                                                cursor.move_left_by_word()
+                                            }
+                                            // Alt | Ctrl-ArrowRight
+                                            [b'3', b'C'] | [b'5', b'C'] => {
+                                                cursor.move_right_by_word()
+                                            }
+                                            _ => {}
+                                        }
+                                    }
+                                    _ => {}
+                                }
                             }
-                            // Alt-ArrowRight
-                            Key::UnknownEscSeq(ref chars)
-                                if word_editing && chars.as_slice() == ['f'] =>
-                            {
-                                cursor.move_right_by_word()
-                            }
-
                             _ => {}
                         }
                     }
