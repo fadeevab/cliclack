@@ -55,22 +55,18 @@ impl StringCursor {
         }
     }
 
-    pub fn move_word_left(&mut self) {
-        if self.cursor > 0 {
-            let jumps = word_jump_indices(&self.value);
-            let ix = jumps.binary_search(&self.cursor).unwrap_or_else(|i| i);
-            self.cursor = jumps[std::cmp::max(ix - 1, 0)];
-        }
+    pub fn move_left_by_word(&mut self) {
+        let jumps = word_jump_indices(&self.value);
+        let ix = jumps.binary_search(&self.cursor).unwrap_or_else(|i| i);
+        self.cursor = jumps[ix.saturating_sub(1)];
     }
 
-    pub fn move_word_right(&mut self) {
-        if self.cursor < self.value.len() {
-            let jumps = word_jump_indices(&self.value);
-            let ix = jumps
-                .binary_search(&self.cursor)
-                .map_or_else(|i| i, |i| i + 1);
-            self.cursor = jumps[std::cmp::min(ix, jumps.len() - 1)];
-        }
+    pub fn move_right_by_word(&mut self) {
+        let jumps = word_jump_indices(&self.value);
+        let ix = jumps
+            .binary_search(&self.cursor)
+            .map_or_else(|i| i, |i| i + 1);
+        self.cursor = jumps[std::cmp::min(ix, jumps.len().saturating_sub(1))];
     }
 
     pub fn move_home(&mut self) {
@@ -102,7 +98,7 @@ impl StringCursor {
         }
     }
 
-    pub fn delete_word_left(&mut self) {
+    pub fn delete_word_to_the_left(&mut self) {
         if self.cursor > 0 {
             let jumps = word_jump_indices(&self.value);
             let ix = jumps.binary_search(&self.cursor).unwrap_or_else(|x| x);
