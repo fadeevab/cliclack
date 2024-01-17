@@ -495,7 +495,7 @@ pub trait Theme {
         let header = format!(
             "{symbol}  {prompt} {horizontal_bar}{corner}\n",
             horizontal_bar =
-                bar_color.apply_to(S_BAR_H.to_string().repeat(width - prompt.chars().count())),
+                bar_color.apply_to(S_BAR_H.to_string().repeat(width - display_width(prompt))),
             corner = bar_color.apply_to(S_CORNER_TOP_RIGHT),
         );
         #[allow(clippy::format_collect)]
