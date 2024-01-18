@@ -37,6 +37,7 @@ pub struct Input {
     default: Option<String>,
     placeholder: StringCursor,
     validate: Option<ValidationCallback>,
+    validate_continuously: bool,
 }
 
 impl Input {
@@ -84,6 +85,13 @@ impl Input {
         self
     }
 
+    /// Sets whether the input should be validated continuously or only when the user submits.
+    /// Default: `false`.
+    pub fn validate_continuously(mut self, validate_continuously: bool) -> Self {
+        self.validate_continuously = validate_continuously;
+        self
+    }
+
     /// Starts the prompt interaction.
     pub fn interact<T>(&mut self) -> io::Result<T>
     where
@@ -118,16 +126,18 @@ where
             }
         }
 
-        if let Some(validator) = &self.validate {
-            if let Err(err) = validator(&self.input.to_string()) {
-                return State::Error(err);
+        if *key == Key::Enter || self.validate_continuously {
+            if let Some(validator) = &self.validate {
+                if let Err(err) = validator(&self.input.to_string()) {
+                    return State::Error(err);
+                }
             }
-        }
 
-        match self.input.to_string().parse::<T>() {
-            Ok(value) if *key == Key::Enter => return State::Submit(value),
-            Err(_) => return State::Error("Invalid value format".to_string()),
-            _ => {}
+            match self.input.to_string().parse::<T>() {
+                Ok(value) if *key == Key::Enter => return State::Submit(value),
+                Err(_) => return State::Error("Invalid value format".to_string()),
+                _ => {}
+            }
         }
 
         State::Active

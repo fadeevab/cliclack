@@ -27,6 +27,7 @@ fn main() -> std::io::Result<()> {
                 Ok(())
             }
         })
+        .validate_continuously(true)
         .interact()?;
 
     let _password = cliclack::password("Provide a password")

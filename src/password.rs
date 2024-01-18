@@ -21,6 +21,7 @@ pub struct Password {
     mask: char,
     input: StringCursor,
     validate: Option<ValidationCallback>,
+    validate_continuously: bool,
 }
 
 impl Password {
@@ -51,6 +52,13 @@ impl Password {
         self
     }
 
+    /// Sets whether the input should be validated continuously or only when the user submits.
+    /// Default: `false`.
+    pub fn validate_continuously(mut self, validate_continuously: bool) -> Self {
+        self.validate_continuously = validate_continuously;
+        self
+    }
+
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<String> {
         <Self as PromptInteraction<String>>::interact(self)
@@ -71,18 +79,20 @@ impl PromptInteraction<String> for Password {
     fn on(&mut self, event: &Event) -> State<String> {
         let Event::Key(key) = event;
 
-        if let Some(validator) = &self.validate {
-            if let Err(err) = validator(&self.input.to_string()) {
-                return State::Error(err);
-            }
-        }
-
-        if *key == Key::Enter {
+        if *key == Key::Enter || self.validate_continuously {
             if self.input.is_empty() {
                 return State::Error("Input required".to_string());
             }
 
-            return State::Submit(self.input.to_string());
+            if let Some(validator) = &self.validate {
+                if let Err(err) = validator(&self.input.to_string()) {
+                    return State::Error(err);
+                }
+            }
+
+            if *key == Key::Enter {
+                return State::Submit(self.input.to_string());
+            }
         }
 
         State::Active
