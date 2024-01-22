@@ -20,7 +20,8 @@ pub struct Password {
     prompt: String,
     mask: char,
     input: StringCursor,
-    validate: Option<ValidationCallback>,
+    validate_on_enter: Option<ValidationCallback>,
+    validate_interactively: Option<ValidationCallback>,
 }
 
 impl Password {
@@ -39,13 +40,35 @@ impl Password {
         self
     }
 
-    /// Sets the validation callback.
+    /// Sets a validation callback for the input that is called when the user submits.
+    /// The same as [`Input::validate_on_enter`].
     pub fn validate<V>(mut self, validator: V) -> Self
     where
         V: Validate<String> + 'static,
         V::Err: ToString,
     {
-        self.validate = Some(Box::new(move |input: &String| {
+        self.validate_on_enter = Some(Box::new(move |input: &String| {
+            validator.validate(input).map_err(|err| err.to_string())
+        }));
+        self
+    }
+
+    /// Sets a validation callback for the input that is called when the user submits.
+    pub fn validate_on_enter<V>(self, validator: V) -> Self
+    where
+        V: Validate<String> + 'static,
+        V::Err: ToString,
+    {
+        self.validate(validator)
+    }
+
+    /// Validates input while user is typing.
+    pub fn validate_interactively<V>(mut self, validator: V) -> Self
+    where
+        V: Validate<String> + 'static,
+        V::Err: ToString,
+    {
+        self.validate_interactively = Some(Box::new(move |input: &String| {
             validator.validate(input).map_err(|err| err.to_string())
         }));
         self
@@ -71,17 +94,26 @@ impl PromptInteraction<String> for Password {
     fn on(&mut self, event: &Event) -> State<String> {
         let Event::Key(key) = event;
 
+        if let Some(validator) = &self.validate_interactively {
+            if let Err(err) = validator(&self.input.to_string()) {
+                return State::Error(err);
+            }
+        }
+
         if *key == Key::Enter {
             if self.input.is_empty() {
                 return State::Error("Input required".to_string());
             }
 
-            if let Some(validator) = &self.validate {
+            if let Some(validator) = &self.validate_on_enter {
                 if let Err(err) = validator(&self.input.to_string()) {
                     return State::Error(err);
                 }
             }
-            return State::Submit(self.input.to_string());
+
+            if *key == Key::Enter {
+                return State::Submit(self.input.to_string());
+            }
         }
 
         State::Active

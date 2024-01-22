@@ -36,7 +36,8 @@ pub struct Input {
     input_required: bool,
     default: Option<String>,
     placeholder: StringCursor,
-    validate: Option<ValidationCallback>,
+    validate_on_enter: Option<ValidationCallback>,
+    validate_interactively: Option<ValidationCallback>,
 }
 
 impl Input {
@@ -72,13 +73,35 @@ impl Input {
         self
     }
 
-    /// Sets a validation callback for the input.
+    /// Sets a validation callback for the input that is called when the user submits.
+    /// The same as [`Input::validate_on_enter`].
     pub fn validate<V>(mut self, validator: V) -> Self
     where
         V: Validate<String> + 'static,
         V::Err: ToString,
     {
-        self.validate = Some(Box::new(move |input: &String| {
+        self.validate_on_enter = Some(Box::new(move |input: &String| {
+            validator.validate(input).map_err(|err| err.to_string())
+        }));
+        self
+    }
+
+    /// Sets a validation callback for the input that is called when the user submits.
+    pub fn validate_on_enter<V>(self, validator: V) -> Self
+    where
+        V: Validate<String> + 'static,
+        V::Err: ToString,
+    {
+        self.validate(validator)
+    }
+
+    /// Validates input while user is typing.
+    pub fn validate_interactively<V>(mut self, validator: V) -> Self
+    where
+        V: Validate<String> + 'static,
+        V::Err: ToString,
+    {
+        self.validate_interactively = Some(Box::new(move |input: &String| {
             validator.validate(input).map_err(|err| err.to_string())
         }));
         self
@@ -110,16 +133,26 @@ where
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
-        if *key == Key::Enter {
-            if self.input.is_empty() {
-                if let Some(default) = &self.default {
-                    self.input.extend(default);
-                } else if self.input_required {
-                    return State::Error("Input required".to_string());
-                }
+        if *key == Key::Enter && self.input.is_empty() {
+            if let Some(default) = &self.default {
+                self.input.extend(default);
+            } else if self.input_required {
+                return State::Error("Input required".to_string());
+            }
+        }
+
+        if let Some(validator) = &self.validate_interactively {
+            if let Err(err) = validator(&self.input.to_string()) {
+                return State::Error(err);
             }
 
-            if let Some(validator) = &self.validate {
+            if self.input.to_string().parse::<T>().is_err() {
+                return State::Error("Invalid value format".to_string());
+            }
+        }
+
+        if *key == Key::Enter {
+            if let Some(validator) = &self.validate_on_enter {
                 if let Err(err) = validator(&self.input.to_string()) {
                     return State::Error(err);
                 }
@@ -127,9 +160,7 @@ where
 
             match self.input.to_string().parse::<T>() {
                 Ok(value) => return State::Submit(value),
-                Err(_) => {
-                    return State::Error("Invalid value format".to_string());
-                }
+                Err(_) => return State::Error("Invalid value format".to_string()),
             }
         }
 
