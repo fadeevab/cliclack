@@ -2,7 +2,7 @@ use std::{fmt::Display, time::Duration};
 
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::theme::THEME;
+use crate::{theme::THEME, ThemeState};
 
 /// A spinner that renders progress indication.
 ///
@@ -40,6 +40,28 @@ impl Spinner {
         // Workaround: the next line doesn't "jump" around while resizing the terminal.
         self.spinner
             .println(theme.format_spinner_stop(&message.to_string()));
+        self.spinner.finish_and_clear();
+    }
+
+    /// Makes the spinner stop with an error.
+    pub fn error(&mut self, message: impl Display) {
+        let theme = THEME.lock().unwrap();
+        let state = &ThemeState::Error("".into());
+
+        // Workaround: the next line doesn't "jump" around while resizing the terminal.
+        self.spinner
+            .println(theme.format_spinner_with_state(&message.to_string(), state));
+        self.spinner.finish_and_clear();
+    }
+
+    /// Cancel the spinner (stop with cancelling style).
+    pub fn cancel(&mut self, message: impl Display) {
+        let theme = THEME.lock().unwrap();
+        let state = &ThemeState::Cancel;
+
+        // Workaround: the next line doesn't "jump" around while resizing the terminal.
+        self.spinner
+            .println(theme.format_spinner_with_state(&message.to_string(), state));
         self.spinner.finish_and_clear();
     }
 }
