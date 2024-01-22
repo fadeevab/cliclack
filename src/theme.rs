@@ -475,6 +475,20 @@ pub trait Theme {
         )
     }
 
+    /// Returns the spinner with a final message in a specified state.
+    ///
+    /// It's not symmetric to [`Theme::format_spinner_start`] because of a workaround
+    /// for the [`indicatif::ProgressBar`] spinner behavior which disrupts
+    /// the line after the stop message reproduced while terminal resizing
+    /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
+    fn format_spinner_with_state(&self, msg: &str, state: &ThemeState) -> String {
+        format!(
+            "{symbol}  {msg}\n{bar}",
+            symbol = self.state_symbol(state),
+            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
+        )
+    }
+
     /// Returns the spinner character sequence.
     fn spinner_chars(&self) -> String {
         S_SPINNER.to_string()
