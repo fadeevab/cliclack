@@ -36,8 +36,8 @@ pub struct Input {
     input_required: bool,
     default: Option<String>,
     placeholder: StringCursor,
-    validate: Option<ValidationCallback>,
-    validate_continuously: bool,
+    validate_on_enter: Option<ValidationCallback>,
+    validate_interactively: Option<ValidationCallback>,
 }
 
 impl Input {
@@ -73,22 +73,37 @@ impl Input {
         self
     }
 
-    /// Sets a validation callback for the input.
+    /// Sets a validation callback for the input that is called when the user submits.
+    /// The same as [`Input::validate_on_enter`].
     pub fn validate<V>(mut self, validator: V) -> Self
     where
         V: Validate<String> + 'static,
         V::Err: ToString,
     {
-        self.validate = Some(Box::new(move |input: &String| {
+        self.validate_on_enter = Some(Box::new(move |input: &String| {
             validator.validate(input).map_err(|err| err.to_string())
         }));
         self
     }
 
-    /// Sets whether the input should be validated continuously or only when the user submits.
-    /// Default: `false`.
-    pub fn validate_continuously(mut self, validate_continuously: bool) -> Self {
-        self.validate_continuously = validate_continuously;
+    /// Sets a validation callback for the input that is called when the user submits.
+    pub fn validate_on_enter<V>(self, validator: V) -> Self
+    where
+        V: Validate<String> + 'static,
+        V::Err: ToString,
+    {
+        self.validate(validator)
+    }
+
+    /// Validates input while user is typing.
+    pub fn validate_interactively<V>(mut self, validator: V) -> Self
+    where
+        V: Validate<String> + 'static,
+        V::Err: ToString,
+    {
+        self.validate_interactively = Some(Box::new(move |input: &String| {
+            validator.validate(input).map_err(|err| err.to_string())
+        }));
         self
     }
 
@@ -126,17 +141,26 @@ where
             }
         }
 
-        if *key == Key::Enter || self.validate_continuously {
-            if let Some(validator) = &self.validate {
+        if let Some(validator) = &self.validate_interactively {
+            if let Err(err) = validator(&self.input.to_string()) {
+                return State::Error(err);
+            }
+
+            if self.input.to_string().parse::<T>().is_err() {
+                return State::Error("Invalid value format".to_string());
+            }
+        }
+
+        if *key == Key::Enter {
+            if let Some(validator) = &self.validate_on_enter {
                 if let Err(err) = validator(&self.input.to_string()) {
                     return State::Error(err);
                 }
             }
 
             match self.input.to_string().parse::<T>() {
-                Ok(value) if *key == Key::Enter => return State::Submit(value),
+                Ok(value) => return State::Submit(value),
                 Err(_) => return State::Error("Invalid value format".to_string()),
-                _ => {}
             }
         }
 
