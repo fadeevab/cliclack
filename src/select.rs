@@ -62,13 +62,12 @@ where
 
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<T> {
-        for (i, item) in self.items.iter().enumerate() {
-            if let Some(initial_value) = &self.initial_value {
-                if initial_value == &item.value {
-                    self.cursor = i;
-                    break;
-                }
-            }
+        if let Some(initial_value) = &self.initial_value {
+            self.cursor = self
+                .items
+                .iter()
+                .position(|item| item.value == *initial_value)
+                .unwrap_or(self.cursor);
         }
         <Self as PromptInteraction<T>>::interact(self)
     }
@@ -101,15 +100,14 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
 
         let line1 = theme.format_header(&state.into(), &self.prompt);
 
-        let mut line2 = String::new();
-        for (i, item) in self.items.iter().enumerate() {
-            line2.push_str(&theme.format_select_item(
-                &state.into(),
-                self.cursor == i,
-                &item.label,
-                &item.hint,
-            ));
-        }
+        let line2: String = self
+            .items
+            .iter()
+            .enumerate()
+            .map(|(i, item)| {
+                theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
+            })
+            .collect();
         let line3 = theme.format_footer(&state.into());
 
         line1 + &line2 + &line3
