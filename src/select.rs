@@ -8,16 +8,14 @@ use crate::{
     theme::THEME,
 };
 
-#[derive(Default)]
-pub struct RadioButton<T: Default> {
+pub struct RadioButton<T> {
     pub value: T,
     pub label: String,
     pub hint: String,
 }
 
 /// A prompt that asks for one selection from a list of options.
-#[derive(Default)]
-pub struct Select<T: Default> {
+pub struct Select<T> {
     prompt: String,
     items: Vec<RadioButton<T>>,
     cursor: usize,
@@ -26,13 +24,15 @@ pub struct Select<T: Default> {
 
 impl<T> Select<T>
 where
-    T: Default + Clone + Eq,
+    T: Clone + Eq,
 {
     /// Creates a new selection prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
-            ..Default::default()
+            items: Vec::new(),
+            cursor: 0,
+            initial_value: None,
         }
     }
 
@@ -74,7 +74,7 @@ where
     }
 }
 
-impl<T: Default + Clone> PromptInteraction<T> for Select<T> {
+impl<T: Clone> PromptInteraction<T> for Select<T> {
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
