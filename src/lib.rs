@@ -273,14 +273,14 @@ pub fn password(prompt: impl Display) -> Password {
 /// Constructs a new [`Select`] prompt.
 ///
 /// See [`Select`] for chainable methods.
-pub fn select<T: Default + Clone + Eq>(prompt: impl Display) -> Select<T> {
+pub fn select<T: Clone + Eq>(prompt: impl Display) -> Select<T> {
     Select::new(prompt)
 }
 
 /// Constructs a new [`MultiSelect`] prompt.
 ///
 /// See [`MultiSelect`] for chainable methods.
-pub fn multiselect<T: Default + Clone + Eq>(prompt: impl Display) -> MultiSelect<T> {
+pub fn multiselect<T: Clone + Eq>(prompt: impl Display) -> MultiSelect<T> {
     MultiSelect::new(prompt)
 }
 

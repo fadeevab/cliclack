@@ -8,8 +8,7 @@ use crate::{
     theme::THEME,
 };
 
-#[derive(Default)]
-pub struct Checkbox<T: Default> {
+pub struct Checkbox<T> {
     pub value: T,
     pub label: String,
     pub hint: String,
@@ -17,8 +16,7 @@ pub struct Checkbox<T: Default> {
 }
 
 /// A prompt that asks for one or more selections from a list of options.
-#[derive(Default)]
-pub struct MultiSelect<T: Default> {
+pub struct MultiSelect<T> {
     prompt: String,
     items: Vec<Checkbox<T>>,
     cursor: usize,
@@ -28,14 +26,16 @@ pub struct MultiSelect<T: Default> {
 
 impl<T> MultiSelect<T>
 where
-    T: Default + Clone + Eq,
+    T: Clone + Eq,
 {
     /// Creates a new [`MultiSelect`] prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
+            items: vec![],
+            cursor: 0,
+            initial_values: None,
             required: true,
-            ..Default::default()
         }
     }
 
@@ -84,7 +84,7 @@ where
     }
 }
 
-impl<T: Default + Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
+impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
     fn on(&mut self, event: &Event) -> State<Vec<T>> {
         let Event::Key(key) = event;
 
