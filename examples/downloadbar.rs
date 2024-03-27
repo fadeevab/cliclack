@@ -1,4 +1,4 @@
-use cliclack::{clear_screen, intro, log, outro, downloadbar};
+use cliclack::{clear_screen, downloadbar, intro, log, outro};
 use console::style;
 use rand::{thread_rng, Rng};
 use std::{sync::mpsc::channel, time::Duration};

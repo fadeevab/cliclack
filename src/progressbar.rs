@@ -56,10 +56,7 @@ impl ProgressBar {
 
         // Workaround: the next line doesn't "jump" around while resizing the terminal.
         self.progress_bar
-            .println(theme.format_progressbar_with_state(
-                &message.to_string(), 
-                state
-            )?);
+            .println(theme.format_progressbar_with_state(&message.to_string(), state)?);
         self.progress_bar.finish_and_clear();
         Ok(())
     }
@@ -71,10 +68,7 @@ impl ProgressBar {
 
         // Workaround: the next line doesn't "jump" around while resizing the terminal.
         self.progress_bar
-            .println(theme.format_progressbar_with_state(
-                &message.to_string(), 
-                state
-            )?);
+            .println(theme.format_progressbar_with_state(&message.to_string(), state)?);
         self.progress_bar.finish_and_clear();
         Ok(())
     }

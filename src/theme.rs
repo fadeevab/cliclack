@@ -458,9 +458,9 @@ pub trait Theme {
 
     /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
     fn format_progressbar_start(&self) -> String {
-        format!("{}\n{S_BAR}  {}",
-            "{spinner:.magenta}  {msg}",
-            "[{elapsed_precise}] {bar:40.cyan/blue} ({pos}/{len})"
+        format!(
+            "{}\n{S_BAR}  {}",
+            "{spinner:.magenta}  {msg}", "[{elapsed_precise}] {bar:40.cyan/blue} ({pos}/{len})"
         )
     }
 
@@ -475,7 +475,8 @@ pub trait Theme {
 
     /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
     fn format_downloadbar_start(&self) -> String {
-        format!("{}\n{S_BAR}  {}",
+        format!(
+            "{}\n{S_BAR}  {}",
             "{spinner:.magenta}  {msg}",
             "[{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})"
         )
@@ -496,7 +497,11 @@ pub trait Theme {
     /// for the [`indicatif::ProgressBar`] progressbar behavior which disrupts
     /// the line after the stop message reproduced while terminal resizing
     /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
-    fn format_downloadbar_with_state(&self, msg: &str, state: &ThemeState) -> std::io::Result<String> {
+    fn format_downloadbar_with_state(
+        &self,
+        msg: &str,
+        state: &ThemeState,
+    ) -> std::io::Result<String> {
         let term = Term::stderr();
         term.move_cursor_up(1)?;
         Ok(format!(
@@ -512,7 +517,11 @@ pub trait Theme {
     /// for the [`indicatif::ProgressBar`] progressbar behavior which disrupts
     /// the line after the stop message reproduced while terminal resizing
     /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
-    fn format_progressbar_with_state(&self, msg: &str, state: &ThemeState) -> std::io::Result<String> {
+    fn format_progressbar_with_state(
+        &self,
+        msg: &str,
+        state: &ThemeState,
+    ) -> std::io::Result<String> {
         let term = Term::stderr();
         term.move_cursor_up(1)?;
         Ok(format!(

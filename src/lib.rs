@@ -200,16 +200,16 @@
 #![warn(missing_docs, unused_qualifications)]
 
 mod confirm;
+mod downloadbar;
 mod input;
 mod multiselect;
 mod password;
+mod progressbar;
 mod prompt;
 mod select;
 mod spinner;
 mod theme;
 mod validate;
-mod progressbar;
-mod downloadbar;
 
 use console::Term;
 use downloadbar::DownloadBar;
@@ -303,14 +303,14 @@ pub fn spinner() -> Spinner {
 }
 
 /// Constructs a new [`ProgressBar`] prompt.
-/// 
+///
 /// See [`ProgressBar`] for chainable methods.
 pub fn progressbar() -> ProgressBar {
     ProgressBar::default()
 }
 
 /// Constructs a new [`DownloadBar`] prompt.
-/// 
+///
 /// See [`DownloadBar`] for chainable methods.
 pub fn downloadbar() -> DownloadBar {
     DownloadBar::default()

@@ -14,7 +14,7 @@ fn main() -> std::io::Result<()> {
     ctrlc::set_handler(move || {
         let _ = tx.send(true);
     })
-        .expect("setting Ctrl-C handler");
+    .expect("setting Ctrl-C handler");
 
     // Clear the screen and print the header.
     clear_screen()?;
@@ -33,7 +33,7 @@ fn main() -> std::io::Result<()> {
         // Check if we received a signal from the channel (the Ctrl-C handler
         // registered above). We use this as our "thread::sleep()" operation
         // as well, to simulate work.
-        if rx.recv_timeout(timeout).is_ok() { 
+        if rx.recv_timeout(timeout).is_ok() {
             // If a message is received, cancel the progress bar and display an outro message
             progressbar.cancel("Installation")?;
             outro("Cancelled")?;

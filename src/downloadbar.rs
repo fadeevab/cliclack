@@ -63,9 +63,7 @@ impl DownloadBar {
 
         // Workaround: the next line doesn't "jump" around while resizing the terminal.
         self.download_bar
-            .println(
-                theme.format_downloadbar_with_state(&message.to_string(), state)?
-            );
+            .println(theme.format_downloadbar_with_state(&message.to_string(), state)?);
         self.download_bar.finish_and_clear();
         Ok(())
     }
@@ -77,8 +75,7 @@ impl DownloadBar {
 
         // Workaround: the next line doesn't "jump" around while resizing the terminal.
         self.download_bar
-            .println(theme.format_downloadbar_with_state(&message.to_string(), state)?
-        );
+            .println(theme.format_downloadbar_with_state(&message.to_string(), state)?);
         self.download_bar.finish_and_clear();
         Ok(())
     }
