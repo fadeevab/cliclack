@@ -4,7 +4,8 @@ use indicatif::ProgressStyle;
 
 use crate::{theme::THEME, ThemeState};
 
-/// A spinner that renders progress indication.
+/// A spinner + downloadbar that renders progress indication based on a 
+/// total number of bytes.
 ///
 /// Implemented via theming of [`indicatif::ProgressBar`](https://docs.rs/indicatif).
 pub struct DownloadBar {
@@ -56,7 +57,7 @@ impl DownloadBar {
         self.download_bar.finish_and_clear();
     }
 
-    /// Makes the spinner stop with an error.
+    /// Makes the downloarbar stop with an error.
     pub fn error(&mut self, message: impl Display) -> std::io::Result<()> {
         let theme = THEME.lock().unwrap();
         let state = &ThemeState::Error("".into());
@@ -68,7 +69,7 @@ impl DownloadBar {
         Ok(())
     }
 
-    /// Cancel the spinner (stop with cancelling style).
+    /// Cancel the downloadbar (stop with cancelling style).
     pub fn cancel(&mut self, message: impl Display) -> std::io::Result<()> {
         let theme = THEME.lock().unwrap();
         let state = &ThemeState::Cancel;
