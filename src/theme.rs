@@ -32,6 +32,7 @@ const S_WARN: Emoji = Emoji("▲", "!");
 const S_ERROR: Emoji = Emoji("■", "x");
 
 const S_SPINNER: Emoji = Emoji("◒◐◓◑", "•oO0");
+const S_PROGRESS: Emoji = Emoji("■□", "#-");
 
 /// The state of the prompt rendering.
 pub enum ThemeState {
@@ -469,6 +470,16 @@ pub trait Theme {
         )
     }
 
+    /// Returns the progress bar template.
+    fn default_progress_template(&self) -> String {
+        "{msg} [{elapsed_precise}] {bar:30.magenta} ({pos}/{len})".into()
+    }
+
+    /// Returns the progress bar start style for the [`indicatif::ProgressBar`].
+    fn format_progress_start(&self, template: &str) -> String {
+        format!("{{spinner:.magenta}}  {template}")
+    }
+
     /// Returns the spinner start style for the [`indicatif::ProgressBar`].
     fn format_spinner_start(&self) -> String {
         "{spinner:.magenta}  {msg}".into()
@@ -531,6 +542,11 @@ pub trait Theme {
         S_SPINNER.to_string()
     }
 
+    /// Returns the progress bar character sequence.
+    fn progress_chars(&self) -> String {
+        S_PROGRESS.to_string()
+    }
+
     /// Returns the multiline note message rendering, taking into account whether
     /// or not it's an inline vs. outro note.
     fn format_note_generic(&self, is_outro: bool, prompt: &str, message: &str) -> String {
@@ -560,7 +576,7 @@ pub trait Theme {
         );
 
         // Render the body, with multi-line support.
-        #[allow(clippy::format_collect)] 
+        #[allow(clippy::format_collect)]
         let body = message
             .lines()
             .map(|line| {

@@ -203,6 +203,7 @@ mod confirm;
 mod input;
 mod multiselect;
 mod password;
+mod progress;
 mod prompt;
 mod select;
 mod spinner;
@@ -210,6 +211,7 @@ mod theme;
 mod validate;
 
 use console::Term;
+use progress::ProgressBar;
 use std::fmt::Display;
 use std::io;
 
@@ -306,6 +308,13 @@ pub fn confirm(prompt: impl Display) -> Confirm {
 /// See [`Spinner`] for chainable methods.
 pub fn spinner() -> Spinner {
     Spinner::default()
+}
+
+/// Constructs a new [`ProgressBar`] prompt.
+///
+/// See [`ProgressBar`] for chainable methods.
+pub fn progress_bar(len: u64) -> ProgressBar {
+    ProgressBar::new(len)
 }
 
 /// Prints a note message.
