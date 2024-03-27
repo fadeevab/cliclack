@@ -208,8 +208,12 @@ mod select;
 mod spinner;
 mod theme;
 mod validate;
+mod progressbar;
+mod downloadbar;
 
 use console::Term;
+use downloadbar::DownloadBar;
+use progressbar::ProgressBar;
 use std::fmt::Display;
 use std::io;
 
@@ -296,6 +300,20 @@ pub fn confirm(prompt: impl Display) -> Confirm {
 /// See [`Spinner`] for chainable methods.
 pub fn spinner() -> Spinner {
     Spinner::default()
+}
+
+/// Constructs a new [`ProgressBar`] prompt.
+/// 
+/// See [`ProgressBar`] for chainable methods.
+pub fn progressbar() -> ProgressBar {
+    ProgressBar::default()
+}
+
+/// Constructs a new [`DownloadBar`] prompt.
+/// 
+/// See [`DownloadBar`] for chainable methods.
+pub fn downloadbar() -> DownloadBar {
+    DownloadBar::default()
 }
 
 /// Prints a note message.

@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use console::{style, Emoji, Style};
+use console::{style, Emoji, Style, Term};
 use once_cell::sync::Lazy;
 use textwrap::core::display_width;
 
@@ -454,6 +454,72 @@ pub trait Theme {
             "{bar}  {yes}{divider}{no}\n",
             bar = self.bar_color(state).apply_to(S_BAR),
         )
+    }
+
+    /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
+    fn format_progressbar_start(&self) -> String {
+        format!("{}\n{S_BAR}  {}",
+            "{spinner:.magenta}  {msg}",
+            "[{elapsed_precise}] {bar:40.cyan/blue} ({pos}/{len})"
+        )
+    }
+
+    /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
+    fn format_progressbar_stop(&self, msg: &str) -> String {
+        format!(
+            "{symbol}  {msg}\n{bar}",
+            symbol = self.state_symbol(&ThemeState::Submit),
+            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
+        )
+    }
+
+    /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
+    fn format_downloadbar_start(&self) -> String {
+        format!("{}\n{S_BAR}  {}",
+            "{spinner:.magenta}  {msg}",
+            "[{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})"
+        )
+    }
+
+    /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
+    fn format_downloadbar_stop(&self, msg: &str) -> String {
+        format!(
+            "{symbol}  {msg}\n{bar}",
+            symbol = self.state_symbol(&ThemeState::Submit),
+            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
+        )
+    }
+
+    /// Returns the progressbar with a final message in a specified state.
+    ///
+    /// It's not symmetric to [`Theme::format_downloadbar_start`] because of a workaround
+    /// for the [`indicatif::ProgressBar`] progressbar behavior which disrupts
+    /// the line after the stop message reproduced while terminal resizing
+    /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
+    fn format_downloadbar_with_state(&self, msg: &str, state: &ThemeState) -> std::io::Result<String> {
+        let term = Term::stderr();
+        term.move_cursor_up(1)?;
+        Ok(format!(
+            "{symbol}  {msg}\n{bar}",
+            symbol = self.state_symbol(state),
+            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
+        ))
+    }
+
+    /// Returns the downloadbar with a final message in a specified state.
+    ///
+    /// It's not symmetric to [`Theme::format_progressbar_start`] because of a workaround
+    /// for the [`indicatif::ProgressBar`] progressbar behavior which disrupts
+    /// the line after the stop message reproduced while terminal resizing
+    /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
+    fn format_progressbar_with_state(&self, msg: &str, state: &ThemeState) -> std::io::Result<String> {
+        let term = Term::stderr();
+        term.move_cursor_up(1)?;
+        Ok(format!(
+            "{symbol}  {msg}\n{bar}",
+            symbol = self.state_symbol(state),
+            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
+        ))
     }
 
     /// Returns the spinner start style for the [`indicatif::ProgressBar`].
