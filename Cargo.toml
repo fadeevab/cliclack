@@ -14,7 +14,7 @@ readme = "README.md"
 repository = "https://github.com/fadeevab/cliclack"
 
 [dependencies]
-console = "0.15.7"
+console = "0.15.8"
 indicatif = "0.17.5"
 once_cell = "1.18.0"
 textwrap = "0.16.0"
@@ -22,3 +22,4 @@ zeroize = {version = "1.6.0", features = ["derive"]}
 
 [dev-dependencies]
 ctrlc = "3.4.2"
+rand = "0.8.5"
