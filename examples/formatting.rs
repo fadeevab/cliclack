@@ -10,7 +10,8 @@ fn main() -> std::io::Result<()> {
     intro(style(" spinner ").on_cyan().black())?;
 
     let mut spinner = spinner();
-    let message = format!("{}\n{}\n\n{}",
+    let message = format!(
+        "{}\n{}\n\n{}",
         style("Installation").bold(),
         style("Press Esc, Enter, or Ctrl-C").dim(),
         style("Check it out, we're multilining!").magenta().italic()
