@@ -9,13 +9,18 @@ use crate::{theme::THEME, ThemeState};
 /// Implemented via theming of [`indicatif::ProgressBar`](https://docs.rs/indicatif).
 pub struct Spinner {
     spinner: ProgressBar,
+    spacing: usize
 }
 
 impl Default for Spinner {
     fn default() -> Self {
+        let theme = THEME.lock().unwrap();
         let spinner = ProgressBar::new_spinner();
         spinner.enable_steady_tick(Duration::from_millis(100));
-        Self { spinner }
+        Self { 
+            spinner,
+            spacing: theme.default_spacing()
+        }
     }
 }
 
@@ -39,7 +44,7 @@ impl Spinner {
 
         // Workaround: the next line doesn't "jump" around while resizing the terminal.
         self.spinner
-            .println(theme.format_spinner_stop(&message.to_string()));
+            .println(theme.format_spinner_stop(self.spacing, &message.to_string()));
         self.spinner.finish_and_clear();
     }
 
@@ -63,5 +68,23 @@ impl Spinner {
         self.spinner
             .println(theme.format_spinner_with_state(&message.to_string(), state));
         self.spinner.finish_and_clear();
+    }
+
+    /// Sets the spacing between this spinner and the next element, returning
+    /// the modified spinner.
+    /// 
+    /// ## Usage
+    /// ```rust
+    /// let spinner = cliclack::spinner().with_spacing(0);
+    /// spinner.start("Loading");
+    /// ```
+    pub fn with_spacing(mut self, spacing: usize) -> Self {
+        self.spacing = spacing;
+        self
+    }
+
+    /// Sets the spacing between this spinner and the next element.
+    pub fn set_spacing(&mut self, spacing: usize) {
+        self.spacing = spacing;
     }
 }
