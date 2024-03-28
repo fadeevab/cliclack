@@ -200,7 +200,6 @@
 #![warn(missing_docs, unused_qualifications)]
 
 mod confirm;
-mod downloadbar;
 mod input;
 mod multiselect;
 mod password;
@@ -212,7 +211,6 @@ mod theme;
 mod validate;
 
 use console::Term;
-use downloadbar::DownloadBar;
 use progressbar::ProgressBar;
 use std::fmt::Display;
 use std::io;
@@ -307,13 +305,6 @@ pub fn spinner() -> Spinner {
 /// See [`ProgressBar`] for chainable methods.
 pub fn progressbar() -> ProgressBar {
     ProgressBar::default()
-}
-
-/// Constructs a new [`DownloadBar`] prompt.
-///
-/// See [`DownloadBar`] for chainable methods.
-pub fn downloadbar() -> DownloadBar {
-    DownloadBar::default()
 }
 
 /// Prints a note message.

@@ -1,6 +1,7 @@
 use std::sync::Mutex;
 
 use console::{style, Emoji, Style, Term};
+use indicatif::ProgressStyle;
 use once_cell::sync::Lazy;
 use textwrap::core::display_width;
 
@@ -457,11 +458,18 @@ pub trait Theme {
     }
 
     /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
-    fn format_progressbar_start(&self) -> String {
-        format!(
-            "{}\n{S_BAR}  {}",
-            "{spinner:.magenta}  {msg}", "[{elapsed_precise}] {bar:40.cyan/blue} ({pos}/{len})"
-        )
+    fn format_progressbar_start(&self) -> ProgressStyle {
+        let template = format!(
+            "{}  {}\n{S_BAR}  {}\n{S_BAR_END}",
+            self.active_symbol(),
+            "{msg}",
+            "[{elapsed_precise}] {bar:40.cyan/blue} ({pos}/{len})"
+        );
+
+        ProgressStyle::with_template(&template)
+            .unwrap()
+            .tick_chars(&self.spinner_chars())
+            .progress_chars("#>-")
     }
 
     /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
@@ -474,12 +482,18 @@ pub trait Theme {
     }
 
     /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
-    fn format_downloadbar_start(&self) -> String {
-        format!(
-            "{}\n{S_BAR}  {}",
-            "{spinner:.magenta}  {msg}",
+    fn format_downloadbar_start(&self) -> ProgressStyle {
+        let template = format!(
+            "{}  {}\n{S_BAR}  {}\n{S_BAR_END}",
+            self.active_symbol(),
+            "{msg}",
             "[{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})"
-        )
+        );
+
+        ProgressStyle::with_template(&template)
+            .unwrap()
+            .tick_chars(&self.spinner_chars())
+            .progress_chars("#>-")
     }
 
     /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
@@ -522,8 +536,6 @@ pub trait Theme {
         msg: &str,
         state: &ThemeState,
     ) -> std::io::Result<String> {
-        let term = Term::stderr();
-        term.move_cursor_up(1)?;
         Ok(format!(
             "{symbol}  {msg}\n{bar}",
             symbol = self.state_symbol(state),

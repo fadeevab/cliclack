@@ -1,4 +1,4 @@
-use cliclack::{clear_screen, downloadbar, intro, log, outro};
+use cliclack::{clear_screen, intro, log, outro, progressbar};
 use console::style;
 use rand::{thread_rng, Rng};
 use std::{sync::mpsc::channel, time::Duration};
@@ -24,12 +24,12 @@ fn main() -> std::io::Result<()> {
     log::remark("Press Esc, Enter, or Ctrl-C")?;
 
     // Create a new download progress bar
-    let mut progressbar = downloadbar();
+    let mut progressbar = progressbar().as_downloadbar();
     // Start the progress bar with the total number of bytes and a label
     progressbar.start(total_bytes, "Downloading, please wait...");
 
     // Loop until the progress bar reaches the total number of bytes
-    while progressbar.get_progress() < total_bytes {
+    while progressbar.get_position() < total_bytes {
         // Use a random timeout to simulate some work.
         let timeout = Duration::from_millis(thread_rng().gen_range(10..150));
 

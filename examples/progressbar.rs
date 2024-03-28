@@ -23,7 +23,7 @@ fn main() -> std::io::Result<()> {
 
     // Create a new progressbar and set the text to "Installation".
     let mut progressbar = progressbar();
-    progressbar.start(100, "Installation");
+    progressbar.start(100, "Copying files...");
 
     // Simulate doing some stuff....
     for _ in 0..100 {
@@ -35,7 +35,7 @@ fn main() -> std::io::Result<()> {
         // as well, to simulate work.
         if rx.recv_timeout(timeout).is_ok() {
             // If a message is received, cancel the progress bar and display an outro message
-            progressbar.cancel("Installation")?;
+            progressbar.cancel("Copying files")?;
             outro("Cancelled")?;
             return Ok(());
         }
@@ -48,7 +48,7 @@ fn main() -> std::io::Result<()> {
 
     // Once we're done, we stop the progressbar and print the outro message.
     // This removes the progressbar and prints the message to the terminal.
-    progressbar.stop("Installation");
+    progressbar.stop("Copying files");
     outro("Done!")?;
 
     Ok(())
