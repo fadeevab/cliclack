@@ -482,11 +482,12 @@ pub trait Theme {
     /// the line after the stop message reproduced while terminal resizing
     /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
     fn format_spinner_with_state(&self, msg: &str, state: &ThemeState) -> String {
-        format!(
-            "{symbol}  {msg}\n{bar}",
-            symbol = self.state_symbol(state),
-            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
-        )
+        self.format_log(msg, &self.state_symbol(state))
+        // format!(
+        //     "{symbol}  {msg}\n{bar}",
+        //     symbol = self.state_symbol(state),
+        //     bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
+        // )
     }
 
     /// Returns the spinner character sequence.
@@ -553,6 +554,31 @@ pub trait Theme {
         }
 
         parts.push("".into());
+        parts.join("\n")
+    }
+
+    /// Returns a multiline text rendering to be used with prompts. This function
+    /// adds the left-bar to all lines but the first, encompases the remainder of the
+    /// message (including new-lines) with the side-bar, and finally ends with 
+    /// the section end character.
+    fn format_multiline_text(&self, text: &str) -> String {
+        let lines: Vec<_> = text.lines().collect();
+        let mut parts: Vec<String> = Vec::new();
+    
+        for (i, line) in lines.iter().enumerate() {
+            let formatted_line = match i {
+                0 => line.to_string(),
+                _ if i < lines.len() - 1 => format!("{bar}  {line}", bar = self.bar_color(&ThemeState::Active).apply_to(S_BAR), line = line),
+                _ => format!(
+                    "{bar}  {line}\n{end}", 
+                    bar = self.bar_color(&ThemeState::Active).apply_to(S_BAR), 
+                    end = self.bar_color(&ThemeState::Active).apply_to(S_BAR_END), 
+                    line = line
+                ),
+            };
+            parts.push(formatted_line);
+        }
+    
         parts.join("\n")
     }
 }

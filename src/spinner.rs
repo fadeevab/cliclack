@@ -30,7 +30,7 @@ impl Spinner {
                 .tick_chars(&theme.spinner_chars()),
         );
 
-        self.spinner.set_message(message.to_string());
+        self.spinner.set_message(theme.format_multiline_text(&message.to_string()));
     }
 
     /// Stops the spinner.
