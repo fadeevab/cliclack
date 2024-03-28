@@ -483,11 +483,6 @@ pub trait Theme {
     /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
     fn format_spinner_with_state(&self, msg: &str, state: &ThemeState) -> String {
         self.format_log(msg, &self.state_symbol(state))
-        // format!(
-        //     "{symbol}  {msg}\n{bar}",
-        //     symbol = self.state_symbol(state),
-        //     bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
-        // )
     }
 
     /// Returns the spinner character sequence.
