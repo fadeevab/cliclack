@@ -206,8 +206,6 @@ mod password;
 mod prompt;
 mod select;
 mod spinner;
-#[cfg(test)]
-mod tests;
 mod theme;
 mod validate;
 

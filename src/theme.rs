@@ -611,3 +611,15 @@ pub fn set_theme<T: Theme + Sync + Send + 'static>(theme: T) {
 pub fn reset_theme() {
     *THEME.lock().unwrap() = Box::new(ClackTheme);
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::Theme;
+
+    use super::ClackTheme;
+
+    #[test]
+    fn format_note() {
+        ClackTheme.format_note("my prompt", "my message");
+    }
+}
