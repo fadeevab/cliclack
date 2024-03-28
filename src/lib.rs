@@ -208,6 +208,8 @@ mod select;
 mod spinner;
 mod theme;
 mod validate;
+#[cfg(test)]
+mod tests;
 
 use console::Term;
 use std::fmt::Display;
@@ -257,13 +259,12 @@ pub fn outro_cancel(message: impl Display) -> io::Result<()> {
 }
 
 /// Prints a footer of the prompt sequence with a note style.
-/// TODO: Support different styles, i.e. info, warning, error, etc.?
 pub fn outro_note(prompt: impl Display, message: impl Display) -> io::Result<()> {
     term_write(
         THEME
             .lock()
             .unwrap()
-            .format_note(true, &prompt.to_string(), &message.to_string()),
+            .format_outro_note(&prompt.to_string(), &message.to_string()),
     )
 }
 
@@ -315,7 +316,7 @@ pub fn note(prompt: impl Display, message: impl Display) -> io::Result<()> {
         THEME
             .lock()
             .unwrap()
-            .format_note(false, &prompt.to_string(), &message.to_string()),
+            .format_note(&prompt.to_string(), &message.to_string()),
     )
 }
 
