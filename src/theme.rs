@@ -542,14 +542,6 @@ pub trait Theme {
                 .to_string()
         };
 
-        // let footer = bar_color
-        //     .apply_to(format!(
-        //         "{S_CONNECT_LEFT}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n{bar}\n",
-        //         horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
-        //         bar = bar_color.apply_to(S_BAR),
-        //     ))
-        //     .to_string();
-
         header + &body + &footer
     }
 
