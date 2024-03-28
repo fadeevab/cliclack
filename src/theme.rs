@@ -503,16 +503,16 @@ pub trait Theme {
             .fold(0usize, |acc, line| display_width(line).max(acc))
             .max(display_width(prompt));
 
-            let bar_color = self.bar_color(&ThemeState::Submit);
-            let text_color = self.input_style(&ThemeState::Submit);
+        let bar_color = self.bar_color(&ThemeState::Submit);
+        let text_color = self.input_style(&ThemeState::Submit);
 
         // If we're rendering an outro note, we use the connecting left bar
         // instead of the step symbol.
         let symbol = if is_outro {
-                bar_color.apply_to(S_CONNECT_LEFT).to_string()
-            } else {
-                self.state_symbol(&ThemeState::Submit)
-            };
+            bar_color.apply_to(S_CONNECT_LEFT).to_string()
+        } else {
+            self.state_symbol(&ThemeState::Submit)
+        };
 
         // Render the header.
         let header = format!(
