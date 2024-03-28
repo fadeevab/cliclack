@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use console::{style, Emoji, Style, Term};
+use console::{style, Emoji, Style};
 use indicatif::ProgressStyle;
 use once_cell::sync::Lazy;
 use textwrap::core::display_width;
@@ -516,8 +516,6 @@ pub trait Theme {
         msg: &str,
         state: &ThemeState,
     ) -> std::io::Result<String> {
-        let term = Term::stderr();
-        term.move_cursor_up(1)?;
         Ok(format!(
             "{symbol}  {msg}\n{bar}",
             symbol = self.state_symbol(state),
