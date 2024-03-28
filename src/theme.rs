@@ -33,6 +33,8 @@ const S_ERROR: Emoji = Emoji("■", "x");
 
 const S_SPINNER: Emoji = Emoji("◒◐◓◑", "•oO0");
 
+const S_DEFAULT_SPACING: usize = 1;
+
 /// The state of the prompt rendering.
 pub enum ThemeState {
     /// The prompt is active.
@@ -96,6 +98,11 @@ impl<T> From<&State<T>> for ThemeState {
 /// Many theme methods render the visual elements differently depending on the
 /// current rendering state. The state is passed to the theme methods as an argument.
 pub trait Theme {
+    /// Returns the default spacing between the elements.
+    fn default_spacing(&self) -> usize {
+        S_DEFAULT_SPACING
+    }
+
     /// Returns the color of the vertical side bar.
     fn bar_color(&self, state: &ThemeState) -> Style {
         match state {
@@ -467,11 +474,13 @@ pub trait Theme {
     /// for the [`indicatif::ProgressBar`] spinner behavior which disrupts
     /// the line after the stop message reproduced while terminal resizing
     /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
-    fn format_spinner_stop(&self, msg: &str) -> String {
+    fn format_spinner_stop(&self, spacing: usize, msg: &str) -> String {
         format!(
-            "{symbol}  {msg}\n{bar}",
+            "{symbol}  {msg}{bar}",
             symbol = self.state_symbol(&ThemeState::Submit),
-            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
+            bar = format!("\n{}", self.bar_color(&ThemeState::Submit)
+                .apply_to(S_BAR).to_string())
+                .repeat(spacing),
         )
     }
 
