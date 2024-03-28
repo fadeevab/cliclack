@@ -26,6 +26,8 @@ fn main() -> std::io::Result<()> {
     let mut progressbar = multi.add_progressbar();
     let mut downloadbar = multi.add_downloadbar();
 
+    
+
     progressbar.start(1000, "Copying files...");
     downloadbar.start(1000, "Downloading files...");
 
