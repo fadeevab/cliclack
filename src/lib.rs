@@ -265,7 +265,6 @@ pub fn outro_note(prompt: impl Display, message: impl Display) -> io::Result<()>
             .unwrap()
             .format_note(true, &prompt.to_string(), &message.to_string()),
     )
-
 }
 
 /// Constructs a new [`Input`] prompt.
