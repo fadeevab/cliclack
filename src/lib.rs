@@ -256,6 +256,8 @@ pub fn outro_cancel(message: impl Display) -> io::Result<()> {
     )
 }
 
+/// Prints a footer of the prompt sequence with a note style.
+/// TODO: Support different styles, i.e. info, warning, error, etc.?
 pub fn outro_note(prompt: impl Display, message: impl Display) -> io::Result<()> {
     term_write(
         THEME
