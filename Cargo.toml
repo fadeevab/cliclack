@@ -22,3 +22,4 @@ zeroize = {version = "1.6.0", features = ["derive"]}
 
 [dev-dependencies]
 ctrlc = "3.4.2"
+rand = "0.8.5"
