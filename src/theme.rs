@@ -539,6 +539,40 @@ pub trait Theme {
         )
     }
 
+    fn multi_progressbar_template(&self, is_last: bool) -> String {
+        let mut newln = String::new();
+        let symbol = if is_last {
+            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_BAR_END));
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        } else {
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        };
+
+        format!(
+            "{bar}  {progress}  {msg}{newln}",
+            bar = self.bar_color(&ThemeState::Active).apply_to(symbol),
+            msg = "{msg:.dim}",
+            progress = "[{elapsed_precise:.dim}] [{bar:40.cyan/blue}] {pos}/{len:} ({eta})"
+        )
+    }
+
+    fn multi_downloadbar_template(&self, is_last: bool) -> String {
+        let mut newln = String::new();
+        let symbol = if is_last {
+            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_BAR_END));
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        } else {
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        };
+
+        format!(
+            "{bar}  {progress}  {msg}{newln}",
+            bar = self.bar_color(&ThemeState::Active).apply_to(symbol),
+            msg = "{msg:.dim}",
+            progress = "[{elapsed_precise:.dim}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})"
+        )
+    }
+
     fn format_downloadbar_multi_start(&self, is_last: bool) -> ProgressStyle {
         let mut newln = String::new();
         let symbol = if is_last {
@@ -551,8 +585,8 @@ pub trait Theme {
         let template = format!(
             "{bar}  {progress}  {msg}{newln}",
             bar = self.bar_color(&ThemeState::Active).apply_to(symbol),
-            msg = "{msg}",
-            progress = "[{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})"
+            msg = "{msg:.dim}",
+            progress = "[{elapsed_precise:.dim}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})"
         );
 
         ProgressStyle::with_template(&template)
@@ -564,7 +598,7 @@ pub trait Theme {
     fn format_progressbar_multi_start(&self, is_last: bool) -> ProgressStyle {
         let mut newln = String::new();
         let symbol = if is_last {
-            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_BAR_END));
+            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_CONNECT_LEFT));
             self.bar_color(&ThemeState::Active).apply_to(S_BAR)
         } else {
             self.bar_color(&ThemeState::Active).apply_to(S_BAR)
@@ -573,8 +607,8 @@ pub trait Theme {
         let template = format!(
             "{bar}  {progress}  {msg}{newln}",
             bar = self.bar_color(&ThemeState::Active).apply_to(symbol),
-            msg = "{msg}",
-            progress = "[{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})"
+            msg = "{msg:.dim}",
+            progress = "[{elapsed_precise:.dim}] [{bar:40.cyan/blue}] {pos}/{len:} ({eta})"
         );
 
         ProgressStyle::with_template(&template)
@@ -586,7 +620,7 @@ pub trait Theme {
     fn format_progressbar_multi_stop(&self, msg: &str, is_last: bool) -> String {
         let mut newln = String::new();
         let bar = if is_last {
-            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_BAR_END));
+            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_CONNECT_LEFT));
             self.bar_color(&ThemeState::Active).apply_to(S_BAR)
         } else {
             self.bar_color(&ThemeState::Active).apply_to(S_BAR)

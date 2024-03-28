@@ -32,6 +32,7 @@ impl MultiLineProgressState {
 /// Implemented via theming of [`indicatif::ProgressBar`](https://docs.rs/indicatif).
 pub struct ProgressBar {
     progress_bar: RwLock<indicatif::ProgressBar>,
+    kind: RwLock<ProgressBarKind>,
     multiline: RwLock<Option<MultiLineProgressState>>
 }
 
@@ -39,7 +40,8 @@ impl Default for ProgressBar {
     fn default() -> Self {
         Self {
             progress_bar: RwLock::new(indicatif::ProgressBar::new(100)),
-            multiline: RwLock::new(None)
+            multiline: RwLock::new(None),
+            kind: RwLock::new(ProgressBarKind::Progress)
         }
         .as_progressbar()
     }
@@ -48,6 +50,11 @@ impl Default for ProgressBar {
 impl ProgressBar {
     fn get_bar(&self) -> std::sync::RwLockReadGuard<indicatif::ProgressBar> {
         self.progress_bar.read().unwrap()
+    }
+
+    fn set_kind(&self, kind: ProgressBarKind) {
+        let mut k = self.kind.write().unwrap();
+        *k = kind;
     }
 
     /// Starts the progressbar.
@@ -155,6 +162,7 @@ impl ProgressBar {
     fn format_as_progressbar(&self) {
         let theme = THEME.lock().unwrap();
         let pb = self.get_bar();
+        self.set_kind(ProgressBarKind::Progress);
 
         pb.enable_steady_tick(Duration::from_millis(100));
         pb.set_style(theme.format_progressbar_start());
@@ -163,6 +171,7 @@ impl ProgressBar {
     fn format_as_progressbar_multi(&self, is_last: bool) {
         let theme = THEME.lock().unwrap();
         let pb = self.get_bar();
+        self.set_kind(ProgressBarKind::Progress);
 
         pb.enable_steady_tick(Duration::from_millis(100));
         pb.set_style(theme.format_progressbar_multi_start(is_last));
@@ -178,6 +187,7 @@ impl ProgressBar {
     fn format_as_downloadbar(&self) {
         let theme = THEME.lock().unwrap();
         let pb = self.get_bar();
+        self.set_kind(ProgressBarKind::Download);
 
         pb.enable_steady_tick(Duration::from_millis(100));
         pb.set_style(theme.format_downloadbar_start());
@@ -186,6 +196,7 @@ impl ProgressBar {
     fn format_as_downloadbar_multi(&self, is_last: bool) {
         let theme = THEME.lock().unwrap();
         let pb = self.get_bar();
+        self.set_kind(ProgressBarKind::Download);
 
         pb.enable_steady_tick(Duration::from_millis(100));
         pb.set_style(theme.format_downloadbar_multi_start(is_last));
@@ -284,7 +295,8 @@ impl MultiProgressBar {
 
         let pb = Arc::new(ProgressBar {
             progress_bar: RwLock::new(indicatif_pb),
-            multiline: RwLock::new(Some(MultiLineProgressState::new(true)))
+            multiline: RwLock::new(Some(MultiLineProgressState::new(true))),
+            kind: ProgressBarKind::Progress.into()
         });
 
         for bar in self.progress_bars.write().unwrap().iter_mut() {
@@ -304,7 +316,8 @@ impl MultiProgressBar {
 
         let pb = Arc::new(ProgressBar {
             progress_bar: RwLock::new(indicatif_pb),
-            multiline: RwLock::new(Some(MultiLineProgressState::new(true)))
+            multiline: RwLock::new(Some(MultiLineProgressState::new(true))),
+            kind: ProgressBarKind::Download.into()
         });
 
         for bar in self.progress_bars.read().unwrap().iter() {
@@ -321,4 +334,9 @@ impl MultiProgressBar {
         let mut bars = self.progress_bars.write().unwrap();
         bars.retain(|bar| !Arc::ptr_eq(&pb, bar));
     }
+}
+
+pub enum ProgressBarKind {
+    Progress,
+    Download
 }

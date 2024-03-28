@@ -1,6 +1,6 @@
 use std::{sync::mpsc::channel, time::Duration};
 
-use cliclack::{clear_screen, intro, log, outro, progressbar, progressbar_multi};
+use cliclack::{clear_screen, intro, log, outro, progressbar_multi};
 use console::style;
 use rand::{thread_rng, Rng};
 
@@ -18,8 +18,8 @@ fn main() -> std::io::Result<()> {
 
     // Clear the screen and print the header.
     clear_screen()?;
-    intro(style(" progressbar ").on_cyan().black())?;
-    log::remark("Press Esc, Enter, or Ctrl-C")?;
+    intro(style(" multi-progressbar ").on_cyan().black())?;
+    log::remark("Press Ctrl-C")?;
 
     let multi = progressbar_multi("Doing stuff...");
 
