@@ -496,15 +496,6 @@ pub trait Theme {
             .progress_chars("#>-")
     }
 
-    /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
-    fn format_downloadbar_stop(&self, msg: &str) -> String {
-        format!(
-            "{symbol}  {msg}\n{bar}",
-            symbol = self.state_symbol(&ThemeState::Submit),
-            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
-        )
-    }
-
     /// Returns the progressbar with a final message in a specified state.
     ///
     /// It's not symmetric to [`Theme::format_downloadbar_start`] because of a workaround
@@ -539,6 +530,72 @@ pub trait Theme {
             symbol = self.state_symbol(state),
             bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
         ))
+    }
+
+    fn format_multiprogress_start(&self, heading: &str) -> String {
+        format!("{bar}  {msg}\n",
+            bar = self.bar_color(&ThemeState::Active).apply_to(S_STEP_ACTIVE),
+            msg = heading // TODO: Change to multiline when that PR gets merged
+        )
+    }
+
+    fn format_downloadbar_multi_start(&self, is_last: bool) -> ProgressStyle {
+        let mut newln = String::new();
+        let symbol = if is_last {
+            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_BAR_END));
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        } else {
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        };
+
+        let template = format!(
+            "{bar}  {progress}  {msg}{newln}",
+            bar = self.bar_color(&ThemeState::Active).apply_to(symbol),
+            msg = "{msg}",
+            progress = "[{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})"
+        );
+
+        ProgressStyle::with_template(&template)
+            .unwrap()
+            .tick_chars(&self.spinner_chars())
+            .progress_chars("#>-")
+    }
+
+    fn format_progressbar_multi_start(&self, is_last: bool) -> ProgressStyle {
+        let mut newln = String::new();
+        let symbol = if is_last {
+            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_BAR_END));
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        } else {
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        };
+
+        let template = format!(
+            "{bar}  {progress}  {msg}{newln}",
+            bar = self.bar_color(&ThemeState::Active).apply_to(symbol),
+            msg = "{msg}",
+            progress = "[{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})"
+        );
+
+        ProgressStyle::with_template(&template)
+            .unwrap()
+            .tick_chars(&self.spinner_chars())
+            .progress_chars("#>-")
+    }
+
+    fn format_progressbar_multi_stop(&self, msg: &str, is_last: bool) -> String {
+        let mut newln = String::new();
+        let bar = if is_last {
+            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_BAR_END));
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        } else {
+            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+        };
+
+        format!(
+            "{bar}  {msg}{newln}",
+            bar = bar
+        )
     }
 
     /// Returns the spinner start style for the [`indicatif::ProgressBar`].
