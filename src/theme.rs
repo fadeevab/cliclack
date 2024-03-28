@@ -495,7 +495,7 @@ pub trait Theme {
     }
 
     /// Returns the multiline note message rendering.
-    fn format_note(&self, prompt: &str, message: &str) -> String {
+    fn format_note(&self, is_outro: bool, prompt: &str, message: &str) -> String {
         let message = format!("\n{message}\n");
         let width = 2 + message
             .split('\n')
@@ -525,13 +525,30 @@ pub trait Theme {
             })
             .collect::<String>();
 
-        let footer = bar_color
-            .apply_to(format!(
-                "{S_CONNECT_LEFT}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n{bar}\n",
-                horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
-                bar = bar_color.apply_to(S_BAR),
-            ))
-            .to_string();
+        let footer = if is_outro {
+            bar_color
+                .apply_to(format!(
+                    "{S_BAR_END}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n",
+                    horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
+                ))
+                .to_string()
+        } else {
+            bar_color
+                .apply_to(format!(
+                    "{S_CONNECT_LEFT}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n{bar}\n",
+                    horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
+                    bar = bar_color.apply_to(S_BAR),
+                ))
+                .to_string()
+        };
+
+        // let footer = bar_color
+        //     .apply_to(format!(
+        //         "{S_CONNECT_LEFT}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n{bar}\n",
+        //         horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
+        //         bar = bar_color.apply_to(S_BAR),
+        //     ))
+        //     .to_string();
 
         header + &body + &footer
     }
