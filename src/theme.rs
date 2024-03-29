@@ -614,9 +614,7 @@ pub fn reset_theme() {
 
 #[cfg(test)]
 mod tests {
-    use crate::Theme;
-
-    use super::ClackTheme;
+    use super::*;
 
     #[test]
     fn format_note() {
