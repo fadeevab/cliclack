@@ -5,7 +5,10 @@ use indicatif::ProgressStyle;
 use once_cell::sync::Lazy;
 use textwrap::core::display_width;
 
-use crate::{progressbar::{ProgressBar, ProgressBarKind}, prompt::{cursor::StringCursor, interaction::State}};
+use crate::{
+    progressbar::{ProgressBar, ProgressBarKind},
+    prompt::{cursor::StringCursor, interaction::State},
+};
 
 const S_STEP_ACTIVE: Emoji = Emoji("◆", "*");
 const S_STEP_CANCEL: Emoji = Emoji("■", "x");
@@ -33,6 +36,9 @@ const S_WARN: Emoji = Emoji("▲", "!");
 const S_ERROR: Emoji = Emoji("■", "x");
 
 const S_SPINNER: Emoji = Emoji("◒◐◓◑", "•oO0");
+
+const S_PROGRESS_FILLED: Emoji = Emoji("■", "#");
+const S_PROGRESS_BLANK: Emoji = Emoji("□", "-");
 
 /// The state of the prompt rendering.
 pub enum ThemeState {
@@ -97,6 +103,10 @@ impl<T> From<&State<T>> for ThemeState {
 /// Many theme methods render the visual elements differently depending on the
 /// current rendering state. The state is passed to the theme methods as an argument.
 pub trait Theme {
+    fn progress_chars(&self) -> String {
+        S_PROGRESS_FILLED.to_string() + &S_PROGRESS_BLANK.to_string()
+    }
+
     /// Returns the color of the vertical side bar.
     fn bar_color(&self, state: &ThemeState) -> Style {
         match state {
@@ -469,8 +479,9 @@ pub trait Theme {
         ProgressStyle::with_template(&template)
             .unwrap()
             .tick_chars(&self.spinner_chars())
-            .progress_chars("#>-")
+            .progress_chars("█░-")
     }
+    // u'░█',
 
     /// Returns the progressbar start style for the [`indicatif::ProgressBar`].
     fn format_progressbar_stop(&self, msg: &str) -> String {
@@ -493,7 +504,7 @@ pub trait Theme {
         ProgressStyle::with_template(&template)
             .unwrap()
             .tick_chars(&self.spinner_chars())
-            .progress_chars("#>-")
+            .progress_chars("█░-")
     }
 
     /// Returns the progressbar with a final message in a specified state.
@@ -534,54 +545,69 @@ pub trait Theme {
 
     /// TODO: Doc me
     fn format_multiprogress_start(&self, heading: &str) -> String {
-        format!("{bar}  {msg}\n",
+        format!(
+            "{bar}  {msg}\n",
             bar = self.bar_color(&ThemeState::Active).apply_to(S_STEP_ACTIVE),
             msg = heading // TODO: Change to multiline when that PR gets merged
         )
     }
 
     /// TODO: Doc me
-    fn multiprogress_template(&self, pb: &ProgressBar) -> ProgressStyle {
+    fn multiprogress_template(&self, pb: &ProgressBar, state: ThemeState) -> ProgressStyle {
         let mut newln = String::new();
         let symbol = if pb.is_last() {
-            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_BAR_END));
-            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+            newln = format!("\n{}\n", self.bar_color(&state).apply_to(S_BAR_END));
+            self.bar_color(&state).apply_to(S_BAR)
         } else {
-            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+            self.bar_color(&state).apply_to(S_BAR)
         };
 
         let progress_template = match pb.kind() {
-            ProgressBarKind::Download => "[{elapsed_precise:.dim}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})",
-            ProgressBarKind::Progress => "[{elapsed_precise:.dim}] [{bar:40.cyan/blue}] {pos}/{len:} ({eta})",
+            ProgressBarKind::Download => {
+                "[{elapsed_precise:.dim}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})"
+            }
+            ProgressBarKind::Progress => {
+                "[{elapsed_precise:.dim}] [{bar:40.cyan/blue}] {pos}/{len:} ({eta})"
+            }
             ProgressBarKind::Spinner => "{spinner:.magenta}  {msg}",
         };
 
         let template = format!(
             "{bar}  {progress_template}  {msg}{newln}",
-            bar = self.bar_color(&ThemeState::Active).apply_to(symbol),
+            bar = self.bar_color(&state).apply_to(symbol),
             msg = "{msg:.dim}"
         );
 
         ProgressStyle::with_template(&template)
             .unwrap()
             .tick_chars(&self.spinner_chars())
-            .progress_chars("#>-")
+            .progress_chars(&self.progress_chars())
+    }
+
+    fn format_multiprogres_stop(&self, header: &str, titles: &[&str]) -> String {
+        let bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR);
+        let symbol = self.bar_color(&ThemeState::Submit).apply_to(S_STEP_SUBMIT);
+
+        let titles_str = titles
+            .iter()
+            .map(|title| format!("{bar}  {title}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        format!("{symbol}  {header}\n{titles}\n{bar}\n", titles = titles_str)
     }
 
     /// TODO: Doc me
-    fn format_progressbar_multi_stop(&self, msg: &str, is_last: bool) -> String {
+    fn format_progressbar_multi_stop(&self, msg: &str, is_last: bool, state: ThemeState) -> String {
         let mut newln = String::new();
         let bar = if is_last {
-            newln = format!("\n{}\n", self.bar_color(&ThemeState::Active).apply_to(S_CONNECT_LEFT));
-            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+            newln = format!("\n{}\n", self.bar_color(&state).apply_to(S_BAR));
+            self.bar_color(&state).apply_to(S_BAR)
         } else {
-            self.bar_color(&ThemeState::Active).apply_to(S_BAR)
+            self.bar_color(&state).apply_to(S_BAR)
         };
 
-        format!(
-            "{bar}  {msg}{newln}",
-            bar = bar
-        )
+        format!("{bar}  {msg}{newln}", bar = bar)
     }
 
     /// Returns the spinner start style for the [`indicatif::ProgressBar`].

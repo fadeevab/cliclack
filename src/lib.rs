@@ -307,9 +307,9 @@ pub fn progressbar() -> ProgressBar {
     ProgressBar::default()
 }
 
-/// Constructs a new [`MultiProgressBar`] prompt. This a container for multiple 
+/// Constructs a new [`MultiProgressBar`] prompt. This a container for multiple
 /// progress bars.
-/// 
+///
 /// See [`MultiProgressBar`] for chainable methods.
 pub fn progressbar_multi(heading: &str) -> MultiProgressBar {
     MultiProgressBar::new(heading)

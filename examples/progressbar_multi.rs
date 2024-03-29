@@ -26,14 +26,11 @@ fn main() -> std::io::Result<()> {
     let mut progressbar = multi.add_progressbar();
     let mut downloadbar = multi.add_downloadbar();
 
-    
-
     progressbar.start(1000, "Copying files...");
     downloadbar.start(1000, "Downloading files...");
 
     // Simulate doing some stuff....
-    while !progressbar.is_finished() || !downloadbar.is_finished()
-    {
+    while !progressbar.is_finished() || !downloadbar.is_finished() {
         // Use a random timeout to simulate some work.
         let timeout = Duration::from_millis(thread_rng().gen_range(10..75));
 
@@ -52,19 +49,15 @@ fn main() -> std::io::Result<()> {
         // using a fixed delta of 1, but otherwise this would be the _change in
         // progress_ from the last iteration to this one.
         if progressbar.get_position() >= progressbar.get_length() && !progressbar.is_finished() {
-            progressbar = progressbar.stop(format!("{} {}",
-                style("✔").green(),
-                "Copying files"
-            ))?;
+            progressbar =
+                progressbar.stop(format!("{} {}", style("✔").green(), "Copying files"))?;
         } else {
             progressbar.increment(thread_rng().gen_range(1..20));
         }
 
         if downloadbar.get_position() >= downloadbar.get_length() && !downloadbar.is_finished() {
-            downloadbar = downloadbar.stop(format!("{} {}",
-                style("✔").green(),
-                "Downloading files"
-            ))?;
+            downloadbar =
+                downloadbar.stop(format!("{} {}", style("✔").green(), "Downloading files"))?;
         } else {
             downloadbar.increment(thread_rng().gen_range(1..13));
         }

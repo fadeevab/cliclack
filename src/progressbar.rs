@@ -1,4 +1,9 @@
-use std::{fmt::Display, ops::Mul, sync::{Arc, RwLock}, time::Duration};
+use std::{
+    fmt::Display,
+    ops::Mul,
+    sync::{Arc, RwLock},
+    time::Duration,
+};
 
 use console::Term;
 
@@ -7,12 +12,14 @@ use crate::{term_write, theme::THEME, Theme, ThemeState};
 #[derive(Debug, Clone)]
 pub struct MultiLineProgressState {
     pub is_last: bool,
+    pub is_finished: bool,
 }
 
 impl MultiLineProgressState {
     pub fn new(is_last: bool) -> Self {
         Self {
-            is_last
+            is_last,
+            is_finished: false,
         }
     }
 
@@ -33,7 +40,8 @@ impl MultiLineProgressState {
 pub struct ProgressBar {
     pub(crate) progress_bar: RwLock<indicatif::ProgressBar>,
     kind: RwLock<ProgressBarKind>,
-    multiline: RwLock<Option<MultiLineProgressState>>
+    multiline: RwLock<Option<MultiLineProgressState>>,
+    title: RwLock<Option<String>>,
 }
 
 impl Default for ProgressBar {
@@ -41,7 +49,8 @@ impl Default for ProgressBar {
         Self {
             progress_bar: RwLock::new(indicatif::ProgressBar::new(100)),
             multiline: RwLock::new(None),
-            kind: RwLock::new(ProgressBarKind::Progress)
+            kind: RwLock::new(ProgressBarKind::Progress),
+            title: RwLock::new(None),
         }
         .as_progressbar()
     }
@@ -69,11 +78,17 @@ impl ProgressBar {
         *k = kind;
     }
 
+    fn set_title(&self, title: impl Display) {
+        let mut t = self.title.write().unwrap();
+        *t = Some(title.to_string());
+    }
+
     /// Starts the progressbar.
-    pub fn start(&self, length: u64, message: impl Display) {
+    pub fn start(&self, length: u64, title: impl Display) {
+        self.set_title(title.to_string());
         let pb = self.get_bar();
         pb.set_length(length);
-        pb.set_message(message.to_string());
+        pb.set_message(title.to_string());
     }
 
     pub fn increment(&self, delta: u64) {
@@ -81,21 +96,35 @@ impl ProgressBar {
     }
 
     /// Stops the progressbar.
-    pub fn stop(&self, message: impl Display)-> std::io::Result<()> {
+    pub fn stop(&self, title: impl Display) -> std::io::Result<()> {
+        self.set_title(title.to_string());
         let theme = THEME.lock().unwrap();
         let pb = self.get_bar();
 
-        if self.multiline.read().unwrap().is_none() {
-            Term::stderr().move_cursor_up(1)?;
-            pb.println(theme.format_progressbar_multi_stop(&message.to_string(), self.multiline.read().unwrap().as_ref().unwrap().is_last));
+        let multiline = self.multiline.read().unwrap();
+
+        if let Some(multi) = multiline.as_ref() {
             pb.finish_and_clear();
+            let state = if multi.is_finished {
+                ThemeState::Submit
+            } else {
+                ThemeState::Active
+            };
+            pb.println(theme.format_progressbar_multi_stop(
+                &title.to_string(),
+                multi.is_last(),
+                state,
+            ));
         } else {
+            Term::stderr().move_cursor_up(1)?;
+            pb.println(theme.format_progressbar_multi_stop(
+                &title.to_string(),
+                false,
+                ThemeState::Submit,
+            ));
             pb.finish_and_clear();
-            //TODO: CHANGE TO MULTI, this prints the symbol of the state
-            //pb.println(theme.format_progressbar_with_state(&message.to_string(), &ThemeState::Submit)?);
-            pb.println(theme.format_progressbar_multi_stop(&message.to_string(), self.multiline.read().unwrap().as_ref().unwrap().is_last));
         }
-        
+
         Ok(())
     }
 
@@ -113,7 +142,7 @@ impl ProgressBar {
             pb.finish_and_clear();
             pb.println(theme.format_progressbar_with_state(&message.to_string(), state)?);
         }
-        
+
         Ok(())
     }
 
@@ -130,7 +159,6 @@ impl ProgressBar {
             pb.finish_and_clear();
         }
 
-        
         Ok(())
     }
 
@@ -186,7 +214,7 @@ impl ProgressBar {
         self.set_kind(ProgressBarKind::Progress);
 
         pb.enable_steady_tick(Duration::from_millis(100));
-        pb.set_style(theme.multiprogress_template(self));
+        pb.set_style(theme.multiprogress_template(self, ThemeState::Active));
     }
 
     /// Formats the progressbar as a download bar, using bytes as the unit (i.e.
@@ -210,7 +238,7 @@ impl ProgressBar {
 pub struct ProgressBarWrapper<'a> {
     progress_bar: Arc<ProgressBar>,
     multi_progress_bar: &'a MultiProgressBar,
-    is_last: bool
+    //is_last: bool
 }
 
 impl<'a> ProgressBarWrapper<'a> {
@@ -218,17 +246,17 @@ impl<'a> ProgressBarWrapper<'a> {
         Self {
             progress_bar,
             multi_progress_bar,
-            is_last: true
+            //is_last: true
         }
     }
 }
 
 impl ProgressBarWrapper<'_> {
     pub fn start(&self, length: u64, message: impl Display) {
-        self.multi_progress_bar.progress_bars
-            .write()
-            .unwrap()
-            .push(self.progress_bar.clone());
+        // self.multi_progress_bar.progress_bars
+        //     .write()
+        //     .unwrap()
+        //     .push(self.progress_bar.clone());
         self.progress_bar.start(length, message);
     }
 
@@ -238,7 +266,8 @@ impl ProgressBarWrapper<'_> {
 
     pub fn stop(self, message: impl Display) -> std::io::Result<Self> {
         self.progress_bar.stop(message)?;
-        self.multi_progress_bar.remove(self.progress_bar.clone());
+        self.multi_progress_bar
+            .check_finish(self.progress_bar.clone());
         Ok(self)
     }
 
@@ -272,17 +301,25 @@ impl ProgressBarWrapper<'_> {
 }
 
 pub struct MultiProgressBar {
-    multi_progress_bar: indicatif::MultiProgress,
+    inner: indicatif::MultiProgress,
     progress_bars: RwLock<Vec<Arc<ProgressBar>>>,
-    //heading: String
+    heading: String,
 }
 
 impl MultiProgressBar {
+    pub fn is_finished(&self) -> bool {
+        self.progress_bars
+            .read()
+            .unwrap()
+            .iter()
+            .all(|pb| pb.is_finished())
+    }
+
     pub fn new(heading: &str) -> Self {
         let this = Self {
-            multi_progress_bar: indicatif::MultiProgress::new(),
+            inner: indicatif::MultiProgress::new(),
             progress_bars: RwLock::new(Vec::new()),
-            //heading: heading.to_string()
+            heading: heading.to_string(),
         };
 
         let theme = THEME.lock().unwrap();
@@ -295,21 +332,25 @@ impl MultiProgressBar {
     pub fn add_progressbar(&self) -> ProgressBarWrapper {
         let theme = THEME.lock().unwrap();
 
-        let indicatif_pb = self.multi_progress_bar.add(
-            indicatif::ProgressBar::new(100)
-        );
+        let indicatif_pb = self.inner.add(indicatif::ProgressBar::new(100));
 
         let pb = Arc::new(ProgressBar {
             progress_bar: RwLock::new(indicatif_pb),
             multiline: RwLock::new(Some(MultiLineProgressState::new(true))),
-            kind: ProgressBarKind::Progress.into()
+            kind: ProgressBarKind::Progress.into(),
+            title: RwLock::new(None),
         });
 
         for bar in self.progress_bars.write().unwrap().iter_mut() {
-            bar.multiline.write().unwrap().as_mut().unwrap().set_is_last(false);
+            bar.multiline
+                .write()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_is_last(false);
             bar.format_as_progressbar_multi(&*theme);
         }
-        pb.set_style(theme.multiprogress_template(&pb));
+        pb.set_style(theme.multiprogress_template(&pb, ThemeState::Active));
         self.progress_bars.write().unwrap().push(pb.clone());
 
         ProgressBarWrapper::new(pb.clone(), self)
@@ -318,35 +359,38 @@ impl MultiProgressBar {
     pub fn add_downloadbar(&self) -> ProgressBarWrapper {
         let theme = THEME.lock().unwrap();
 
-        let indicatif_pb = self.multi_progress_bar.add(
-            indicatif::ProgressBar::new(100)
-        );
+        let indicatif_pb = self.inner.add(indicatif::ProgressBar::new(100));
 
         let pb = Arc::new(ProgressBar {
             progress_bar: RwLock::new(indicatif_pb),
             multiline: RwLock::new(Some(MultiLineProgressState::new(true))),
-            kind: ProgressBarKind::Download.into()
+            kind: ProgressBarKind::Download.into(),
+            title: RwLock::new(None),
         });
 
         for bar in self.progress_bars.read().unwrap().iter() {
-            bar.multiline.write().unwrap().as_mut().unwrap().set_is_last(false);
+            bar.multiline
+                .write()
+                .unwrap()
+                .as_mut()
+                .unwrap()
+                .set_is_last(false);
             bar.format_as_progressbar_multi(&*theme);
         }
-        pb.set_style(theme.multiprogress_template(&pb));
+        pb.set_style(theme.multiprogress_template(&pb, ThemeState::Active));
         self.progress_bars.write().unwrap().push(pb.clone());
 
         ProgressBarWrapper::new(pb.clone(), self)
     }
 
     pub fn add_spinner(&self) -> ProgressBarWrapper {
-        let indicatif_pb = self.multi_progress_bar.add(
-            indicatif::ProgressBar::new_spinner()
-        );
+        let indicatif_pb = self.inner.add(indicatif::ProgressBar::new_spinner());
 
         let pb = Arc::new(ProgressBar {
             progress_bar: RwLock::new(indicatif_pb),
             multiline: RwLock::new(None),
-            kind: ProgressBarKind::Progress.into()
+            kind: ProgressBarKind::Progress.into(),
+            title: RwLock::new(None),
         });
 
         self.progress_bars.write().unwrap().push(pb.clone());
@@ -354,15 +398,35 @@ impl MultiProgressBar {
         ProgressBarWrapper::new(pb.clone(), self)
     }
 
-    fn remove(&self, pb: Arc<ProgressBar>) {
-        let mut bars = self.progress_bars.write().unwrap();
-        bars.retain(|bar| !Arc::ptr_eq(&pb, bar));
+    fn check_finish(&self, pb: Arc<ProgressBar>) {
+        if self.is_finished() {
+            let bars = self.progress_bars.write().unwrap();
+
+            for _ in 0..=bars.len() {
+                Term::stderr().move_cursor_up(1).unwrap();
+                Term::stderr().clear_line().unwrap();
+            }
+
+            let theme = THEME.lock().unwrap();
+            let titles = bars
+                .iter()
+                .map(|bar| bar.title.read().unwrap().as_ref().unwrap().to_string())
+                .collect::<Vec<String>>();
+
+            let title_refs = titles.iter().map(AsRef::as_ref).collect::<Vec<&str>>();
+            term_write(theme.format_multiprogres_stop(&self.heading, &title_refs)).unwrap();
+            // for bar in bars.iter() {
+            //     let theme = THEME.lock().unwrap();
+            //     let title = bar.title.read().unwrap().as_ref().unwrap().to_string();
+            //     term_write(theme.format_multiprogress_title(&title, ThemeState::Submit)).unwrap();
+            // }
+        }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum ProgressBarKind {
     Progress,
     Download,
-    Spinner
+    Spinner,
 }
