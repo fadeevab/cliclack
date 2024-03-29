@@ -523,6 +523,7 @@ pub trait Theme {
         );
 
         // Render the body, with multi-line support.
+        #[allow(clippy::format_collect)] 
         let body = message
             .lines()
             .map(|line| {
