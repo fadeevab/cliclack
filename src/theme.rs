@@ -590,7 +590,7 @@ pub trait Theme {
 }
 
 /// Default @clack/prompts theme.
-pub struct ClackTheme;
+struct ClackTheme;
 
 /// Using default @clack/prompts theme implementation from the [`Theme`] trait.
 impl Theme for ClackTheme {}
