@@ -620,6 +620,7 @@ mod tests {
 
     #[test]
     fn format_note() {
+        // A simple backward compatibility check.
         ClackTheme.format_note("my prompt", "my message");
     }
 }
