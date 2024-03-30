@@ -1,6 +1,6 @@
 use std::io;
 
-use cliclack::{clear_screen, intro, log, outro, outro_cancel, spinner};
+use cliclack::{clear_screen, intro, outro, outro_cancel, spinner};
 use console::{style, Key, Term};
 
 fn main() -> std::io::Result<()> {
