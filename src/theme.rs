@@ -474,7 +474,7 @@ pub trait Theme {
         "{spinner:.magenta}  {msg}".into()
     }
 
-    /// Returns a multiline text rendering to be used with prompts.
+    /// Returns a spinner message multiline rendering.
     ///
     /// This function adds the left-bar to all lines but the first, encompasses
     /// the remainder of the message (including new-lines) with the side-bar,
