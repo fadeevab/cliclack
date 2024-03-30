@@ -7,7 +7,30 @@ fn main() -> std::io::Result<()> {
     ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
 
     clear_screen()?;
-    intro(style(" spinner ").on_cyan().black())?;
+    intro(style(" multiline support ").on_cyan().black())?;
+
+    let path: String = cliclack::input("Where should we create your project?\n👇")
+        .placeholder("./sparkling-solid")
+        .interact()?;
+
+    let _password = cliclack::password("Provide a password\n🔒")
+        .mask('▪')
+        .interact()?;
+
+    let _kind = cliclack::select(format!("Pick a project type within '{path}'\n💪"))
+        .initial_value("ts")
+        .item("ts", "TypeScript", "")
+        .item("js", "JavaScript", "")
+        .item("coffee", "CoffeeScript", "oh no")
+        .interact()?;
+
+    let _tools = cliclack::multiselect("Select additional tools\n🛠️")
+        .initial_values(vec!["prettier", "eslint"])
+        .item("prettier", "Prettier", "recommended")
+        .item("eslint", "ESLint", "recommended")
+        .item("stylelint", "Stylelint", "")
+        .item("gh-action", "GitHub Action", "")
+        .interact()?;
 
     let mut spinner = spinner();
     let message = format!(

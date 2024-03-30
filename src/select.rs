@@ -29,8 +29,7 @@ where
     /// Creates a new selection prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
-            prompt: THEME.lock().unwrap()
-                .format_multiline_text(&prompt.to_string()),
+            prompt: prompt.to_string(),
             items: Vec::new(),
             cursor: 0,
             initial_value: None,

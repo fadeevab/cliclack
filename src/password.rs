@@ -29,7 +29,7 @@ impl Password {
     pub fn new(prompt: impl Display) -> Self {
         let theme = THEME.lock().unwrap();
         Self {
-            prompt: theme.format_multiline_text(&prompt.to_string()),
+            prompt: prompt.to_string(),
             mask: theme.password_mask(),
             ..Default::default()
         }

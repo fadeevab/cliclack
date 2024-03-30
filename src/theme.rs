@@ -264,10 +264,23 @@ pub trait Theme {
 
     /// Formats the header of the prompt (like `◇  Input data`).
     fn format_header(&self, state: &ThemeState, prompt: &str) -> String {
-        format!(
-            "{state_symbol}  {prompt}\n",
-            state_symbol = self.state_symbol(state)
-        )
+        let mut lines = vec![];
+
+        for (i, line) in prompt.lines().enumerate() {
+            if i == 0 {
+                lines.push(format!(
+                    "{state_symbol}  {line}\n",
+                    state_symbol = self.state_symbol(state)
+                ));
+            } else {
+                lines.push(format!(
+                    "{bar}  {line}\n",
+                    bar = self.bar_color(state).apply_to(S_BAR)
+                ));
+            }
+        }
+
+        lines.join("")
     }
 
     /// Formats the footer of the prompt (like `└  Operation cancelled.`).
@@ -461,6 +474,30 @@ pub trait Theme {
         "{spinner:.magenta}  {msg}".into()
     }
 
+    /// Returns a multiline text rendering to be used with prompts.
+    ///
+    /// This function adds the left-bar to all lines but the first, encompasses
+    /// the remainder of the message (including new-lines) with the side-bar,
+    /// and finally ends with the section end character.
+    fn format_spinner_message(&self, text: &str) -> String {
+        let bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR);
+        let end = self.bar_color(&ThemeState::Submit).apply_to(S_BAR_END);
+
+        let lines: Vec<_> = text.lines().collect();
+
+        let parts: Vec<String> = lines
+            .iter()
+            .enumerate()
+            .map(|(i, line)| match i {
+                0 => line.to_string(),
+                _ if i < lines.len() - 1 => format!("{bar}  {line}"),
+                _ => format!("{end}  {line}"),
+            })
+            .collect();
+
+        parts.join("\n")
+    }
+
     /// Returns the spinner stop style as a final message.
     ///
     /// It's not symmetric to [`Theme::format_spinner_start`] because of a workaround
@@ -549,26 +586,6 @@ pub trait Theme {
         }
 
         parts.push("".into());
-        parts.join("\n")
-    }
-
-    /// Returns a multiline text rendering to be used with prompts. This function
-    /// adds the left-bar to all lines but the first, encompases the remainder of the
-    /// message (including new-lines) with the side-bar, and finally ends with
-    /// the section end character.
-    fn format_multiline_text(&self, text: &str) -> String {
-        let lines: Vec<_> = text.lines().collect();
-        let active_bar = self.bar_color(&ThemeState::Active).apply_to(S_BAR);
-        let active_end = self.bar_color(&ThemeState::Active).apply_to(S_BAR_END);
-
-        let parts: Vec<String> = lines.iter().enumerate().map(|(i, line)| {
-            match i {
-                0 => line.to_string(),
-                _ if i < lines.len() - 1 => format!("{bar}  {line}", bar = active_bar, line = line),
-                _ => format!("{bar}  {line}\n{end}", bar = active_bar, end = active_end, line = line),
-            }
-        }).collect();
-
         parts.join("\n")
     }
 }

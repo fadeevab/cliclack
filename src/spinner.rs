@@ -31,7 +31,7 @@ impl Spinner {
         );
 
         self.spinner
-            .set_message(theme.format_multiline_text(&message.to_string()));
+            .set_message(theme.format_spinner_message(&message.to_string()));
     }
 
     /// Stops the spinner.

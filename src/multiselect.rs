@@ -31,8 +31,7 @@ where
     /// Creates a new [`MultiSelect`] prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
-            prompt: THEME.lock().unwrap()
-                .format_multiline_text(&prompt.to_string()),
+            prompt: prompt.to_string(),
             items: vec![],
             cursor: 0,
             initial_values: None,
