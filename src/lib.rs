@@ -256,6 +256,16 @@ pub fn outro_cancel(message: impl Display) -> io::Result<()> {
     )
 }
 
+/// Prints a footer of the prompt sequence with a note style.
+pub fn outro_note(prompt: impl Display, message: impl Display) -> io::Result<()> {
+    term_write(
+        THEME
+            .lock()
+            .unwrap()
+            .format_outro_note(&prompt.to_string(), &message.to_string()),
+    )
+}
+
 /// Constructs a new [`Input`] prompt.
 ///
 /// See [`Input`] for chainable methods.

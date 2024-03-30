@@ -494,25 +494,36 @@ pub trait Theme {
         S_SPINNER.to_string()
     }
 
-    /// Returns the multiline note message rendering.
-    fn format_note(&self, prompt: &str, message: &str) -> String {
+    /// Returns the multiline note message rendering, taking into account whether
+    /// or not it's an inline vs. outro note.
+    fn format_note_generic(&self, is_outro: bool, prompt: &str, message: &str) -> String {
         let message = format!("\n{message}\n");
         let width = 2 + message
             .split('\n')
             .fold(0usize, |acc, line| display_width(line).max(acc))
             .max(display_width(prompt));
 
-        let symbol = self.state_symbol(&ThemeState::Submit);
         let bar_color = self.bar_color(&ThemeState::Submit);
         let text_color = self.input_style(&ThemeState::Submit);
 
+        // If we're rendering an outro note, we use the connecting left bar
+        // instead of the step symbol.
+        let symbol = if is_outro {
+            bar_color.apply_to(S_CONNECT_LEFT).to_string()
+        } else {
+            self.state_symbol(&ThemeState::Submit)
+        };
+
+        // Render the header.
         let header = format!(
             "{symbol}  {prompt} {horizontal_bar}{corner}\n",
             horizontal_bar =
                 bar_color.apply_to(S_BAR_H.to_string().repeat(width - display_width(prompt))),
             corner = bar_color.apply_to(S_CORNER_TOP_RIGHT),
         );
-        #[allow(clippy::format_collect)]
+
+        // Render the body, with multi-line support.
+        #[allow(clippy::format_collect)] 
         let body = message
             .lines()
             .map(|line| {
@@ -525,15 +536,36 @@ pub trait Theme {
             })
             .collect::<String>();
 
-        let footer = bar_color
-            .apply_to(format!(
-                "{S_CONNECT_LEFT}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n{bar}\n",
-                horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
-                bar = bar_color.apply_to(S_BAR),
-            ))
-            .to_string();
+        // Render the footer. Depending on whether or not this is an outro note,
+        // we'll either use the bar end or the connecting left bar.
+        let footer = if is_outro {
+            bar_color
+                .apply_to(format!(
+                    "{S_BAR_END}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n",
+                    horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
+                ))
+                .to_string()
+        } else {
+            bar_color
+                .apply_to(format!(
+                    "{S_CONNECT_LEFT}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n{bar}\n",
+                    horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
+                    bar = bar_color.apply_to(S_BAR),
+                ))
+                .to_string()
+        };
 
         header + &body + &footer
+    }
+
+    /// Formats an inline note message.
+    fn format_note(&self, prompt: &str, message: &str) -> String {
+        self.format_note_generic(false, prompt, message)
+    }
+
+    /// Formats an outro note message.
+    fn format_outro_note(&self, prompt: &str, message: &str) -> String {
+        self.format_note_generic(true, prompt, message)
     }
 
     /// Returns a log message rendering with a chosen symbol.
@@ -579,4 +611,15 @@ pub fn set_theme<T: Theme + Sync + Send + 'static>(theme: T) {
 /// Resets the global theme to the default one.
 pub fn reset_theme() {
     *THEME.lock().unwrap() = Box::new(ClackTheme);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn format_note() {
+        // A simple backward compatibility check.
+        ClackTheme.format_note("my prompt", "my message");
+    }
 }
