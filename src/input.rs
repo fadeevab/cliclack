@@ -44,7 +44,8 @@ impl Input {
     /// Creates a new input prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
-            prompt: prompt.to_string(),
+            prompt: THEME.lock().unwrap()
+                .format_multiline_text(&prompt.to_string()),
             input_required: true,
             ..Default::default()
         }

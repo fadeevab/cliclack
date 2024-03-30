@@ -25,7 +25,8 @@ impl Confirm {
     /// Creates a new confirmation prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
-            prompt: prompt.to_string(),
+            prompt: THEME.lock().unwrap()
+                .format_multiline_text(&prompt.to_string()),
             ..Default::default()
         }
     }
