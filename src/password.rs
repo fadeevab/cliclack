@@ -27,10 +27,9 @@ pub struct Password {
 impl Password {
     /// Creates a new password prompt.
     pub fn new(prompt: impl Display) -> Self {
-        let theme = THEME.lock().unwrap();
         Self {
             prompt: prompt.to_string(),
-            mask: theme.password_mask(),
+            mask: THEME.lock().unwrap().password_mask(),
             ..Default::default()
         }
     }
