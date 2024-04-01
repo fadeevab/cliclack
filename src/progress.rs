@@ -4,9 +4,7 @@ use indicatif::ProgressStyle;
 
 use crate::{theme::THEME, ThemeState};
 
-/// A spinner + progress bar that renders progress indication using current/total
-/// semantics. If you're looking for a download bar (or a bar that deals with
-/// bytes and formatting of bytes/KB/MB/GB, etc.), see [`DownloadBar`](crate::DownloadBar).
+/// A spinner + progress bar that renders progress indication.
 ///
 /// Implemented via theming of [`indicatif::ProgressBar`](https://docs.rs/indicatif).
 pub struct ProgressBar {
