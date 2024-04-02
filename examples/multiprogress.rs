@@ -1,6 +1,8 @@
 use std::{sync::mpsc::channel, time::Duration};
 
-use cliclack::{clear_screen, intro, log::remark, outro, outro_cancel, progress_bar};
+use cliclack::{
+    clear_screen, intro, log::remark, multi_progress, outro, outro_cancel, progress_bar,
+};
 use console::{style, Term};
 use rand::{thread_rng, Rng};
 
@@ -24,11 +26,16 @@ fn main() -> std::io::Result<()> {
     remark("Press Ctrl-C")?;
 
     // Create a new progress bar and set the text to "Installation".
-    let progress = progress_bar(100);
-    progress.start("Copying files...");
+    let multi = multi_progress("Doing stuff...");
+
+    let pb1 = multi.add(progress_bar(100));
+    let pb2 = multi.add(progress_bar(100));
+
+    pb1.start("Downloading files...");
+    pb2.start("Copying files...");
 
     // Simulate doing some stuff....
-    for _ in 0..100 {
+    while !pb1.bar().is_finished() || !pb2.bar().is_finished() {
         // Use a random timeout to simulate some work.
         let timeout = Duration::from_millis(thread_rng().gen_range(10..75));
 
@@ -39,18 +46,27 @@ fn main() -> std::io::Result<()> {
             term.clear_line()?;
             term.move_cursor_up(1)?;
 
-            progress.cancel("Copying files");
+            pb1.cancel("Copying files");
+            pb2.cancel("Downloading files");
             outro_cancel("Interrupted")?;
             return Ok(());
         }
 
-        // Otherwise, we increase the progress bar by the delta 1.
-        progress.bar().inc(1);
+        if pb1.bar().position() < pb1.bar().length().unwrap() {
+            pb1.bar().inc(thread_rng().gen_range(1..20));
+        } else if !pb1.bar().is_finished() {
+            pb1.stop(format!("{} {}", style("✔").green(), "Copying files"));
+        }
+
+        if pb2.bar().position() < pb2.bar().length().unwrap() {
+            pb2.bar().inc(thread_rng().gen_range(1..13));
+        } else if !pb2.bar().is_finished() {
+            pb2.stop(format!("{} {}", style("✔").green(), "Downloading files"));
+        }
     }
 
-    // Once we're done, we stop the progress bar and print the outro message.
-    // This removes the progress bar and prints the message to the terminal.
-    progress.stop("Copying files");
+    multi.stop();
+
     outro("Done!")?;
 
     Ok(())
