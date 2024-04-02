@@ -72,6 +72,10 @@ impl ProgressBar {
 
     /// Stops the progress bar.
     pub fn stop(&self, message: impl Display) {
+        if self.options().message.is_some() {
+            return;
+        }
+
         let state = if !self.options().grouped {
             ThemeState::Submit
         } else {
@@ -84,6 +88,10 @@ impl ProgressBar {
 
     /// Makes the spinner stop with an error.
     pub fn error(&self, message: impl Display) {
+        if self.options().message.is_some() {
+            return;
+        }
+
         let state = if !self.options().grouped {
             ThemeState::Error("".into())
         } else {
@@ -96,6 +104,10 @@ impl ProgressBar {
 
     /// Cancel the spinner (stop with cancelling style).
     pub fn cancel(&self, message: impl Display) {
+        if self.options().message.is_some() {
+            return;
+        }
+
         let state = if !self.options().grouped {
             ThemeState::Cancel
         } else {
