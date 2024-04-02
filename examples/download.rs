@@ -44,7 +44,7 @@ fn main() -> std::io::Result<()> {
             term.clear_line()?;
             term.move_cursor_up(1)?;
 
-            download.error("Downloading");
+            download.cancel("Downloading");
             outro_cancel("Interrupted")?;
             return Ok(());
         }

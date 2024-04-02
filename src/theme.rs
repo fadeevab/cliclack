@@ -470,16 +470,6 @@ pub trait Theme {
         )
     }
 
-    /// Returns the progress bar template.
-    fn default_progress_template(&self) -> String {
-        "{msg} [{elapsed_precise}] {bar:30.magenta} ({pos}/{len})".into()
-    }
-
-    /// Returns the progress bar start style for the [`indicatif::ProgressBar`].
-    fn format_progress_start(&self, template: &str) -> String {
-        format!("{{spinner:.magenta}}  {template}")
-    }
-
     /// Returns the spinner start style for the [`indicatif::ProgressBar`].
     fn format_spinner_start(&self) -> String {
         "{spinner:.magenta}  {msg}".into()
@@ -535,6 +525,63 @@ pub trait Theme {
             symbol = self.state_symbol(state),
             bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
         )
+    }
+
+    /// Returns the progress bar template.
+    fn default_progress_template(&self) -> String {
+        "{msg} [{elapsed_precise}] {bar:30.magenta} ({pos}/{len})".into()
+    }
+
+    /// Returns the progress bar start style for the [`indicatif::ProgressBar`].
+    fn format_progress_start(
+        &self,
+        template: &str,
+        added: bool,
+        last: bool,
+        state: &ThemeState,
+    ) -> String {
+        self.format_progress_with_state(
+            &format!("{{spinner:.magenta}}  {template}"),
+            added,
+            last,
+            state,
+        )
+    }
+
+    /// Returns the progress bar with formatted prefix and suffix.
+    fn format_progress_with_state(
+        &self,
+        msg: &str,
+        added: bool,
+        last: bool,
+        state: &ThemeState,
+    ) -> String {
+        let prefix = if added {
+            self.bar_color(state).apply_to(S_BAR).to_string() + "  "
+        } else {
+            match state {
+                ThemeState::Active => "".to_string(),
+                _ => self.state_symbol(state).to_string() + "  ",
+            }
+        };
+
+        let suffix = if added && last {
+            let bar = match state {
+                ThemeState::Active => S_BAR_END,
+                _ => S_BAR,
+            };
+
+            format!("\n{}", self.bar_color(state).apply_to(bar)) // | or └
+        } else if added && !last {
+            "".to_string() // Nothing.
+        } else {
+            match state {
+                ThemeState::Active => "".to_string(), // Nothing.
+                _ => format!("\n{}", self.bar_color(&ThemeState::Submit).apply_to(S_BAR)), // |
+            }
+        };
+
+        format!("{prefix}{msg}{suffix}")
     }
 
     /// Returns the spinner character sequence.
