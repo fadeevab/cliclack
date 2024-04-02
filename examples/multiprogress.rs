@@ -28,8 +28,8 @@ fn main() -> std::io::Result<()> {
     // Create a new progress bar and set the text to "Installation".
     let multi = multi_progress("Doing stuff...");
 
-    let pb1 = multi.add(progress_bar(100));
-    let pb2 = multi.add(progress_bar(100));
+    let pb1 = multi.add(progress_bar(500));
+    let pb2 = multi.add(progress_bar(500));
 
     pb1.start("Downloading files...");
     pb2.start("Copying files...");
@@ -46,8 +46,9 @@ fn main() -> std::io::Result<()> {
             term.clear_line()?;
             term.move_cursor_up(1)?;
 
-            pb1.cancel("Copying files");
-            pb2.cancel("Downloading files");
+            pb1.cancel(format!("{} Copying files", style("✘").red()));
+            pb2.cancel(format!("{} Downloading files", style("✘").red()));
+            multi.stop();
             outro_cancel("Interrupted")?;
             return Ok(());
         }
@@ -55,13 +56,13 @@ fn main() -> std::io::Result<()> {
         if pb1.bar().position() < pb1.bar().length().unwrap() {
             pb1.bar().inc(thread_rng().gen_range(1..20));
         } else if !pb1.bar().is_finished() {
-            pb1.stop(format!("{} {}", style("✔").green(), "Copying files"));
+            pb1.stop(format!("{} Copying files", style("✔").green()));
         }
 
         if pb2.bar().position() < pb2.bar().length().unwrap() {
             pb2.bar().inc(thread_rng().gen_range(1..13));
         } else if !pb2.bar().is_finished() {
-            pb2.stop(format!("{} {}", style("✔").green(), "Downloading files"));
+            pb2.stop(format!("{} Downloading files", style("✔").green()));
         }
     }
 
