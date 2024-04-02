@@ -7,11 +7,13 @@ use console::Term;
 
 use crate::{progress::ProgressBar, theme::THEME, ThemeState};
 
-const HEADER_HEIGHT: usize = 2;
+const HEADER_HEIGHT: usize = 1;
+const FOOTER_HEIGHT: usize = 1;
 
 /// A spinner + progress bar that renders progress indication.
 ///
 /// Implemented via theming of [`indicatif::ProgressBar`](https://docs.rs/indicatif).
+#[derive(Clone)]
 pub struct MultiProgress {
     multi: indicatif::MultiProgress,
     bars: Arc<RwLock<Vec<ProgressBar>>>,
@@ -24,7 +26,6 @@ impl MultiProgress {
         let theme = THEME.lock().unwrap();
         let multi = indicatif::MultiProgress::new();
 
-        // HEADER_HEIGHT: 2 lines.
         let header =
             theme.format_header(&ThemeState::Active, (prompt.to_string() + "\n ").trim_end());
 
@@ -61,8 +62,16 @@ impl MultiProgress {
     pub fn stop(&self) {
         let term = Term::stderr();
 
-        let height = self.bars.write().unwrap().len() + HEADER_HEIGHT;
-        term.clear_last_lines(height).ok();
+        let visible_count = self
+            .bars
+            .read()
+            .unwrap()
+            .iter()
+            .filter(|bar| bar.options().message.is_some())
+            .count();
+
+        term.clear_last_lines(visible_count + HEADER_HEIGHT + FOOTER_HEIGHT)
+            .ok();
 
         let state = &ThemeState::Submit;
 
@@ -74,8 +83,8 @@ impl MultiProgress {
         )
         .ok();
 
-        for bar in self.bars.write().unwrap().iter() {
-            let message = bar.options().message.as_ref().unwrap().clone();
+        for bar in self.bars.read().unwrap().iter() {
+            let message = bar.options().message.as_ref().cloned().unwrap_or_default();
             bar.println(message, state);
         }
     }
