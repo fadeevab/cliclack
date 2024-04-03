@@ -470,17 +470,27 @@ pub trait Theme {
         )
     }
 
-    /// Returns the spinner start style for the [`indicatif::ProgressBar`].
-    fn format_spinner_start(&self) -> String {
-        "{spinner:.magenta}  {msg}".into()
+    /// Returns a progress bar template.
+    fn default_progress_template(&self) -> String {
+        "{msg} [{elapsed_precise}] {bar:30.magenta} ({pos}/{len})".into()
     }
 
-    /// Returns a spinner message multiline rendering.
+    /// Returns a spinner bar template.
+    fn default_spinner_template(&self) -> String {
+        "{msg}".into()
+    }
+
+    /// Return a default download template.
+    fn default_download_template(&self) -> String {
+        "{msg} [{elapsed_precise}] [{bar:30.cyan/blue}] {bytes}/{total_bytes} ({eta})".into()
+    }
+
+    /// Returns a progress bar message with multiline rendering.
     ///
     /// This function adds the left-bar to all lines but the first, encompasses
     /// the remainder of the message (including new-lines) with the side-bar,
     /// and finally ends with the section end character.
-    fn format_spinner_message(&self, text: &str) -> String {
+    fn format_progress_message(&self, text: &str) -> String {
         let bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR);
         let end = self.bar_color(&ThemeState::Submit).apply_to(S_BAR_END);
 
@@ -499,50 +509,17 @@ pub trait Theme {
         parts.join("\n")
     }
 
-    /// Returns the spinner stop style as a final message.
-    ///
-    /// It's not symmetric to [`Theme::format_spinner_start`] because of a workaround
-    /// for the [`indicatif::ProgressBar`] spinner behavior which disrupts
-    /// the line after the stop message reproduced while terminal resizing
-    /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
-    fn format_spinner_stop(&self, msg: &str) -> String {
-        format!(
-            "{symbol}  {msg}\n{bar}",
-            symbol = self.state_symbol(&ThemeState::Submit),
-            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
-        )
-    }
-
-    /// Returns the spinner with a final message in a specified state.
-    ///
-    /// It's not symmetric to [`Theme::format_spinner_start`] because of a workaround
-    /// for the [`indicatif::ProgressBar`] spinner behavior which disrupts
-    /// the line after the stop message reproduced while terminal resizing
-    /// (see [`Spinner::stop`](fn@crate::Spinner::stop)).
-    fn format_spinner_with_state(&self, msg: &str, state: &ThemeState) -> String {
-        format!(
-            "{symbol}  {msg}\n{bar}",
-            symbol = self.state_symbol(state),
-            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
-        )
-    }
-
-    /// Returns the progress bar template.
-    fn default_progress_template(&self) -> String {
-        "{msg} [{elapsed_precise}] {bar:30.magenta} ({pos}/{len})".into()
-    }
-
     /// Returns the progress bar start style for the [`indicatif::ProgressBar`].
     fn format_progress_start(
         &self,
         template: &str,
-        added: bool,
+        grouped: bool,
         last: bool,
         state: &ThemeState,
     ) -> String {
         self.format_progress_with_state(
             &format!("{{spinner:.magenta}}  {template}"),
-            added,
+            grouped,
             last,
             state,
         )
@@ -552,11 +529,11 @@ pub trait Theme {
     fn format_progress_with_state(
         &self,
         msg: &str,
-        added: bool,
+        grouped: bool,
         last: bool,
         state: &ThemeState,
     ) -> String {
-        let prefix = if added {
+        let prefix = if grouped {
             self.bar_color(state).apply_to(S_BAR).to_string() + "  "
         } else {
             match state {
@@ -565,18 +542,13 @@ pub trait Theme {
             }
         };
 
-        let suffix = if added && last {
-            let bar = match state {
-                ThemeState::Active => S_BAR_END,
-                _ => S_BAR,
-            };
-
-            format!("\n{}", self.bar_color(state).apply_to(bar)) // | or └
-        } else if added && !last {
+        let suffix = if grouped && last {
+            format!("\n{}", self.format_footer(state)) // | or └ with message
+        } else if grouped && !last {
             "".to_string() // Nothing.
         } else {
             match state {
-                ThemeState::Active => "".to_string(), // Nothing.
+                ThemeState::Active => "".to_string(), // No footer.
                 _ => format!("\n{}", self.bar_color(&ThemeState::Submit).apply_to(S_BAR)), // |
             }
         };

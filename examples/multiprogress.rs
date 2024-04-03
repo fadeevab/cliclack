@@ -1,8 +1,6 @@
 use std::{sync::mpsc::channel, time::Duration};
 
-use cliclack::{
-    clear_screen, intro, log::remark, multi_progress, outro, outro_cancel, progress_bar,
-};
+use cliclack::{clear_screen, intro, log::remark, multi_progress, outro, progress_bar, spinner};
 use console::{style, Term};
 use rand::{thread_rng, Rng};
 
@@ -30,9 +28,11 @@ fn main() -> std::io::Result<()> {
 
     let pb1 = multi.add(progress_bar(500));
     let pb2 = multi.add(progress_bar(500));
+    let spinner = multi.add(spinner());
 
     pb1.start("Downloading files...");
     pb2.start("Copying files...");
+    spinner.start("Waiting...");
 
     // Simulate doing some stuff....
     while !pb1.bar().is_finished() || !pb2.bar().is_finished() {
@@ -48,8 +48,8 @@ fn main() -> std::io::Result<()> {
 
             pb1.cancel(format!("{}  Copying files", style("✘").red()));
             pb2.cancel(format!("{}  Downloading files", style("✘").red()));
-            multi.stop();
-            outro_cancel("Interrupted")?;
+            spinner.cancel(format!("{}  Not waiting", style("✘").red()));
+            multi.cancel();
             return Ok(());
         }
 
@@ -66,6 +66,7 @@ fn main() -> std::io::Result<()> {
         }
     }
 
+    spinner.stop(format!("{}  Not waiting", style("✔").green()));
     multi.stop();
 
     outro("Done!")?;

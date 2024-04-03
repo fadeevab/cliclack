@@ -1,6 +1,7 @@
 use std::{
     fmt::Display,
     sync::{Arc, RwLock, RwLockWriteGuard},
+    time::Duration,
 };
 
 use indicatif::ProgressStyle;
@@ -10,7 +11,6 @@ use crate::{theme::THEME, ThemeState};
 #[derive(Default)]
 pub(crate) struct ProgressBarOptions {
     pub template: String,
-    pub message: Option<String>,
     pub grouped: bool,
     pub last: bool,
 }
@@ -32,15 +32,25 @@ impl ProgressBar {
             options: Default::default(),
         };
 
-        this.options().template = THEME.lock().unwrap().default_progress_template();
+        this.options_write().template = THEME.lock().unwrap().default_progress_template();
 
         this
     }
 
-    /// Sets the template string for the progress bar according to
+    pub fn with_spinner_template(self) -> Self {
+        self.options_write().template = THEME.lock().unwrap().default_spinner_template();
+        self
+    }
+
+    pub fn with_download_template(self) -> Self {
+        self.options_write().template = THEME.lock().unwrap().default_download_template();
+        self
+    }
+
+    /// Sets a custom template string for the progress bar according to
     /// [`indicatif::ProgressStyle`](https://docs.rs/indicatif/latest/indicatif/#templates).
     pub fn with_template(self, template: &str) -> Self {
-        self.options().template = template.to_string();
+        self.options_write().template = template.to_string();
         self
     }
 
@@ -67,12 +77,14 @@ impl ProgressBar {
             .progress_chars(&theme.progress_chars()),
         );
 
-        self.bar.set_message(message.to_string());
+        self.bar
+            .set_message(theme.format_progress_message(&message.to_string()));
+        self.bar.enable_steady_tick(Duration::from_millis(100));
     }
 
     /// Stops the progress bar.
     pub fn stop(&self, message: impl Display) {
-        if self.options().message.is_some() {
+        if self.bar.is_finished() {
             return;
         }
 
@@ -82,29 +94,12 @@ impl ProgressBar {
             ThemeState::Active
         };
 
-        self.println(message.to_string(), &state);
-        self.preserve_finish_and_clear(message);
-    }
-
-    /// Makes the spinner stop with an error.
-    pub fn error(&self, message: impl Display) {
-        if self.options().message.is_some() {
-            return;
-        }
-
-        let state = if !self.options().grouped {
-            ThemeState::Error("".into())
-        } else {
-            ThemeState::Active
-        };
-
-        self.println(message.to_string(), &state);
-        self.preserve_finish_and_clear(message);
+        self.preserve_print_finish_and_clear(message, &state);
     }
 
     /// Cancel the spinner (stop with cancelling style).
     pub fn cancel(&self, message: impl Display) {
-        if self.options().message.is_some() {
+        if self.bar.is_finished() {
             return;
         }
 
@@ -114,11 +109,31 @@ impl ProgressBar {
             ThemeState::Active
         };
 
-        self.println(message.to_string(), &state);
-        self.preserve_finish_and_clear(message);
+        self.preserve_print_finish_and_clear(message, &state);
+    }
+
+    /// Makes the spinner stop with an error.
+    pub fn error(&self, message: impl Display) {
+        if self.bar.is_finished() {
+            return;
+        }
+
+        let state = if !self.options().grouped {
+            ThemeState::Error("".into())
+        } else {
+            ThemeState::Active
+        };
+
+        self.preserve_print_finish_and_clear(message, &state);
     }
 
     /// Accesses the options for writing (a convenience function).
+    #[inline]
+    pub(crate) fn options_write(&self) -> RwLockWriteGuard<'_, ProgressBarOptions> {
+        self.options.write().unwrap()
+    }
+
+    /// Accesses the options for reading (a convenience function).
     #[inline]
     pub(crate) fn options(&self) -> RwLockWriteGuard<'_, ProgressBarOptions> {
         self.options.write().unwrap()
@@ -129,7 +144,7 @@ impl ProgressBar {
     /// The method is semi-open for multi-progress bar purposes.
     pub(crate) fn println(&self, message: impl Display, state: &ThemeState) {
         let theme = THEME.lock().unwrap();
-        let options = self.options();
+        let options = self.options.read().unwrap();
 
         let msg = theme.format_progress_with_state(
             &message.to_string(),
@@ -142,9 +157,9 @@ impl ProgressBar {
         self.bar.println(msg);
     }
 
-    /// Preserves the message for a multi-progress bar and clears the bar.
-    fn preserve_finish_and_clear(&self, message: impl Display) {
-        self.options().message = Some(message.to_string());
+    fn preserve_print_finish_and_clear(&self, message: impl Display, state: &ThemeState) {
+        self.bar.set_message(message.to_string()); // Preserve the message.
+        self.println(message.to_string(), state);
         self.bar.finish_and_clear();
     }
 }

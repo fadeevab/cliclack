@@ -27,9 +27,7 @@ fn main() -> std::io::Result<()> {
     remark("Press Ctrl-C")?;
 
     // Create a new progress bar and set the text to "Installation".
-    let download = progress_bar(TOTAL_BYTES).with_template(
-        "{msg} [{elapsed_precise}] [{bar:30.cyan/blue}] {bytes}/{total_bytes} ({eta})",
-    );
+    let download = progress_bar(TOTAL_BYTES).with_download_template();
     download.start("Downloading, please wait...");
 
     // Loop until the progress bar reaches the total number of bytes

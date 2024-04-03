@@ -42,7 +42,7 @@ impl MultiProgress {
     pub fn add(&self, pb: ProgressBar) -> ProgressBar {
         // Unset the last flag for all other progress bars: it affects rendering.
         for bar in self.bars.write().unwrap().iter_mut() {
-            bar.options().last = false;
+            bar.options_write().last = false;
         }
 
         // Attention: deconstructing `pb` to avoid borrowing `pb.bar` twice.
@@ -60,20 +60,43 @@ impl MultiProgress {
     }
 
     pub fn stop(&self) {
+        self.stop_with(&ThemeState::Submit)
+    }
+
+    pub fn cancel(&self) {
+        self.stop_with(&ThemeState::Cancel)
+    }
+
+    pub fn error(&self, error: impl Display) {
+        self.stop_with(&ThemeState::Error(error.to_string()))
+    }
+
+    fn stop_with(&self, state: &ThemeState) {
         let term = Term::stderr();
 
-        let visible_count = self
-            .bars
-            .read()
-            .unwrap()
-            .iter()
-            .filter(|bar| bar.options().message.is_some())
-            .count();
+        for bar in self.bars.read().unwrap().iter() {
+            // Corner case: stop the progress if it's not finished properly.
+            if !bar.bar.is_finished() {
+                let height = bar.bar().message().lines().count();
+                bar.bar().finish_and_clear(); // It moves the cursor up...
+                term.move_cursor_down(height + 1).ok(); // ...so move it down.
+            }
 
-        term.clear_last_lines(visible_count + HEADER_HEIGHT + FOOTER_HEIGHT)
-            .ok();
+            let height = if !bar.bar().message().is_empty() {
+                if bar.options().last {
+                    1 + FOOTER_HEIGHT
+                } else {
+                    1
+                }
+            } else {
+                0
+            };
 
-        let state = &ThemeState::Submit;
+            term.clear_last_lines(height).ok();
+        }
+
+        // Clear the header.
+        term.clear_last_lines(HEADER_HEIGHT).ok();
 
         term.write_str(
             &THEME
@@ -84,8 +107,10 @@ impl MultiProgress {
         .ok();
 
         for bar in self.bars.read().unwrap().iter() {
-            let message = bar.options().message.as_ref().cloned().unwrap_or_default();
-            bar.println(message, state);
+            if bar.bar().message().is_empty() {
+                continue;
+            }
+            bar.println(bar.bar().message(), state);
         }
     }
 }
