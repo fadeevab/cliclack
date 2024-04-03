@@ -207,7 +207,6 @@ mod password;
 mod progress;
 mod prompt;
 mod select;
-mod spinner;
 mod theme;
 mod validate;
 
@@ -227,7 +226,6 @@ pub use input::Input;
 pub use multiselect::MultiSelect;
 pub use password::Password;
 pub use select::Select;
-pub use spinner::Spinner;
 pub use validate::Validate;
 
 fn term_write(line: impl Display) -> io::Result<()> {
@@ -305,11 +303,11 @@ pub fn confirm(prompt: impl Display) -> Confirm {
     Confirm::new(prompt)
 }
 
-/// Constructs a new [`Spinner`] prompt.
+/// Constructs a new [`ProgressBar::new_spinner`] prompt.
 ///
-/// See [`Spinner`] for chainable methods.
-pub fn spinner() -> Spinner {
-    Spinner::default()
+/// See [`ProgressBar`] for chainable methods.
+pub fn spinner() -> ProgressBar {
+    ProgressBar::new(0).with_spinner_template()
 }
 
 /// Constructs a new [`ProgressBar`] prompt.

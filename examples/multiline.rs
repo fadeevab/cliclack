@@ -32,7 +32,7 @@ fn main() -> std::io::Result<()> {
         .item("gh-action", "GitHub Action", "")
         .interact()?;
 
-    let mut spinner = spinner();
+    let spinner = spinner();
     let message = format!(
         "{}\n{}\n\n{}",
         style("Installation").bold(),
