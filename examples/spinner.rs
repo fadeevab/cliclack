@@ -10,7 +10,7 @@ fn main() -> std::io::Result<()> {
     intro(style(" spinner ").on_cyan().black())?;
     log::remark("Press Esc, Enter, or Ctrl-C")?;
 
-    let mut spinner = spinner();
+    let spinner = spinner();
     spinner.start("Installation");
 
     let term = Term::stderr();

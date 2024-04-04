@@ -53,7 +53,7 @@ fn main() -> std::io::Result<()> {
     let install = cliclack::confirm("Install dependencies?").interact()?;
 
     if install {
-        let mut spinner = cliclack::spinner();
+        let spinner = cliclack::spinner();
         spinner.start("Installing via pnpm");
         thread::sleep(Duration::from_secs(5));
         spinner.stop("Installed via pnpm");
