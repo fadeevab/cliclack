@@ -143,10 +143,54 @@
 //! # fn test() -> std::io::Result<()> {
 //! use cliclack::spinner;
 //!
-//! let mut spinner = spinner();
+//! let spinner = spinner();
 //! spinner.start("Installing...");
 //! // Do installation.
 //! spinner.stop("Installation complete");
+//! # Ok(())
+//! # }
+//! # test().ok(); // Ignoring I/O runtime errors.
+//! ```
+//!
+//! ## Progress Bar
+//!
+//! ```
+//! # fn test() -> std::io::Result<()> {
+//! use cliclack::progress_bar;
+//!
+//! let progress = progress_bar(100);
+//! progress.start("Installation...");
+//! for _ in 0..100 {
+//!      progress.bar().inc(1);
+//! }
+//! progress.stop("Installation complete");
+//! # Ok(())
+//! # }
+//! # test().ok(); // Ignoring I/O runtime errors.
+//! ```
+//!
+//! ## Multi-Progress Bar
+//!
+//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-multi-progress-bar.gif" width="70%">
+//!
+//! ```
+//! # fn test() -> std::io::Result<()> {
+//! use cliclack::{multi_progress, progress_bar, spinner};
+//!
+//! let multi = multi_progress("Doing stuff...");
+//! let pb1 = multi.add(progress_bar(100));
+//! let pb2 = multi.add(progress_bar(100).with_download_template());
+//! let spinner = multi.add(spinner());
+//!
+//! pb1.start("Installation...");
+//! pb2.start("Downloading...");
+//! spinner.start("Waiting...");
+//!
+//! pb1.stop("Installation complete");
+//! pb2.stop("Download complete");
+//! spinner.stop("Done");
+//!
+//! multi.stop();
 //! # Ok(())
 //! # }
 //! # test().ok(); // Ignoring I/O runtime errors.
@@ -211,8 +255,6 @@ mod theme;
 mod validate;
 
 use console::Term;
-use multiprogress::MultiProgress;
-use progress::ProgressBar;
 use std::fmt::Display;
 use std::io;
 
@@ -223,8 +265,10 @@ pub use theme::{reset_theme, set_theme, Theme, ThemeState};
 
 pub use confirm::Confirm;
 pub use input::Input;
+pub use multiprogress::MultiProgress;
 pub use multiselect::MultiSelect;
 pub use password::Password;
+pub use progress::ProgressBar;
 pub use select::Select;
 pub use validate::Validate;
 
@@ -303,7 +347,7 @@ pub fn confirm(prompt: impl Display) -> Confirm {
     Confirm::new(prompt)
 }
 
-/// Constructs a new [`ProgressBar::new_spinner`] prompt.
+/// Constructs a new [`ProgressBar::with_spinner_template`] prompt.
 ///
 /// See [`ProgressBar`] for chainable methods.
 pub fn spinner() -> ProgressBar {
@@ -312,14 +356,14 @@ pub fn spinner() -> ProgressBar {
 
 /// Constructs a new [`ProgressBar`] prompt.
 ///
-/// See [`ProgressBar`] for chainable methods.
+/// See [`progress::ProgressBar`] for chainable methods.
 pub fn progress_bar(len: u64) -> ProgressBar {
     ProgressBar::new(len)
 }
 
-/// Constructs a new [`MultiProgressBar`] prompt.
+/// Constructs a new [`MultiProgress`] prompt.
 ///
-/// See [`MultiProgressBar`] for chainable methods.
+/// See [`MultiProgress`] for chainable methods.
 pub fn multi_progress(prompt: impl Display) -> MultiProgress {
     MultiProgress::new(prompt)
 }

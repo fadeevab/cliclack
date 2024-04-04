@@ -10,9 +10,7 @@ use crate::{progress::ProgressBar, theme::THEME, ThemeState};
 const HEADER_HEIGHT: usize = 1;
 const FOOTER_HEIGHT: usize = 1;
 
-/// A spinner + progress bar that renders progress indication.
-///
-/// Implemented via theming of [`indicatif::ProgressBar`](https://docs.rs/indicatif).
+/// Renders other progress bars and spinners under a common header in a single visual block.
 #[derive(Clone)]
 pub struct MultiProgress {
     multi: indicatif::MultiProgress,
@@ -59,14 +57,17 @@ impl MultiProgress {
         pb
     }
 
+    /// Stops the progress bar in a submitted state.
     pub fn stop(&self) {
         self.stop_with(&ThemeState::Submit)
     }
 
+    /// Stops the progress bar with a default cancel message.
     pub fn cancel(&self) {
         self.stop_with(&ThemeState::Cancel)
     }
 
+    /// Stops the progress bar with an error message.
     pub fn error(&self, error: impl Display) {
         self.stop_with(&ThemeState::Error(error.to_string()))
     }

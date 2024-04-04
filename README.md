@@ -77,6 +77,14 @@ cargo run --example theme
   <img alt="CliClack Magenta Theme" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-theme.png" width="400" />
 </div>
 
+### 🚥 Progress Bar
+
+Starting from `cliclack = "0.1.14"`, progress bars and multi-progress bars are supported.
+
+<div align="center">
+  <img alt="CliClack Multi Progress Bar" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-multi-progress-bar.gif" width="420" />
+</div>
+
 ### See more
 
 - [Documentation](https://docs.rs/cliclack)

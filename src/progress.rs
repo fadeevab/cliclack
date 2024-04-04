@@ -15,7 +15,9 @@ pub(crate) struct ProgressBarOptions {
     pub last: bool,
 }
 
-/// A spinner + progress bar that renders progress indication.
+/// A progress bar renders progress indication. Supports spinner and download templates.
+/// Can be used for both single and multi-progress bars
+/// (see [`MultiProgress`](crate::multiprogress::MultiProgress)).
 ///
 /// Implemented via theming of [`indicatif::ProgressBar`](https://docs.rs/indicatif).
 #[derive(Clone)]
@@ -37,11 +39,13 @@ impl ProgressBar {
         this
     }
 
+    /// Sets a default spinner visual template for the progress bar.
     pub fn with_spinner_template(self) -> Self {
         self.options_write().template = THEME.lock().unwrap().default_spinner_template();
         self
     }
 
+    /// Sets a default visual template for downloading.
     pub fn with_download_template(self) -> Self {
         self.options_write().template = THEME.lock().unwrap().default_download_template();
         self

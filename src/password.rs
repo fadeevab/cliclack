@@ -41,7 +41,7 @@ impl Password {
     }
 
     /// Sets a validation callback for the input that is called when the user submits.
-    /// The same as [`Input::validate_on_enter`].
+    /// The same as [`Password::validate_on_enter`].
     pub fn validate<V>(mut self, validator: V) -> Self
     where
         V: Validate<String> + 'static,
