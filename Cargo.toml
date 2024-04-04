@@ -1,6 +1,6 @@
 [package]
 name = "cliclack"
-version = "0.1.14"
+version = "0.2.0"
 
 authors = ["Alexander Fadeev <fadeevab.com@gmail.com>"]
 categories = ["command-line-interface"]
