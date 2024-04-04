@@ -28,11 +28,13 @@ fn main() -> std::io::Result<()> {
 
     let pb1 = multi.add(progress_bar(500));
     let pb2 = multi.add(progress_bar(500));
-    let spinner = multi.add(spinner());
 
     pb1.start("Downloading files...");
     pb2.start("Copying files...");
+
+    let spinner = multi.add(spinner());
     spinner.start("Waiting...");
+    spinner.stop(format!("{}  Task done", style("✔").green()));
 
     // Simulate doing some stuff....
     while !pb1.bar().is_finished() || !pb2.bar().is_finished() {
@@ -66,9 +68,7 @@ fn main() -> std::io::Result<()> {
         }
     }
 
-    spinner.stop(format!("{}  Not waiting", style("✔").green()));
     multi.stop();
-
     outro("Done!")?;
 
     Ok(())

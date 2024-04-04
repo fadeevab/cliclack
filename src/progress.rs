@@ -66,7 +66,6 @@ impl ProgressBar {
     /// Starts the progress bar.
     pub fn start(&self, message: impl Display) {
         let theme = THEME.lock().unwrap();
-        let state = &ThemeState::Active;
         let options = self.options();
 
         self.bar.set_style(
@@ -74,7 +73,6 @@ impl ProgressBar {
                 &options.template,
                 options.grouped,
                 options.last,
-                state,
             ))
             .unwrap()
             .tick_chars(&theme.spinner_chars())
@@ -88,7 +86,7 @@ impl ProgressBar {
 
     /// Stops the progress bar.
     pub fn stop(&self, message: impl Display) {
-        if self.bar.is_finished() {
+        if !self.first_stop(message.to_string()) {
             return;
         }
 
@@ -98,12 +96,12 @@ impl ProgressBar {
             ThemeState::Active
         };
 
-        self.preserve_print_finish_and_clear(message, &state);
+        self.print_finish_and_clear(message, &state);
     }
 
     /// Cancel the spinner (stop with cancelling style).
     pub fn cancel(&self, message: impl Display) {
-        if self.bar.is_finished() {
+        if !self.first_stop(message.to_string()) {
             return;
         }
 
@@ -113,12 +111,12 @@ impl ProgressBar {
             ThemeState::Active
         };
 
-        self.preserve_print_finish_and_clear(message, &state);
+        self.print_finish_and_clear(message, &state);
     }
 
     /// Makes the spinner stop with an error.
     pub fn error(&self, message: impl Display) {
-        if self.bar.is_finished() {
+        if !self.first_stop(message.to_string()) {
             return;
         }
 
@@ -128,7 +126,7 @@ impl ProgressBar {
             ThemeState::Active
         };
 
-        self.preserve_print_finish_and_clear(message, &state);
+        self.print_finish_and_clear(message, &state);
     }
 
     /// Accesses the options for writing (a convenience function).
@@ -161,8 +159,59 @@ impl ProgressBar {
         self.bar.println(msg);
     }
 
-    fn preserve_print_finish_and_clear(&self, message: impl Display, state: &ThemeState) {
-        self.bar.set_message(message.to_string()); // Preserve the message.
+    /// Redraws the progress bar without changing the message.
+    pub(crate) fn redraw_as_started(&self) {
+        let theme = THEME.lock().unwrap();
+        let options = self.options();
+
+        self.bar.set_style(
+            ProgressStyle::with_template(&theme.format_progress_start(
+                &options.template,
+                options.grouped,
+                options.last,
+            ))
+            .unwrap()
+            .tick_chars(&theme.spinner_chars())
+            .progress_chars(&theme.progress_chars()),
+        );
+    }
+
+    /// Redraws the progress bar without changing the message.
+    fn redraw_as_stopped(&self) {
+        let theme = THEME.lock().unwrap();
+        let options = self.options();
+
+        self.bar.set_style(
+            ProgressStyle::with_template(&theme.format_progress_with_state(
+                &self.bar.message(),
+                options.grouped,
+                options.last,
+                &ThemeState::Active,
+            ))
+            .unwrap(),
+        );
+    }
+
+    fn first_stop(&self, message: String) -> bool {
+        if self.bar.is_finished() {
+            return false;
+        }
+
+        // Corner case: preserve the message for the last stop.
+        self.bar.set_message(message);
+
+        if self.options().grouped && self.options().last {
+            // Corner case: if the last progress bar is stopped first,
+            // we need to redraw it and keep talking to indicatif::MultiBar
+            // that it's still active to avoid a jumping effect.
+            self.redraw_as_stopped();
+            return false;
+        }
+
+        true
+    }
+
+    fn print_finish_and_clear(&self, message: impl Display, state: &ThemeState) {
         self.println(message.to_string(), state);
         self.bar.finish_and_clear();
     }

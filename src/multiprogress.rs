@@ -41,6 +41,7 @@ impl MultiProgress {
         // Unset the last flag for all other progress bars: it affects rendering.
         for bar in self.bars.write().unwrap().iter_mut() {
             bar.options_write().last = false;
+            bar.redraw_as_started();
         }
 
         // Attention: deconstructing `pb` to avoid borrowing `pb.bar` twice.

@@ -510,18 +510,12 @@ pub trait Theme {
     }
 
     /// Returns the progress bar start style for the [`indicatif::ProgressBar`].
-    fn format_progress_start(
-        &self,
-        template: &str,
-        grouped: bool,
-        last: bool,
-        state: &ThemeState,
-    ) -> String {
+    fn format_progress_start(&self, template: &str, grouped: bool, last: bool) -> String {
         self.format_progress_with_state(
             &format!("{{spinner:.magenta}}  {template}"),
             grouped,
             last,
-            state,
+            &ThemeState::Active,
         )
     }
 
