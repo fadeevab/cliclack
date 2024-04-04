@@ -79,7 +79,7 @@ cargo run --example theme
 
 ### 🚥 Progress Bar
 
-Starting from `cliclack = "0.1.14"`, progress bars and multi-progress bars are supported.
+Starting from `cliclack = "0.2.0"`, progress bars and multi-progress bars are supported.
 
 <div align="center">
   <img alt="CliClack Multi Progress Bar" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-multi-progress-bar.gif" width="600" />
