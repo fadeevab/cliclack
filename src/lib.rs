@@ -8,7 +8,9 @@
 //! ✅ Simple API.<br>
 //! 🧱 Comes with [`input`](fn@input), [`password`](fn@password),
 //!    [`confirm`](fn@confirm), [`select`](fn@select),
-//!    [`multiselect`](fn@multiselect), and [`spinner`](fn@spinner) prompts.<br>
+//!    [`multiselect`](fn@multiselect), [`spinner`](fn@spinner),
+//!    [`progress_bar`](fn@progress_bar), and
+//!    [`multi_progress`](fn@multi_progress) prompts.<br>
 //! 🧱 Styled non-interactive messages with [`log`] submodule.<br>
 //! 🎨 [`Theme`] support.<br>
 //!

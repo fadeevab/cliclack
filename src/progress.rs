@@ -79,6 +79,18 @@ impl ProgressBar {
         self.options().stopped
     }
 
+    /// Sets the current message of the progress bar
+    /// (`{msg}` placeholder must be present in the template if you're using
+    /// a custom template via [`ProgressBar::with_template`]).
+    pub fn set_message(&self, message: impl Display) {
+        self.bar.set_message(message.to_string());
+    }
+
+    /// Sets the length of the progress bar
+    pub fn set_length(&self, len: u64) {
+        self.bar.set_length(len);
+    }
+
     /// Starts the progress bar.
     pub fn start(&self, message: impl Display) {
         let theme = THEME.lock().unwrap();
