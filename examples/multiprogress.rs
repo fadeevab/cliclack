@@ -26,18 +26,19 @@ fn main() -> std::io::Result<()> {
     // Create a new progress bar and set the text to "Installation".
     let multi = multi_progress("Doing stuff...");
 
+    let spinner = multi.add(spinner());
+    spinner.start("Establish connection...");
+    std::thread::sleep(Duration::from_secs(1));
+    spinner.clear();
+
     let pb1 = multi.add(progress_bar(500));
     let pb2 = multi.add(progress_bar(500));
 
     pb1.start("Downloading files...");
     pb2.start("Copying files...");
 
-    let spinner = multi.add(spinner());
-    spinner.start("Waiting...");
-    spinner.stop(format!("{}  Task done", style("✔").green()));
-
     // Simulate doing some stuff....
-    while !pb1.bar().is_finished() || !pb2.bar().is_finished() {
+    while !pb1.is_finished() || !pb2.is_finished() {
         // Use a random timeout to simulate some work.
         let timeout = Duration::from_millis(thread_rng().gen_range(10..75));
 
@@ -50,20 +51,19 @@ fn main() -> std::io::Result<()> {
 
             pb1.cancel(format!("{}  Copying files", style("✘").red()));
             pb2.cancel(format!("{}  Downloading files", style("✘").red()));
-            spinner.cancel(format!("{}  Not waiting", style("✘").red()));
             multi.cancel();
             return Ok(());
         }
 
-        if pb1.bar().position() < pb1.bar().length().unwrap() {
-            pb1.bar().inc(thread_rng().gen_range(1..20));
-        } else if !pb1.bar().is_finished() {
+        if pb1.position() < pb1.length().unwrap() {
+            pb1.inc(thread_rng().gen_range(1..20));
+        } else if !pb1.is_finished() {
             pb1.stop(format!("{}  Copying files", style("✔").green()));
         }
 
-        if pb2.bar().position() < pb2.bar().length().unwrap() {
-            pb2.bar().inc(thread_rng().gen_range(1..13));
-        } else if !pb2.bar().is_finished() {
+        if pb2.position() < pb2.length().unwrap() {
+            pb2.inc(thread_rng().gen_range(1..13));
+        } else if !pb2.is_finished() {
             pb2.stop(format!("{}  Downloading files", style("✔").green()));
         }
     }

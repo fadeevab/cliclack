@@ -161,7 +161,7 @@
 //! let progress = progress_bar(100);
 //! progress.start("Installation...");
 //! for _ in 0..100 {
-//!      progress.bar().inc(1);
+//!      progress.inc(1);
 //! }
 //! progress.stop("Installation complete");
 //! # Ok(())

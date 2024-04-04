@@ -31,7 +31,7 @@ fn main() -> std::io::Result<()> {
     download.start("Downloading, please wait...");
 
     // Loop until the progress bar reaches the total number of bytes
-    while download.bar().position() < TOTAL_BYTES {
+    while download.position() < TOTAL_BYTES {
         // Use a random timeout to simulate some work.
         let timeout = Duration::from_millis(thread_rng().gen_range(10..150));
 
@@ -48,7 +48,7 @@ fn main() -> std::io::Result<()> {
         }
 
         // Increment the progress bar with a random number of bytes.
-        download.bar().inc(thread_rng().gen_range(1_000..200_000));
+        download.inc(thread_rng().gen_range(1_000..200_000));
     }
 
     // Once we're done, we stop the progress bar and print the outro message.

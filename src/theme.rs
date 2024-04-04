@@ -547,7 +547,11 @@ pub trait Theme {
             }
         };
 
-        format!("{prefix}{msg}{suffix}")
+        if !msg.is_empty() {
+            format!("{prefix}{msg}{suffix}")
+        } else {
+            suffix
+        }
     }
 
     /// Returns the spinner character sequence.

@@ -45,7 +45,7 @@ fn main() -> std::io::Result<()> {
         }
 
         // Otherwise, we increase the progress bar by the delta 1.
-        progress.bar().inc(1);
+        progress.inc(1);
     }
 
     // Once we're done, we stop the progress bar and print the outro message.

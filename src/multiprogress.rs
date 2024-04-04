@@ -8,7 +8,6 @@ use console::Term;
 use crate::{progress::ProgressBar, theme::THEME, ThemeState};
 
 const HEADER_HEIGHT: usize = 1;
-const FOOTER_HEIGHT: usize = 1;
 
 /// Renders other progress bars and spinners under a common header in a single visual block.
 #[derive(Clone)]
@@ -41,7 +40,7 @@ impl MultiProgress {
         // Unset the last flag for all other progress bars: it affects rendering.
         for bar in self.bars.write().unwrap().iter_mut() {
             bar.options_write().last = false;
-            bar.redraw_as_started();
+            bar.redraw_active();
         }
 
         // Attention: deconstructing `pb` to avoid borrowing `pb.bar` twice.
@@ -49,7 +48,7 @@ impl MultiProgress {
         let bar = self.multi.add(bar);
         {
             let mut options = options.write().unwrap();
-            options.grouped = true;
+            options.grouped = Some(self.clone());
             options.last = true;
         }
 
@@ -76,18 +75,8 @@ impl MultiProgress {
     fn stop_with(&self, state: &ThemeState) {
         let term = Term::stderr();
 
-        for bar in self.bars.read().unwrap().iter() {
-            let message_height = bar.bar().message().lines().count();
-            let footer_height = if bar.options().last { FOOTER_HEIGHT } else { 0 };
-
-            let height = footer_height + message_height;
-
-            // Corner case: stop the progress if it's not finished properly.
-            if !bar.bar.is_finished() {
-                bar.bar().finish_and_clear();
-            } else {
-                term.clear_last_lines(height).ok();
-            }
+        for pb in self.bars.read().unwrap().iter() {
+            pb.bar.finish_and_clear();
         }
 
         // Clear the header.
@@ -101,11 +90,8 @@ impl MultiProgress {
         )
         .ok();
 
-        for bar in self.bars.read().unwrap().iter() {
-            if bar.bar().message().is_empty() {
-                continue;
-            }
-            bar.println(bar.bar().message(), state);
+        for pb in self.bars.read().unwrap().iter() {
+            pb.redraw_finished(pb.bar.message(), state);
         }
     }
 }
