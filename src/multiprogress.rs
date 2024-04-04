@@ -75,24 +75,17 @@ impl MultiProgress {
         let term = Term::stderr();
 
         for bar in self.bars.read().unwrap().iter() {
+            let message_height = bar.bar().message().lines().count();
+            let footer_height = if bar.options().last { FOOTER_HEIGHT } else { 0 };
+
+            let height = footer_height + message_height;
+
             // Corner case: stop the progress if it's not finished properly.
             if !bar.bar.is_finished() {
-                let height = bar.bar().message().lines().count();
-                bar.bar().finish_and_clear(); // It moves the cursor up...
-                term.move_cursor_down(height + 1).ok(); // ...so move it down.
-            }
-
-            let height = if !bar.bar().message().is_empty() {
-                if bar.options().last {
-                    1 + FOOTER_HEIGHT
-                } else {
-                    1
-                }
+                bar.bar().finish_and_clear();
             } else {
-                0
-            };
-
-            term.clear_last_lines(height).ok();
+                term.clear_last_lines(height).ok();
+            }
         }
 
         // Clear the header.
