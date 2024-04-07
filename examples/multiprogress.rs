@@ -49,8 +49,8 @@ fn main() -> std::io::Result<()> {
             term.clear_line()?;
             term.move_cursor_up(1)?;
 
-            pb1.cancel(format!("{}  Copying files", style("✘").red()));
-            pb2.cancel(format!("{}  Downloading files", style("✘").red()));
+            pb1.cancel(format!("{} Copying files", style("✘").red()));
+            pb2.cancel(format!("{} Downloading files", style("✘").red()));
             multi.cancel();
             return Ok(());
         }
@@ -58,13 +58,13 @@ fn main() -> std::io::Result<()> {
         if pb1.position() < pb1.length().unwrap() {
             pb1.inc(thread_rng().gen_range(1..20));
         } else if !pb1.is_finished() {
-            pb1.stop(format!("{}  Copying files", style("✔").green()));
+            pb1.stop(format!("{} Copying files", style("✔").green()));
         }
 
         if pb2.position() < pb2.length().unwrap() {
             pb2.inc(thread_rng().gen_range(1..13));
         } else if !pb2.is_finished() {
-            pb2.stop(format!("{}  Downloading files", style("✔").green()));
+            pb2.stop(format!("{} Downloading files", style("✔").green()));
         }
     }
 
