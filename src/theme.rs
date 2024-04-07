@@ -511,8 +511,9 @@ pub trait Theme {
 
     /// Returns the progress bar start style for the [`indicatif::ProgressBar`].
     fn format_progress_start(&self, template: &str, grouped: bool, last: bool) -> String {
+        let space = if grouped { " " } else { "  " };
         self.format_progress_with_state(
-            &format!("{{spinner:.magenta}}  {template}"),
+            &format!("{{spinner:.magenta}}{space}{template}"),
             grouped,
             last,
             &ThemeState::Active,
