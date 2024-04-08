@@ -6,12 +6,12 @@ use std::{
 
 use indicatif::ProgressStyle;
 
-use crate::{theme::THEME, MultiProgress, ThemeState};
+use crate::{theme::THEME, ThemeState};
 
 #[derive(Default)]
 pub(crate) struct ProgressBarState {
     pub template: String,
-    pub grouped: Option<MultiProgress>,
+    pub grouped: bool,
     pub last: bool,
     pub stopped: bool,
 }
@@ -86,7 +86,7 @@ impl ProgressBar {
         self.bar.set_message(message.to_string());
     }
 
-    /// Sets the length of the progress bar
+    /// Sets the length of the progress bar.
     pub fn set_length(&self, len: u64) {
         self.bar.set_length(len);
     }
@@ -99,7 +99,7 @@ impl ProgressBar {
         self.bar.set_style(
             ProgressStyle::with_template(&theme.format_progress_start(
                 &options.template,
-                options.grouped.is_some(),
+                options.grouped,
                 options.last,
             ))
             .unwrap()
@@ -144,22 +144,23 @@ impl ProgressBar {
         self.options.write().unwrap()
     }
 
-    /// Redraws the progress bar with a new message. Stop the progress bar.
+    /// Redraws the progress bar with a new message. Returns the number of lines printed.
     ///
     /// The method is semi-open for multi-progress bar purposes.
-    pub(crate) fn redraw_finished(&self, message: impl Display, state: &ThemeState) {
+    pub(crate) fn redraw_finished(&self, message: impl Display, state: &ThemeState) -> usize {
         let theme = THEME.lock().unwrap();
         let options = self.options.read().unwrap();
 
         let msg = theme.format_progress_with_state(
             &message.to_string(),
-            options.grouped.is_some(),
+            options.grouped,
             options.last,
             state,
         );
 
-        // Workaround: the next line doesn't "jump" around while resizing the terminal.
-        self.bar.println(msg);
+        self.bar.println(msg.clone());
+
+        msg.lines().count()
     }
 
     /// Redraws the progress bar.
@@ -179,7 +180,7 @@ impl ProgressBar {
         self.bar.set_style(
             ProgressStyle::with_template(&theme.format_progress_start(
                 &options.template,
-                options.grouped.is_some(),
+                options.grouped,
                 options.last,
             ))
             .unwrap()
@@ -196,7 +197,7 @@ impl ProgressBar {
         self.bar.set_style(
             ProgressStyle::with_template(&theme.format_progress_with_state(
                 &self.bar.message(),
-                options.grouped.is_some(),
+                options.grouped,
                 options.last,
                 &ThemeState::Active,
             ))
@@ -211,9 +212,11 @@ impl ProgressBar {
 
         self.options_write().stopped = true;
 
-        if self.options().grouped.is_none() {
-            self.bar.finish_and_clear();
+        if !self.options().grouped {
+            // Workaround: `bar.println` must be before `bar.finish_and_clear` to avoid "jumping"
+            // of the printed line while resizing the terminal.
             self.redraw_finished(message, state);
+            self.bar.finish_and_clear();
         } else {
             // Don't actually stop the indicatif progress bar.
             self.bar.set_message(message.to_string());

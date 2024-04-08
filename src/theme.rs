@@ -520,7 +520,7 @@ pub trait Theme {
         )
     }
 
-    /// Returns the progress bar with formatted prefix and suffix.
+    /// Returns the progress bar with formatted prefix and suffix, e.g. `│  ◒ Downloading`.
     fn format_progress_with_state(
         &self,
         msg: &str,
