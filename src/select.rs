@@ -62,6 +62,12 @@ where
 
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<T> {
+        if self.items.is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "No items added to the list",
+            ));
+        }
         if let Some(initial_value) = &self.initial_value {
             self.cursor = self
                 .items
@@ -111,5 +117,20 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let line3 = theme.format_footer(&state.into());
 
         line1 + &line2 + &line3
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn empty_list() {
+        let mut select = Select::<&str>::new("Select an item").initial_value("");
+        let result = select.interact();
+        assert_eq!(
+            "No items added to the list",
+            result.unwrap_err().to_string()
+        );
     }
 }
