@@ -6,10 +6,12 @@ fn main() {
         .item("world","world","world")
         .item("how","how","how")
         .item("are","are","are")
-        .item("you","you","you").interact();
-    
+        .item("you","you","you")
+        .item("hello you","hello you","hello you")
+        .interact();
+
     if let Ok(val) = selected {
         println!("{}", val);
     }
-    
+
 }

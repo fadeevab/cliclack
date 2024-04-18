@@ -2,6 +2,7 @@ use std::fmt::Display;
 use std::io;
 
 use console::Key;
+use regex::Regex;
 
 use crate::{
     prompt::interaction::{Event, PromptInteraction, State}
@@ -10,6 +11,7 @@ use crate::{
 };
 use crate::prompt::cursor::StringCursor;
 
+#[derive(Clone)]
 pub struct RadioButton<T> {
     pub value: T,
     pub label: String,
@@ -25,6 +27,7 @@ pub struct Select<T> {
     initial_value: Option<T>,
     enable_filter: bool,
     filter: StringCursor,
+    filtered_items: Vec<RadioButton<T>>,
 }
 
 impl<T> Select<T>
@@ -40,6 +43,7 @@ impl<T> Select<T>
             initial_value: None,
             enable_filter: false,
             filter: StringCursor::default(),
+            filtered_items: Vec::new(),
         }
     }
 
@@ -91,34 +95,40 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let Event::Key(key) = event;
 
         match key {
-            Key::ArrowLeft | Key::ArrowUp => {
+            Key::ArrowUp => {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
             }
-            Key::ArrowRight | Key::ArrowDown => {
+            Key::ArrowDown => {
                 if self.cursor < self.items.len() - 1 {
                     self.cursor += 1;
                 }
             }
-
-            Key::Char(char) => {
-                if *char == '/' {
-                    self.filter.delete_word_to_the_left();
-                    self.enable_filter = !self.enable_filter;
+            Key::ArrowRight => {
+                if !self.enable_filter && self.cursor < self.items.len() - 1 {
+                    self.cursor += 1;
                 }
             }
-            Key::Enter => return State::Submit(self.items[self.cursor].value.clone()),
-
+            Key::ArrowLeft => {
+                if !self.enable_filter && self.cursor > 0 {
+                    self.cursor -= 1;
+                }
+            }
+            Key::Char(char) => {
+                if *char == '/' {
+                    self.filter.clear();
+                    self.enable_filter = !self.enable_filter;
+                    if self.enable_filter { self.filtered_items = self.items.clone() }
+                }
+            }
+            Key::Enter => {
+                return if self.enable_filter { State::Submit(self.filtered_items.get(self.cursor).unwrap_or(&self.items[0]).value.clone()) } else { State::Submit(self.items[self.cursor].value.clone()) };
+            }
             _ => {}
         }
 
         State::Active
-    }
-
-
-    fn input(&mut self) -> Option<&mut StringCursor> {
-        Some(&mut self.filter)
     }
 
     fn render(&mut self, state: &State<T>) -> String {
@@ -127,24 +137,28 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let line1 = theme.format_header(&state.into(), &self.prompt);
         let line4 = theme.format_footer(&state.into());
         let line2: String;
+
         if self.enable_filter {
-            line2 = self
+            let filter_regex = Regex::new(&self.filter.to_string()).unwrap();
+
+            self.filtered_items = self
                 .items
+                .iter()
+                .filter(|item| filter_regex.is_match(&item.label))
+                .cloned()
+                .collect();
+
+            if !self.filtered_items.is_empty() && self.cursor > self.filtered_items.len() - 1 { self.cursor = 0 }
+
+            line2 = self
+                .filtered_items
                 .iter()
                 .enumerate()
                 .map(|(i, item)| {
                     theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
                 })
-                .filter(|item| {
-                    item.contains(&self.filter.to_string())
-                })
                 .collect();
 
-            if !self.filter.is_empty() {
-                if let Some(index) = self.items.iter().position(|item| item.label.contains(&self.filter.to_string())) {
-                    self.cursor = index;
-                }
-            }
             let line3 = theme.format_input(&state.into(), &self.filter);
             line1 + &line2 + &line3 + &line4
         } else {
@@ -159,11 +173,15 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
             line1 + &line2 + &line4
         }
     }
+
+    fn input(&mut self) -> Option<&mut StringCursor> {
+        Some(&mut self.filter)
+    }
 }
 
 #[cfg(test)]
 mod test {
-    use super::*;
+    use crate::Select;
 
     #[test]
     fn empty_list() {
