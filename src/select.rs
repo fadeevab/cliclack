@@ -139,7 +139,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let line2: String;
 
         if self.enable_filter {
-            let filter_regex = Regex::new(&self.filter.to_string()).unwrap();
+            let filter_regex = Regex::new(&format!("(?i){}", self.filter)).unwrap();
 
             self.filtered_items = self
                 .items
