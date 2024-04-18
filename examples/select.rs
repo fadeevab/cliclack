@@ -1,7 +1,7 @@
 use cliclack::select;
 
 fn main() {
-    let selected = select("Select an anime")
+    let selected = select("Select a word")
         .item("hello","hello","hi")
         .item("world","world","world")
         .item("how","how","how")
@@ -11,7 +11,7 @@ fn main() {
         .interact();
 
     if let Ok(val) = selected {
-        println!("{}", val);
+        println!("you chose: {}", val);
     }
 
 }
