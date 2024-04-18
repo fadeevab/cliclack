@@ -4,9 +4,11 @@ use std::io;
 use console::Key;
 
 use crate::{
-    prompt::interaction::{Event, PromptInteraction, State},
+    prompt::interaction::{Event, PromptInteraction, State}
+    ,
     theme::THEME,
 };
+use crate::prompt::cursor::StringCursor;
 
 pub struct RadioButton<T> {
     pub value: T,
@@ -15,16 +17,19 @@ pub struct RadioButton<T> {
 }
 
 /// A prompt that asks for one selection from a list of options.
+#[derive(Default)]
 pub struct Select<T> {
     prompt: String,
     items: Vec<RadioButton<T>>,
     cursor: usize,
     initial_value: Option<T>,
+    enable_filter: bool,
+    filter: StringCursor,
 }
 
 impl<T> Select<T>
-where
-    T: Clone + Eq,
+    where
+        T: Clone + Eq,
 {
     /// Creates a new selection prompt.
     pub fn new(prompt: impl Display) -> Self {
@@ -33,6 +38,8 @@ where
             items: Vec::new(),
             cursor: 0,
             initial_value: None,
+            enable_filter: false,
+            filter: StringCursor::default(),
         }
     }
 
@@ -94,29 +101,63 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                     self.cursor += 1;
                 }
             }
+
+            Key::Char(char) => {
+                if *char == '/' {
+                    self.filter.delete_word_to_the_left();
+                    self.enable_filter = !self.enable_filter;
+                }
+            }
             Key::Enter => return State::Submit(self.items[self.cursor].value.clone()),
+
             _ => {}
         }
 
         State::Active
     }
 
+
+    fn input(&mut self) -> Option<&mut StringCursor> {
+        Some(&mut self.filter)
+    }
+
     fn render(&mut self, state: &State<T>) -> String {
         let theme = THEME.lock().unwrap();
 
         let line1 = theme.format_header(&state.into(), &self.prompt);
+        let line4 = theme.format_footer(&state.into());
+        let line2: String;
+        if self.enable_filter {
+            line2 = self
+                .items
+                .iter()
+                .enumerate()
+                .map(|(i, item)| {
+                    theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
+                })
+                .filter(|item| {
+                    item.contains(&self.filter.to_string())
+                })
+                .collect();
 
-        let line2: String = self
-            .items
-            .iter()
-            .enumerate()
-            .map(|(i, item)| {
-                theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
-            })
-            .collect();
-        let line3 = theme.format_footer(&state.into());
-
-        line1 + &line2 + &line3
+            if !self.filter.is_empty() {
+                if let Some(index) = self.items.iter().position(|item| item.label.contains(&self.filter.to_string())) {
+                    self.cursor = index;
+                }
+            }
+            let line3 = theme.format_input(&state.into(), &self.filter);
+            line1 + &line2 + &line3 + &line4
+        } else {
+            line2 = self
+                .items
+                .iter()
+                .enumerate()
+                .map(|(i, item)| {
+                    theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
+                })
+                .collect();
+            line1 + &line2 + &line4
+        }
     }
 }
 
