@@ -7,7 +7,7 @@ fn main() {
         .item("how","how","how")
         .item("are","are","are")
         .item("you","you","you")
-        .item("hello you","hello you","hello you")
+        .item("hello YOU","hello YOU","hello YOU")
         .interact();
 
     if let Ok(val) = selected {

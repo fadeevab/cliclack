@@ -139,8 +139,9 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let line2: String;
 
         if self.enable_filter {
-            let filter_regex = Regex::new(&format!("(?i){}", self.filter)).unwrap();
-
+            let filter_regex = Regex::new(&format!("(?i){}", self.filter))
+                .unwrap_or_else(|_| Regex::new(r"^\b$").unwrap());
+            
             self.filtered_items = self
                 .items
                 .iter()
