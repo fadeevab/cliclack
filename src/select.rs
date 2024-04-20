@@ -19,7 +19,6 @@ pub struct RadioButton<T> {
 }
 
 /// A prompt that asks for one selection from a list of options.
-#[derive(Default)]
 pub struct Select<T> {
     prompt: String,
     items: Vec<RadioButton<T>>,
