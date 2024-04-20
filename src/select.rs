@@ -5,11 +5,10 @@ use console::Key;
 use regex::Regex;
 
 use crate::{
-    prompt::interaction::{Event, PromptInteraction, State}
-    ,
+    prompt::cursor::StringCursor,
+    prompt::interaction::{Event, PromptInteraction, State},
     theme::THEME,
 };
-use crate::prompt::cursor::StringCursor;
 
 #[derive(Clone)]
 pub struct RadioButton<T> {
