@@ -132,7 +132,7 @@ impl StringCursor {
         (left, cursor, right)
     }
 
-    pub fn iter_mut(&mut self) -> impl Iterator<Item=&mut char> {
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut char> {
         self.value.iter_mut()
     }
 }

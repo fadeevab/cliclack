@@ -30,8 +30,8 @@ pub struct Select<T> {
 }
 
 impl<T> Select<T>
-    where
-        T: Clone + Eq,
+where
+    T: Clone + Eq,
 {
     /// Creates a new selection prompt.
     pub fn new(prompt: impl Display) -> Self {
@@ -125,12 +125,20 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 if self.enable_filter_mode && *char == '/' {
                     self.filter.clear();
                     self.switch_filter_mode = !self.switch_filter_mode;
-                    if self.switch_filter_mode { self.filtered_items = self.items.clone() }
+                    if self.switch_filter_mode {
+                        self.filtered_items = self.items.clone()
+                    }
                 }
             }
             Key::Enter => {
                 return if self.switch_filter_mode {
-                    State::Submit(self.filtered_items.get(self.cursor).unwrap_or(&self.items[0]).value.clone())
+                    State::Submit(
+                        self.filtered_items
+                            .get(self.cursor)
+                            .unwrap_or(&self.items[0])
+                            .value
+                            .clone(),
+                    )
                 } else {
                     State::Submit(self.items[self.cursor].value.clone())
                 };
@@ -159,7 +167,9 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 .cloned()
                 .collect();
 
-            if !self.filtered_items.is_empty() && self.cursor > self.filtered_items.len() - 1 { self.cursor = 0 }
+            if !self.filtered_items.is_empty() && self.cursor > self.filtered_items.len() - 1 {
+                self.cursor = 0
+            }
 
             let filter_display = theme.format_input(&state.into(), &self.filter);
 
@@ -168,7 +178,12 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 .iter()
                 .enumerate()
                 .map(|(i, item)| {
-                    theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
+                    theme.format_select_item(
+                        &state.into(),
+                        self.cursor == i,
+                        &item.label,
+                        &item.hint,
+                    )
                 })
                 .collect();
 
@@ -179,7 +194,12 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 .iter()
                 .enumerate()
                 .map(|(i, item)| {
-                    theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
+                    theme.format_select_item(
+                        &state.into(),
+                        self.cursor == i,
+                        &item.label,
+                        &item.hint,
+                    )
                 })
                 .collect();
             header_display + &items_display + &footer_display
