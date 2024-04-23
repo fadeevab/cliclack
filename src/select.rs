@@ -29,8 +29,8 @@ pub struct Select<T> {
 }
 
 impl<T> Select<T>
-    where
-        T: Clone + Eq,
+where
+    T: Clone + Eq,
 {
     /// Creates a new selection prompt.
     pub fn new(prompt: impl Display) -> Self {
@@ -120,15 +120,11 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 }
             }
             Key::Enter => {
-                if self.filtered_items.is_empty() { return State::Active; }
+                if self.filtered_items.is_empty() {
+                    return State::Active;
+                }
                 return if self.enable_filter_mode {
-                    State::Submit(
-                        self.filtered_items
-                            .get(self.cursor)
-                            .unwrap()
-                            .value
-                            .clone(),
-                    )
+                    State::Submit(self.filtered_items.get(self.cursor).unwrap().value.clone())
                 } else {
                     State::Submit(self.items[self.cursor].value.clone())
                 };
