@@ -24,14 +24,13 @@ pub struct Select<T> {
     cursor: usize,
     initial_value: Option<T>,
     enable_filter_mode: bool,
-    switch_filter_mode: bool,
-    filter: StringCursor,
+    input_filter: StringCursor,
     filtered_items: Vec<RadioButton<T>>,
 }
 
 impl<T> Select<T>
-where
-    T: Clone + Eq,
+    where
+        T: Clone + Eq,
 {
     /// Creates a new selection prompt.
     pub fn new(prompt: impl Display) -> Self {
@@ -41,8 +40,7 @@ where
             cursor: 0,
             initial_value: None,
             enable_filter_mode: false,
-            switch_filter_mode: false,
-            filter: StringCursor::default(),
+            input_filter: StringCursor::default(),
             filtered_items: Vec::new(),
         }
     }
@@ -112,30 +110,22 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 }
             }
             Key::ArrowRight => {
-                if !self.switch_filter_mode && self.cursor < self.items.len() - 1 {
+                if self.input_filter.is_empty() && self.cursor < self.items.len() - 1 {
                     self.cursor += 1;
                 }
             }
             Key::ArrowLeft => {
-                if !self.switch_filter_mode && self.cursor > 0 {
+                if self.input_filter.is_empty() && self.cursor > 0 {
                     self.cursor -= 1;
                 }
             }
-            Key::Char(char) => {
-                if self.enable_filter_mode && *char == '/' {
-                    self.filter.clear();
-                    self.switch_filter_mode = !self.switch_filter_mode;
-                    if self.switch_filter_mode {
-                        self.filtered_items = self.items.clone()
-                    }
-                }
-            }
             Key::Enter => {
-                return if self.switch_filter_mode {
+                if self.filtered_items.is_empty() { return State::Active; }
+                return if self.enable_filter_mode {
                     State::Submit(
                         self.filtered_items
                             .get(self.cursor)
-                            .unwrap_or(&self.items[0])
+                            .unwrap()
                             .value
                             .clone(),
                     )
@@ -153,11 +143,15 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let theme = THEME.lock().unwrap();
 
         let header_display = theme.format_header(&state.into(), &self.prompt);
+
         let items_display: String;
         let footer_display = theme.format_footer(&state.into());
 
-        if self.switch_filter_mode {
-            let filter_regex = Regex::new(&format!("(?i){}", self.filter))
+        if self.enable_filter_mode {
+            let mut display = String::new();
+            display += &header_display;
+
+            let filter_regex = Regex::new(&format!("(?i){}", self.input_filter))
                 .unwrap_or_else(|_| Regex::new(r"^\b$").unwrap());
 
             self.filtered_items = self
@@ -171,7 +165,10 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 self.cursor = 0
             }
 
-            let filter_display = theme.format_input(&state.into(), &self.filter);
+            if !self.input_filter.is_empty() {
+                let filter_display = theme.format_input(&state.into(), &self.input_filter);
+                display += &filter_display
+            }
 
             items_display = self
                 .filtered_items
@@ -187,7 +184,10 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 })
                 .collect();
 
-            header_display + &filter_display + &items_display + &footer_display
+            display += &items_display;
+            display += &footer_display;
+
+            display
         } else {
             items_display = self
                 .items
@@ -207,7 +207,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
     }
 
     fn input(&mut self) -> Option<&mut StringCursor> {
-        Some(&mut self.filter)
+        Some(&mut self.input_filter)
     }
 }
 
