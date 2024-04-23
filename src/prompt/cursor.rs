@@ -1,5 +1,4 @@
 use std::fmt::{Display, Formatter, Result};
-use std::string::ParseError;
 
 use zeroize::ZeroizeOnDrop;
 
