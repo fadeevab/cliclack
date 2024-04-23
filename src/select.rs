@@ -2,7 +2,6 @@ use std::fmt::Display;
 use std::io;
 
 use console::Key;
-use regex::Regex;
 
 use crate::{
     prompt::cursor::StringCursor,
@@ -87,7 +86,7 @@ where
         <Self as PromptInteraction<T>>::interact(self)
     }
 
-    /// Enable the filter mode, press / to activate
+    /// Enable the filter mode
     pub fn enable_filter(mut self) -> Self {
         self.enable_filter_mode = true;
         self
@@ -120,10 +119,13 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 }
             }
             Key::Enter => {
-                if self.filtered_items.is_empty() {
+                if self.enable_filter_mode
+                    && !self.input_filter.is_empty()
+                    && self.filtered_items.is_empty()
+                {
                     return State::Active;
                 }
-                return if self.enable_filter_mode {
+                return if self.enable_filter_mode && !self.input_filter.is_empty() {
                     State::Submit(self.filtered_items.get(self.cursor).unwrap().value.clone())
                 } else {
                     State::Submit(self.items[self.cursor].value.clone())
@@ -143,30 +145,40 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let items_display: String;
         let footer_display = theme.format_footer(&state.into());
 
-        if self.enable_filter_mode {
+        if self.enable_filter_mode && !self.input_filter.is_empty() {
             let mut display = String::new();
             display += &header_display;
 
-            let filter_regex = Regex::new(&format!("(?i){}", self.input_filter))
-                .unwrap_or_else(|_| Regex::new(r"^\b$").unwrap());
-
-            self.filtered_items = self
+            let mut filtered_and_scored_items: Vec<_> = self
                 .items
                 .iter()
-                .filter(|item| filter_regex.is_match(&item.label))
-                .cloned()
+                .map(|item| {
+                    let similarity = strsim::jaro_winkler(
+                        &item.label.to_lowercase(),
+                        &self.input_filter.value_to_string().to_lowercase(),
+                    );
+                    (similarity, item)
+                })
+                .filter(|(similarity, _)| *similarity > 0.6)
+                .collect();
+
+            filtered_and_scored_items.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+
+            self.filtered_items = filtered_and_scored_items
+                .into_iter()
+                .map(|(_, item)| item.clone())
                 .collect();
 
             if !self.filtered_items.is_empty() && self.cursor > self.filtered_items.len() - 1 {
-                self.cursor = 0
+                self.cursor = 0;
             }
 
             if !self.input_filter.is_empty() {
                 let filter_display = theme.format_input(&state.into(), &self.input_filter);
-                display += &filter_display
+                display += &filter_display;
             }
 
-            items_display = self
+            let items_display: String = self
                 .filtered_items
                 .iter()
                 .enumerate()
@@ -182,7 +194,6 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
 
             display += &items_display;
             display += &footer_display;
-
             display
         } else {
             items_display = self
