@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter, Result};
+use std::string::ParseError;
 
 use zeroize::ZeroizeOnDrop;
 
@@ -134,6 +135,10 @@ impl StringCursor {
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut char> {
         self.value.iter_mut()
+    }
+
+    pub fn value_to_string(&self) -> String {
+        self.value.iter().collect()
     }
 }
 
