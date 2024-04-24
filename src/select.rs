@@ -173,10 +173,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 self.cursor = 0;
             }
 
-            if !self.input_filter.is_empty() {
-                let filter_display = theme.format_input(&state.into(), &self.input_filter);
-                display += &filter_display;
-            }
+            let filter_display = theme.format_input(&state.into(), &self.input_filter);
 
             let items_display: String = self
                 .filtered_items
@@ -192,6 +189,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 })
                 .collect();
 
+            display += &filter_display;
             display += &items_display;
             display += &footer_display;
             display
