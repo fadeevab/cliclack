@@ -155,7 +155,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 .map(|item| {
                     let similarity = strsim::jaro_winkler(
                         &item.label.to_lowercase(),
-                        &self.input_filter.value_to_string().to_lowercase(),
+                        &self.input_filter.to_string().to_lowercase(),
                     );
                     (similarity, item)
                 })
@@ -218,7 +218,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
 
 #[cfg(test)]
 mod test {
-    use crate::Select;
+    use super::*;
 
     #[test]
     fn empty_list() {
