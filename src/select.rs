@@ -28,8 +28,8 @@ pub struct Select<T> {
 }
 
 impl<T> Select<T>
-where
-    T: Clone + Eq,
+    where
+        T: Clone + Eq,
 {
     /// Creates a new selection prompt.
     pub fn new(prompt: impl Display) -> Self {
@@ -141,13 +141,12 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let theme = THEME.lock().unwrap();
 
         let header_display = theme.format_header(&state.into(), &self.prompt);
-
-        let items_display: String;
         let footer_display = theme.format_footer(&state.into());
-
+        let filter_display = theme.format_input(&state.into(), &self.input_filter);
+        
         if self.enable_filter_mode && !self.input_filter.is_empty() {
-            let mut display = String::new();
-            display += &header_display;
+            let input_filter_lower = self.input_filter.to_string();
+            let filter_words: Vec<_> = input_filter_lower.split_whitespace().collect();
 
             let mut filtered_and_scored_items: Vec<_> = self
                 .items
@@ -157,7 +156,8 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                         &item.label.to_lowercase(),
                         &self.input_filter.to_string().to_lowercase(),
                     );
-                    (similarity, item)
+                    let bonus = filter_words.iter().all(|word| item.label.to_lowercase().contains(word)) as usize as f64;
+                    (similarity + bonus, item)
                 })
                 .filter(|(similarity, _)| *similarity > 0.6)
                 .collect();
@@ -172,43 +172,28 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
             if !self.filtered_items.is_empty() && self.cursor > self.filtered_items.len() - 1 {
                 self.cursor = 0;
             }
-
-            let filter_display = theme.format_input(&state.into(), &self.input_filter);
-
-            let items_display: String = self
-                .filtered_items
-                .iter()
-                .enumerate()
-                .map(|(i, item)| {
-                    theme.format_select_item(
-                        &state.into(),
-                        self.cursor == i,
-                        &item.label,
-                        &item.hint,
-                    )
-                })
-                .collect();
-
-            display += &filter_display;
-            display += &items_display;
-            display += &footer_display;
-            display
-        } else {
-            items_display = self
-                .items
-                .iter()
-                .enumerate()
-                .map(|(i, item)| {
-                    theme.format_select_item(
-                        &state.into(),
-                        self.cursor == i,
-                        &item.label,
-                        &item.hint,
-                    )
-                })
-                .collect();
-            header_display + &items_display + &footer_display
         }
+
+        let items = if self.enable_filter_mode && !self.input_filter.is_empty() {
+            &self.filtered_items
+        } else {
+            &self.items
+        };
+
+        let items_display: String = items
+            .iter()
+            .enumerate()
+            .map(|(i, item)| {
+                theme.format_select_item(
+                    &state.into(),
+                    self.cursor == i,
+                    &item.label,
+                    &item.hint,
+                )
+            })
+            .collect();
+
+        header_display + &filter_display + &items_display + &footer_display
     }
 
     fn input(&mut self) -> Option<&mut StringCursor> {
