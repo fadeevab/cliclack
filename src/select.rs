@@ -87,7 +87,7 @@ where
     }
 
     /// Enable the filter mode
-    pub fn enable_filter(mut self) -> Self {
+    pub fn filter_mode(mut self) -> Self {
         self.enable_filter_mode = true;
         self
     }
