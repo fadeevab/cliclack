@@ -28,8 +28,8 @@ pub struct Select<T> {
 }
 
 impl<T> Select<T>
-    where
-        T: Clone + Eq,
+where
+    T: Clone + Eq,
 {
     /// Creates a new selection prompt.
     pub fn new(prompt: impl Display) -> Self {
@@ -143,7 +143,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let header_display = theme.format_header(&state.into(), &self.prompt);
         let footer_display = theme.format_footer(&state.into());
         let filter_display = theme.format_input(&state.into(), &self.input_filter);
-        
+
         if self.enable_filter_mode && !self.input_filter.is_empty() {
             let input_filter_lower = self.input_filter.to_string();
             let filter_words: Vec<_> = input_filter_lower.split_whitespace().collect();
@@ -156,7 +156,10 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                         &item.label.to_lowercase(),
                         &self.input_filter.to_string().to_lowercase(),
                     );
-                    let bonus = filter_words.iter().all(|word| item.label.to_lowercase().contains(word)) as usize as f64;
+                    let bonus = filter_words
+                        .iter()
+                        .all(|word| item.label.to_lowercase().contains(word))
+                        as usize as f64;
                     (similarity + bonus, item)
                 })
                 .filter(|(similarity, _)| *similarity > 0.6)
@@ -184,12 +187,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
             .iter()
             .enumerate()
             .map(|(i, item)| {
-                theme.format_select_item(
-                    &state.into(),
-                    self.cursor == i,
-                    &item.label,
-                    &item.hint,
-                )
+                theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
             })
             .collect();
 
