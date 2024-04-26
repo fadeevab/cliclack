@@ -8,6 +8,7 @@ fn main() {
         .item("are", "are", "are")
         .item("you", "you", "you")
         .item("hello YOU", "hello YOU", "hello YOU")
+        .filter_mode()
         .interact();
 
     if let Ok(val) = selected {
