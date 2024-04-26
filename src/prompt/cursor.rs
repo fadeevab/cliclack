@@ -109,6 +109,11 @@ impl StringCursor {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.cursor = 0;
+        self.value.clear()
+    }
+
     pub fn extend(&mut self, string: &str) {
         self.value.extend(string.chars());
     }
