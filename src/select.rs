@@ -158,7 +158,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                     );
                     let bonus = filter_words
                         .iter()
-                        .all(|word| item.label.to_lowercase().contains(word))
+                        .all(|word| item.label.to_lowercase().contains(&word.to_lowercase()))
                         as usize as f64;
                     (similarity + bonus, item)
                 })
@@ -190,8 +190,11 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
             })
             .collect();
-        if self.enable_filter_mode { header_display + &filter_display + &items_display + &footer_display } else { header_display + &items_display + &footer_display }
-        
+        if self.enable_filter_mode {
+            header_display + &filter_display + &items_display + &footer_display
+        } else {
+            header_display + &items_display + &footer_display
+        }
     }
 
     fn input(&mut self) -> Option<&mut StringCursor> {

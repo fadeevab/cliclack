@@ -7,7 +7,11 @@ fn main() {
         .item("how", "how", "how")
         .item("are", "are", "are")
         .item("you", "you", "you")
-        .item("hello YOU", "hello YOU", "hello YOU")
+        .item(
+            "hello how are YOU",
+            "hello how are YOU",
+            "hello how are YOU",
+        )
         .filter_mode()
         .interact();
 
