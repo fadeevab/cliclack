@@ -190,8 +190,8 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
             })
             .collect();
-
-        header_display + &filter_display + &items_display + &footer_display
+        if self.enable_filter_mode { header_display + &filter_display + &items_display + &footer_display } else { header_display + &items_display + &footer_display }
+        
     }
 
     fn input(&mut self) -> Option<&mut StringCursor> {
