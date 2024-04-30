@@ -10,10 +10,10 @@ use crate::{
 };
 
 #[derive(Clone)]
-pub struct RadioButton<T> {
-    pub value: T,
-    pub label: String,
-    pub hint: String,
+struct RadioButton<T> {
+    value: T,
+    label: String,
+    hint: String,
 }
 
 /// A prompt that asks for one selection from a list of options.
@@ -22,9 +22,7 @@ pub struct Select<T> {
     items: Vec<RadioButton<T>>,
     cursor: usize,
     initial_value: Option<T>,
-    enable_filter_mode: bool,
-    input_filter: StringCursor,
-    filtered_items: Vec<RadioButton<T>>,
+    filter_mode: Option<FilterMode<T>>,
 }
 
 impl<T> Select<T>
@@ -38,9 +36,7 @@ where
             items: Vec::new(),
             cursor: 0,
             initial_value: None,
-            enable_filter_mode: false,
-            input_filter: StringCursor::default(),
-            filtered_items: Vec::new(),
+            filter_mode: None,
         }
     }
 
@@ -68,6 +64,12 @@ where
         self
     }
 
+    /// Enable the filter mode
+    pub fn filter_mode(mut self) -> Self {
+        self.filter_mode = Some(FilterMode::new(self.items.clone()));
+        self
+    }
+
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<T> {
         if self.items.is_empty() {
@@ -85,51 +87,37 @@ where
         }
         <Self as PromptInteraction<T>>::interact(self)
     }
-
-    /// Enable the filter mode
-    pub fn filter_mode(mut self) -> Self {
-        self.enable_filter_mode = true;
-        self
-    }
 }
 
 impl<T: Clone> PromptInteraction<T> for Select<T> {
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
+        if let Some(filter) = &mut self.filter_mode {
+            if let Some(state) = filter.on(key, &self.items) {
+                return state;
+            }
+        }
+
+        let (cursor, items) = if let Some(filter) = &mut self.filter_mode {
+            (&mut filter.cursor, &filter.items)
+        } else {
+            (&mut self.cursor, &self.items)
+        };
+
         match key {
-            Key::ArrowUp => {
-                if self.cursor > 0 {
-                    self.cursor -= 1;
+            Key::ArrowUp | Key::ArrowLeft => {
+                if *cursor > 0 {
+                    *cursor -= 1;
                 }
             }
-            Key::ArrowDown => {
-                if self.cursor < self.items.len() - 1 {
-                    self.cursor += 1;
-                }
-            }
-            Key::ArrowRight => {
-                if self.input_filter.is_empty() && self.cursor < self.items.len() - 1 {
-                    self.cursor += 1;
-                }
-            }
-            Key::ArrowLeft => {
-                if self.input_filter.is_empty() && self.cursor > 0 {
-                    self.cursor -= 1;
+            Key::ArrowDown | Key::ArrowRight => {
+                if *cursor < items.len() - 1 {
+                    *cursor += 1;
                 }
             }
             Key::Enter => {
-                if self.enable_filter_mode
-                    && !self.input_filter.is_empty()
-                    && self.filtered_items.is_empty()
-                {
-                    return State::Active;
-                }
-                return if self.enable_filter_mode && !self.input_filter.is_empty() {
-                    State::Submit(self.filtered_items.get(self.cursor).unwrap().value.clone())
-                } else {
-                    State::Submit(self.items[self.cursor].value.clone())
-                };
+                return State::Submit(items[*cursor].value.clone());
             }
             _ => {}
         }
@@ -142,63 +130,104 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
 
         let header_display = theme.format_header(&state.into(), &self.prompt);
         let footer_display = theme.format_footer(&state.into());
-        let filter_display = theme.format_input(&state.into(), &self.input_filter);
 
-        if self.enable_filter_mode && !self.input_filter.is_empty() {
-            let input_filter_lower = self.input_filter.to_string();
-            let filter_words: Vec<_> = input_filter_lower.split_whitespace().collect();
-
-            let mut filtered_and_scored_items: Vec<_> = self
-                .items
-                .iter()
-                .map(|item| {
-                    let similarity = strsim::jaro_winkler(
-                        &item.label.to_lowercase(),
-                        &self.input_filter.to_string().to_lowercase(),
-                    );
-                    let bonus = filter_words
-                        .iter()
-                        .all(|word| item.label.to_lowercase().contains(&word.to_lowercase()))
-                        as usize as f64;
-                    (similarity + bonus, item)
-                })
-                .filter(|(similarity, _)| *similarity > 0.6)
-                .collect();
-
-            filtered_and_scored_items.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-
-            self.filtered_items = filtered_and_scored_items
-                .into_iter()
-                .map(|(_, item)| item.clone())
-                .collect();
-
-            if !self.filtered_items.is_empty() && self.cursor > self.filtered_items.len() - 1 {
-                self.cursor = 0;
+        let filter_display = if let Some(filter) = &self.filter_mode {
+            match state {
+                State::Submit(_) | State::Cancel => "".to_string(),
+                _ => theme.format_input(&state.into(), &filter.input),
             }
-        }
-
-        let items = if self.enable_filter_mode && !self.input_filter.is_empty() {
-            &self.filtered_items
         } else {
-            &self.items
+            "".to_string()
+        };
+
+        let (items, cursor) = if let Some(filter) = &self.filter_mode {
+            (&filter.items, filter.cursor)
+        } else {
+            (&self.items, self.cursor)
         };
 
         let items_display: String = items
             .iter()
             .enumerate()
             .map(|(i, item)| {
-                theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
+                theme.format_select_item(&state.into(), cursor == i, &item.label, &item.hint)
             })
             .collect();
-        if self.enable_filter_mode {
-            header_display + &filter_display + &items_display + &footer_display
-        } else {
-            header_display + &items_display + &footer_display
+
+        header_display + &filter_display + &items_display + &footer_display
+    }
+
+    /// Handles the input cursor automatically in the filter mode.
+    fn input(&mut self) -> Option<&mut StringCursor> {
+        self.filter_mode.as_mut().map(|filter| &mut filter.input)
+    }
+}
+
+struct FilterMode<T> {
+    input: StringCursor,
+    items: Vec<RadioButton<T>>,
+    cursor: usize,
+}
+
+impl<T: Clone> FilterMode<T> {
+    fn new(items: Vec<RadioButton<T>>) -> Self {
+        Self {
+            input: StringCursor::default(),
+            items,
+            cursor: 0,
         }
     }
 
-    fn input(&mut self) -> Option<&mut StringCursor> {
-        Some(&mut self.input_filter)
+    fn on(&mut self, key: &Key, all_items: &[RadioButton<T>]) -> Option<State<T>> {
+        match key {
+            // Need further processing of simple up and down actions.
+            Key::ArrowDown | Key::ArrowUp => None,
+            // Need moving up and down the list if no input provided.
+            Key::ArrowLeft | Key::ArrowRight if self.input.is_empty() => None,
+            // Need submitting of the selected item.
+            Key::Enter if !self.items.is_empty() => None,
+            // Otherwise, no items found.
+            Key::Enter => Some(State::Error("No items".into())),
+            // Refresh the filtered items for the rest of the keys.
+            _ if !self.input.is_empty() => {
+                let input_lower = self.input.to_string();
+                let filter_words: Vec<_> = input_lower.split_whitespace().collect();
+
+                let mut filtered_and_scored_items: Vec<_> = all_items
+                    .iter()
+                    .map(|item| {
+                        let similarity = strsim::jaro_winkler(
+                            &item.label.to_lowercase(),
+                            &self.input.to_string().to_lowercase(),
+                        );
+                        let bonus = filter_words
+                            .iter()
+                            .all(|word| item.label.to_lowercase().contains(&word.to_lowercase()))
+                            as usize as f64;
+                        (similarity + bonus, item)
+                    })
+                    .filter(|(similarity, _)| *similarity > 0.6)
+                    .collect();
+
+                filtered_and_scored_items.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
+
+                self.items = filtered_and_scored_items
+                    .into_iter()
+                    .map(|(_, item)| item.clone())
+                    .collect();
+
+                if self.items.is_empty() || self.cursor > self.items.len() - 1 {
+                    self.cursor = 0;
+                }
+
+                Some(State::Active)
+            }
+            // Reset the items to the original list.
+            _ => {
+                self.items = all_items.to_vec();
+                Some(State::Active)
+            }
+        }
     }
 }
 
