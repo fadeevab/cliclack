@@ -1,6 +1,6 @@
-use cliclack::select;
+use cliclack::{outro, select};
 
-fn main() {
+fn main() -> std::io::Result<()> {
     let selected = select("Select a word")
         .item("hello", "hello", "hi")
         .item("world", "world", "world")
@@ -13,9 +13,9 @@ fn main() {
             "hello how are YOU",
         )
         .filter_mode()
-        .interact();
+        .interact()?;
 
-    if let Ok(val) = selected {
-        println!("you chose: {}", val);
-    }
+    outro(format!("You chose: {selected}"))?;
+
+    Ok(())
 }

@@ -8,11 +8,11 @@ use crate::{
     theme::THEME,
 };
 
-pub struct Checkbox<T> {
-    pub value: T,
-    pub label: String,
-    pub hint: String,
-    pub selected: bool,
+struct Checkbox<T> {
+    value: T,
+    label: String,
+    hint: String,
+    selected: bool,
 }
 
 /// A prompt that asks for one or more selections from a list of options.
