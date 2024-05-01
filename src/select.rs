@@ -112,7 +112,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 }
             }
             Key::ArrowDown | Key::ArrowRight => {
-                if *cursor < items.len() - 1 {
+                if !items.is_empty() && *cursor < items.len() - 1 {
                     *cursor += 1;
                 }
             }
