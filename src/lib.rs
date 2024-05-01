@@ -246,6 +246,7 @@
 #![warn(missing_docs, unused_qualifications)]
 
 mod confirm;
+mod filter;
 mod input;
 mod multiprogress;
 mod multiselect;

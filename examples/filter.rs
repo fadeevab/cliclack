@@ -15,7 +15,16 @@ fn main() -> std::io::Result<()> {
         .filter_mode()
         .interact()?;
 
-    outro(format!("You chose: {selected}"))?;
+    let tools = cliclack::multiselect("Select additional tools")
+        .initial_values(vec!["prettier", "eslint"])
+        .item("prettier", "Prettier", "recommended")
+        .item("eslint", "ESLint", "recommended")
+        .item("stylelint", "Stylelint", "")
+        .item("gh-action", "GitHub Action", "")
+        .filter_mode()
+        .interact()?;
+
+    outro(format!("You chose: {selected}, then {}", tools.join(", ")))?;
 
     Ok(())
 }
