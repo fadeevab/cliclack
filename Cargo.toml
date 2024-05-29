@@ -13,6 +13,9 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/fadeevab/cliclack"
 
+[package.metadata.docs.rs]
+all-features = true
+
 [dependencies]
 console = "0.15.8"
 indicatif = "0.17.8"
@@ -21,10 +24,13 @@ strsim = "0.11.1"
 textwrap = "0.16.0"
 zeroize = { version = "1.6.0", features = ["derive"] }
 
+[build-dependencies]
+rustc_version = "0.4.0"
+
 [dev-dependencies]
 ctrlc = "3.4.2"
 rand = "0.8.5"
 
 [features]
-default = ["multiline"]
+default = []
 multiline = []

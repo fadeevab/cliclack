@@ -188,14 +188,27 @@ where
     fn render(&mut self, state: &State<T>) -> String {
         let theme = THEME.lock().unwrap();
 
-        let line1 = theme.format_header(&state.into(), &self.prompt);
-        let line2 = if self.input.is_empty() {
+        let part1 = theme.format_header(&state.into(), &self.prompt);
+        let part2 = if self.input.is_empty() {
             theme.format_placeholder(&state.into(), &self.placeholder)
         } else {
             theme.format_input(&state.into(), &self.input)
         };
-        let line3 = theme.format_footer(&state.into());
+        #[cfg(not(feature = "multiline"))]
+        let part3 = theme.format_footer(&state.into());
+        #[cfg(feature = "multiline")]
+        let part3 = if self.input.is_multiline() {
+            theme.format_footer_with_active_hint(
+                &state.into(),
+                match self.input.is_editing() {
+                    true => "[Tab => ViewMode | ESC => Cancel]",
+                    false => "[Tab => EditMode | Enter => Submit | ESC => Cancel]",
+                },
+            )
+        } else {
+            theme.format_footer(&state.into())
+        };
 
-        line1 + &line2 + &line3
+        part1 + &part2 + &part3
     }
 }

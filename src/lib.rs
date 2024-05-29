@@ -244,6 +244,7 @@
 
 #![forbid(unsafe_code)]
 #![warn(missing_docs, unused_qualifications)]
+#![cfg_attr(all(doc, CHANNEL_NIGHTLY), feature(doc_auto_cfg))] // For nightly rustdoc, enable auto-cfg
 
 mod confirm;
 mod filter;

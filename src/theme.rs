@@ -218,13 +218,13 @@ pub trait Theme {
 
     /// Highlights the cursor character in the input text formatting the whole
     /// string with the given style.
-    fn cursor_with_style(&self, cursor: &StringCursor, new_style: &Style) -> String {
+    fn cursor_with_style(&self, cursor: &StringCursor) -> String {
         let (left, cursor, right) = cursor.split();
         format!(
             "{left}{cursor}{right}",
-            left = new_style.apply_to(left),
+            left = left,
             cursor = style(cursor).reverse(),
-            right = new_style.apply_to(right)
+            right = right
         )
     }
 
@@ -302,6 +302,19 @@ pub trait Theme {
         )
     }
 
+    /// Formats the footer of the prompt like [`Theme::format_footer`] but with a hint on ThemeState::Active.
+    fn format_footer_with_active_hint(&self, state: &ThemeState, hint: &str) -> String {
+        format!(
+            "{}\n", // '\n' vanishes by style applying, thus exclude it from styling
+            self.bar_color(state).apply_to(match state {
+                ThemeState::Active => format!("{S_BAR_END}  {hint}"),
+                ThemeState::Cancel => format!("{S_BAR_END}  Operation cancelled."),
+                ThemeState::Submit => format!("{S_BAR}"),
+                ThemeState::Error(err) => format!("{S_BAR_END}  {err}"),
+            })
+        )
+    }
+
     /// Formats the input cursor with the given style adding frame bars around.
     ///
     /// It hides the cursor when the input is not active.
@@ -309,14 +322,29 @@ pub trait Theme {
         let new_style = &self.input_style(state);
 
         let input = &match state {
-            ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
+            ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor),
             _ => new_style.apply_to(cursor).to_string(),
         };
 
-        format!(
-            "{bar}  {input}\n",
-            bar = self.bar_color(state).apply_to(S_BAR)
-        )
+        #[cfg(feature = "multiline")]
+        {
+            input.lines().fold(String::new(), |acc, line| {
+                format!(
+                    "{}{}  {}\n",
+                    acc,
+                    self.bar_color(state).apply_to(S_BAR),
+                    new_style.apply_to(line)
+                )
+            })
+        }
+        #[cfg(not(feature = "multiline"))]
+        {
+            format!(
+                "{}  {}\n",
+                self.bar_color(state).apply_to(S_BAR),
+                new_style.apply_to(input)
+            )
+        }
     }
 
     /// Formats the input cursor with the dimmed style of placeholder.
@@ -329,15 +357,30 @@ pub trait Theme {
         let new_style = &self.placeholder_style(state);
 
         let placeholder = &match state {
-            ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
+            ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor),
             ThemeState::Cancel => "".to_string(),
             _ => new_style.apply_to(cursor).to_string(),
         };
+        #[cfg(feature = "multiline")]
+        {
+            placeholder.lines().fold(String::new(), |acc, line| {
+                format!(
+                    "{}{}  {}\n",
+                    acc,
+                    self.bar_color(state).apply_to(S_BAR),
+                    new_style.apply_to(line)
+                )
+            })
+        }
 
-        format!(
-            "{bar}  {placeholder}\n",
-            bar = self.bar_color(state).apply_to(S_BAR)
-        )
+        #[cfg(not(feature = "multiline"))]
+        {
+            format!(
+                "{bar}  {placeholder}\n",
+                bar = self.bar_color(state).apply_to(S_BAR),
+                placeholder = new_style.apply_to(placeholder)
+            )
+        }
     }
 
     /// Returns the radio item without frame bars around the item.

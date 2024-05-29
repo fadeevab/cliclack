@@ -114,6 +114,10 @@ pub trait PromptInteraction<T> {
                             Key::Del => cursor.delete_right(),
                             Key::ArrowLeft => cursor.move_left(),
                             Key::ArrowRight => cursor.move_right(),
+                            #[cfg(feature = "multiline")]
+                            Key::ArrowUp => cursor.move_up(),
+                            #[cfg(feature = "multiline")]
+                            Key::ArrowDown => cursor.move_down(),
                             Key::Home => cursor.move_home(),
                             Key::End => cursor.move_end(),
 
