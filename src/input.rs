@@ -73,6 +73,19 @@ impl Input {
         self
     }
 
+    /// Sets whether allow the multiline input. Default: `false`. Needs feature `multiline`.
+    ///
+    /// If enable, the user should press `Tab` to switch between the `edit` and `view` mode.
+    ///
+    /// In the edit mode, the user can input multiple lines of text.
+    ///
+    /// In the view mode, the user can press `Enter` to submit the input.
+    #[cfg(feature = "multiline")]
+    pub fn multiline(mut self, multiline: bool) -> Self {
+        self.input.multiline(multiline);
+        self
+    }
+
     /// Sets a validation callback for the input that is called when the user submits.
     /// The same as [`Input::validate_on_enter`].
     pub fn validate<V>(mut self, validator: V) -> Self
@@ -132,6 +145,11 @@ where
 
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
+
+        #[cfg(feature = "multiline")]
+        if *key == Key::Enter && self.input.is_multiline() && self.input.is_editing() {
+            return State::Active;
+        }
 
         if *key == Key::Enter && self.input.is_empty() {
             if let Some(default) = &self.default {

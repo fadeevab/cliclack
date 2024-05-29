@@ -2,10 +2,27 @@ use std::fmt::{Display, Formatter, Result};
 
 use zeroize::ZeroizeOnDrop;
 
-#[derive(Default, ZeroizeOnDrop, Clone)]
+#[derive(ZeroizeOnDrop, Clone)]
+#[cfg_attr(not(feature = "multiline"), derive(Default))]
 pub struct StringCursor {
     value: Vec<char>,
     cursor: usize,
+    #[cfg(feature = "multiline")]
+    multiline: bool,
+    #[cfg(feature = "multiline")]
+    editing: bool,
+}
+
+#[cfg(feature = "multiline")]
+impl Default for StringCursor {
+    fn default() -> Self {
+        Self {
+            value: Vec::new(),
+            cursor: 0,
+            multiline: false,
+            editing: true,
+        }
+    }
 }
 
 /// Returns the indices of the first character of each word in the given string,
@@ -39,6 +56,10 @@ impl StringCursor {
     }
 
     pub fn insert(&mut self, chr: char) {
+        #[cfg(feature = "multiline")]
+        if !self.editing | (!self.multiline && chr == '\n') {
+            return;
+        }
         self.value.insert(self.cursor, chr);
         self.cursor += 1;
     }
@@ -134,6 +155,28 @@ impl StringCursor {
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut char> {
         self.value.iter_mut()
+    }
+
+    #[cfg(feature = "multiline")]
+    pub fn multiline(&mut self, multiline: bool) {
+        self.multiline = multiline;
+    }
+
+    #[cfg(feature = "multiline")]
+    pub fn is_multiline(&self) -> bool {
+        self.multiline
+    }
+
+    #[cfg(feature = "multiline")]
+    pub fn is_editing(&self) -> bool {
+        self.editing
+    }
+
+    #[cfg(feature = "multiline")]
+    pub fn switch_editing(&mut self) {
+        if self.multiline {
+            self.editing = !self.editing;
+        }
     }
 }
 
