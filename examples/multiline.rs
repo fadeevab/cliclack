@@ -1,14 +1,11 @@
 fn main() -> std::io::Result<()> {
-    #[cfg(feature = "multiline")]
-    {
-        use cliclack::Input;
+    use cliclack::Input;
 
-        let res: String = Input::new("Try input mutiline text:")
-            .placeholder("Type here...")
-            .multiline(true)
-            .interact()?;
-        println!("Your input is:\n {}", res);
-        println!("Your input len is:\n {}", res.len());
-    }
+    let res: String = Input::new("Try input mutiline text:")
+        .placeholder("Type here...")
+        .multiline(true)
+        .interact()?;
+    println!("Your input is:\n {}", res);
+    println!("Your input len is:\n {}", res.len());
     Ok(())
 }
