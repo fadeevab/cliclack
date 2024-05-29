@@ -98,6 +98,9 @@ impl StringCursor {
 
     #[cfg(feature = "multiline")]
     pub fn move_up(&mut self) {
+        if !self.multiline {
+            return;
+        }
         let jumps = line_jump_indices(&self.value);
         let ix = jumps
             .binary_search(&self.cursor)
@@ -109,6 +112,9 @@ impl StringCursor {
 
     #[cfg(feature = "multiline")]
     pub fn move_down(&mut self) {
+        if !self.multiline {
+            return;
+        }
         let jumps = line_jump_indices(&self.value);
         let ix = jumps
             .binary_search(&self.cursor)

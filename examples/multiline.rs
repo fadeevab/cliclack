@@ -5,7 +5,11 @@ fn main() -> std::io::Result<()> {
         .placeholder("Type here...")
         .multiline(true)
         .interact()?;
-    println!("Your input is:\n {}", res);
-    println!("Your input len is:\n {}", res.len());
+    cliclack::note("Your input is:", res)?;
+
+    let res: String = Input::new("Try input one line:")
+        .placeholder("Type here...")
+        .interact()?;
+    cliclack::outro(format!("Your input is: {res}"))?;
     Ok(())
 }
