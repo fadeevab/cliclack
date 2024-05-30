@@ -32,8 +32,8 @@ ctrlc = "3.4.2"
 rand = "0.8.5"
 
 [[example]]
-name = "multiline"
-path = "examples/multiline.rs"
+name = "multiline_input"
+path = "examples/multiline_input.rs"
 required-features = ["multiline"]
 
 [features]
