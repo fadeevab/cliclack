@@ -69,7 +69,7 @@ If feature `multiline` enabled, the input prompt can accept multiple lines of te
 ```rust
 use cliclack::input;
 
-let path: String = input("Input multiple lines?")
+let path: String = input("Input multiple lines: ")
     .multiline(true)
     .interact()?;
 ```
