@@ -216,8 +216,7 @@ pub trait Theme {
         }
     }
 
-    /// Highlights the cursor character in the input text formatting the whole
-    /// string with the given style.
+    /// Highlights the cursor character in the input.
     fn cursor_with_style(&self, cursor: &StringCursor) -> String {
         let (left, cursor, right) = cursor.split();
         format!(
