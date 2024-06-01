@@ -286,10 +286,15 @@ pub trait Theme {
 
     /// Formats the footer of the prompt (like `└  Operation cancelled.`).
     fn format_footer(&self, state: &ThemeState) -> String {
+        self.format_footer_with_message(state, "")
+    }
+
+    /// Formats the footer with a custom message (like `└  {message}`).
+    fn format_footer_with_message(&self, state: &ThemeState, message: &str) -> String {
         format!(
             "{}\n", // '\n' vanishes by style applying, thus exclude it from styling
             self.bar_color(state).apply_to(match state {
-                ThemeState::Active => format!("{S_BAR_END}"),
+                ThemeState::Active => format!("{S_BAR_END}  {message}"),
                 ThemeState::Cancel => format!("{S_BAR_END}  Operation cancelled."),
                 ThemeState::Submit => format!("{S_BAR}"),
                 ThemeState::Error(err) => format!("{S_BAR_END}  {err}"),

@@ -139,8 +139,7 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
             }
             Key::Enter => {
                 let selected_items = self
-                    .filter
-                    .items()
+                    .items
                     .iter()
                     .map(|item| item.borrow())
                     .filter(|item| item.selected)
@@ -162,8 +161,10 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
     fn render(&mut self, state: &State<Vec<T>>) -> String {
         let theme = THEME.lock().unwrap();
 
+        // Render the static header.
         let header = theme.format_header(&state.into(), &self.prompt);
 
+        // Render the filter input until the user submits or cancels.
         let filter_line = if let Some(input) = self.filter.input() {
             match state {
                 State::Submit(_) | State::Cancel => "".to_string(),
@@ -173,8 +174,16 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
             "".to_string()
         };
 
+        // When the user is submitting or canceling, the original items
+        // are shown to display the final selection.
+        // Otherwise, show the filtered items.
+        let items_to_render = match state {
+            State::Submit(_) | State::Cancel => &self.items,
+            _ => self.filter.items(),
+        };
+
         let mut items_render = String::new();
-        for (i, item) in self.filter.items().iter().map(|i| i.borrow()).enumerate() {
+        for (i, item) in items_to_render.iter().map(|i| i.borrow()).enumerate() {
             items_render.push_str(&theme.format_multiselect_item(
                 &state.into(),
                 item.selected,
@@ -183,7 +192,24 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                 &item.hint,
             ));
         }
-        let footer = theme.format_footer(&state.into());
+
+        let not_rendered_items = self.items.iter().filter(|i| i.borrow().selected).count()
+            - self
+                .filter
+                .items()
+                .iter()
+                .filter(|i| i.borrow().selected)
+                .count();
+
+        // Render the footer with a hint about the number of selected items.
+        let footer = if not_rendered_items > 0 {
+            theme.format_footer_with_message(
+                &state.into(),
+                &format!("{} selected items hidden", not_rendered_items),
+            )
+        } else {
+            theme.format_footer(&state.into())
+        };
 
         header + &filter_line + &items_render + &footer
     }
