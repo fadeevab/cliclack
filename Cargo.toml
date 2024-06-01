@@ -13,9 +13,6 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/fadeevab/cliclack"
 
-[package.metadata.docs.rs]
-all-features = true
-
 [dependencies]
 console = "0.15.8"
 indicatif = "0.17.8"
