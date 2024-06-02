@@ -1,30 +1,38 @@
-use std::fmt::Display;
+use std::cell::RefCell;
 use std::io;
+use std::{fmt::Display, rc::Rc};
 
 use console::Key;
 
 use crate::{
-    prompt::cursor::StringCursor,
-    prompt::interaction::{Event, PromptInteraction, State},
+    filter::{FilteredView, LabeledItem},
+    prompt::{
+        cursor::StringCursor,
+        interaction::{Event, PromptInteraction, State},
+    },
     theme::THEME,
 };
 
 #[derive(Clone)]
-pub struct RadioButton<T> {
-    pub value: T,
-    pub label: String,
-    pub hint: String,
+struct RadioButton<T> {
+    value: T,
+    label: String,
+    hint: String,
+}
+
+impl<T> LabeledItem for RadioButton<T> {
+    fn label(&self) -> &str {
+        &self.label
+    }
 }
 
 /// A prompt that asks for one selection from a list of options.
 pub struct Select<T> {
     prompt: String,
-    items: Vec<RadioButton<T>>,
+    items: Vec<Rc<RefCell<RadioButton<T>>>>,
     cursor: usize,
     initial_value: Option<T>,
-    enable_filter_mode: bool,
-    input_filter: StringCursor,
-    filtered_items: Vec<RadioButton<T>>,
+    filter: FilteredView<RadioButton<T>>,
 }
 
 impl<T> Select<T>
@@ -38,19 +46,17 @@ where
             items: Vec::new(),
             cursor: 0,
             initial_value: None,
-            enable_filter_mode: false,
-            input_filter: StringCursor::default(),
-            filtered_items: Vec::new(),
+            filter: FilteredView::default(),
         }
     }
 
     /// Adds an item to the selection prompt.
     pub fn item(mut self, value: T, label: impl Display, hint: impl Display) -> Self {
-        self.items.push(RadioButton {
+        self.items.push(Rc::new(RefCell::new(RadioButton {
             value,
             label: label.to_string(),
             hint: hint.to_string(),
-        });
+        })));
         self
     }
 
@@ -68,6 +74,12 @@ where
         self
     }
 
+    /// Enable the filter mode.
+    pub fn filter_mode(mut self) -> Self {
+        self.filter.enable();
+        self
+    }
+
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<T> {
         if self.items.is_empty() {
@@ -80,16 +92,11 @@ where
             self.cursor = self
                 .items
                 .iter()
-                .position(|item| item.value == *initial_value)
+                .position(|item| item.borrow().value == *initial_value)
                 .unwrap_or(self.cursor);
         }
+        self.filter.set(self.items.to_vec());
         <Self as PromptInteraction<T>>::interact(self)
-    }
-
-    /// Enable the filter mode
-    pub fn filter_mode(mut self) -> Self {
-        self.enable_filter_mode = true;
-        self
     }
 }
 
@@ -97,39 +104,26 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
+        if let Some(state) = self.filter.on(key, self.items.clone()) {
+            if self.filter.items().is_empty() || self.cursor > self.filter.items().len() - 1 {
+                self.cursor = 0;
+            }
+            return state;
+        }
+
         match key {
-            Key::ArrowUp => {
+            Key::ArrowUp | Key::ArrowLeft => {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
             }
-            Key::ArrowDown => {
-                if self.cursor < self.items.len() - 1 {
+            Key::ArrowDown | Key::ArrowRight => {
+                if !self.filter.items().is_empty() && self.cursor < self.filter.items().len() - 1 {
                     self.cursor += 1;
-                }
-            }
-            Key::ArrowRight => {
-                if self.input_filter.is_empty() && self.cursor < self.items.len() - 1 {
-                    self.cursor += 1;
-                }
-            }
-            Key::ArrowLeft => {
-                if self.input_filter.is_empty() && self.cursor > 0 {
-                    self.cursor -= 1;
                 }
             }
             Key::Enter => {
-                if self.enable_filter_mode
-                    && !self.input_filter.is_empty()
-                    && self.filtered_items.is_empty()
-                {
-                    return State::Active;
-                }
-                return if self.enable_filter_mode && !self.input_filter.is_empty() {
-                    State::Submit(self.filtered_items.get(self.cursor).unwrap().value.clone())
-                } else {
-                    State::Submit(self.items[self.cursor].value.clone())
-                };
+                return State::Submit(self.filter.items()[self.cursor].borrow().value.clone());
             }
             _ => {}
         }
@@ -142,63 +136,33 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
 
         let header_display = theme.format_header(&state.into(), &self.prompt);
         let footer_display = theme.format_footer(&state.into());
-        let filter_display = theme.format_input(&state.into(), &self.input_filter);
 
-        if self.enable_filter_mode && !self.input_filter.is_empty() {
-            let input_filter_lower = self.input_filter.to_string();
-            let filter_words: Vec<_> = input_filter_lower.split_whitespace().collect();
-
-            let mut filtered_and_scored_items: Vec<_> = self
-                .items
-                .iter()
-                .map(|item| {
-                    let similarity = strsim::jaro_winkler(
-                        &item.label.to_lowercase(),
-                        &self.input_filter.to_string().to_lowercase(),
-                    );
-                    let bonus = filter_words
-                        .iter()
-                        .all(|word| item.label.to_lowercase().contains(&word.to_lowercase()))
-                        as usize as f64;
-                    (similarity + bonus, item)
-                })
-                .filter(|(similarity, _)| *similarity > 0.6)
-                .collect();
-
-            filtered_and_scored_items.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-
-            self.filtered_items = filtered_and_scored_items
-                .into_iter()
-                .map(|(_, item)| item.clone())
-                .collect();
-
-            if !self.filtered_items.is_empty() && self.cursor > self.filtered_items.len() - 1 {
-                self.cursor = 0;
+        let filter_display = if let Some(input) = &self.filter.input() {
+            match state {
+                State::Submit(_) | State::Cancel => "".to_string(),
+                _ => theme.format_input(&state.into(), input),
             }
-        }
-
-        let items = if self.enable_filter_mode && !self.input_filter.is_empty() {
-            &self.filtered_items
         } else {
-            &self.items
+            "".to_string()
         };
 
-        let items_display: String = items
+        let items_display: String = self
+            .filter
+            .items()
             .iter()
             .enumerate()
             .map(|(i, item)| {
+                let item = item.borrow();
                 theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
             })
             .collect();
-        if self.enable_filter_mode {
-            header_display + &filter_display + &items_display + &footer_display
-        } else {
-            header_display + &items_display + &footer_display
-        }
+
+        header_display + &filter_display + &items_display + &footer_display
     }
 
+    /// Enable handling of the input in the filter mode.
     fn input(&mut self) -> Option<&mut StringCursor> {
-        Some(&mut self.input_filter)
+        self.filter.input()
     }
 }
 
