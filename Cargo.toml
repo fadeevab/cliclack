@@ -31,5 +31,5 @@ path = "examples/multiline_input.rs"
 required-features = ["multiline"]
 
 [features]
-default = []
+default = ["multiline"]
 multiline = []

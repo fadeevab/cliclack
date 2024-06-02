@@ -8,9 +8,9 @@ pub struct StringCursor {
     value: Vec<char>,
     cursor: usize,
     #[cfg(feature = "multiline")]
-    multiline: bool,
+    pub(crate) multiline: bool,
     #[cfg(feature = "multiline")]
-    editing: bool,
+    pub(crate) editing: bool,
 }
 
 #[cfg(feature = "multiline")]
@@ -213,16 +213,6 @@ impl StringCursor {
     #[cfg(feature = "multiline")]
     pub fn multiline(&mut self, multiline: bool) {
         self.multiline = multiline;
-    }
-
-    #[cfg(feature = "multiline")]
-    pub fn is_multiline(&self) -> bool {
-        self.multiline
-    }
-
-    #[cfg(feature = "multiline")]
-    pub fn is_editing(&self) -> bool {
-        self.editing
     }
 
     #[cfg(feature = "multiline")]

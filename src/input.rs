@@ -147,7 +147,7 @@ where
         let Event::Key(key) = event;
 
         #[cfg(feature = "multiline")]
-        if self.input.is_multiline() && self.input.is_editing() {
+        if self.input.multiline && self.input.editing {
             return State::Active;
         }
 
@@ -197,10 +197,10 @@ where
         #[cfg(not(feature = "multiline"))]
         let part3 = theme.format_footer(&state.into());
         #[cfg(feature = "multiline")]
-        let part3 = if self.input.is_multiline() {
+        let part3 = if self.input.multiline {
             theme.format_footer_with_active_hint(
                 &state.into(),
-                match self.input.is_editing() {
+                match self.input.editing {
                     true => "[Tab => ViewMode | ESC => Cancel]",
                     false => "[Tab => EditMode | Enter => Submit | ESC => Cancel]",
                 },
