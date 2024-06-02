@@ -158,7 +158,10 @@ impl ProgressBar {
             state,
         );
 
-        self.bar.println(msg.clone());
+        // Ignore a cleared progress bar.
+        if !msg.is_empty() {
+            self.bar.println(msg.clone());
+        }
 
         msg.lines().count()
     }

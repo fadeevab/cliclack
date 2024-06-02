@@ -77,11 +77,6 @@ impl MultiProgress {
 
         // Redraw all progress bars.
         for pb in self.bars.read().unwrap().iter() {
-            // Ignore cleared (hidden and stopped) progress bars.
-            if pb.bar.message().is_empty() && pb.options().stopped {
-                continue;
-            }
-
             // Workaround: `bar.println` must be called before `bar.finish_and_clear`
             // to avoid lines "jumping" while terminal resizing.
             inner_height += pb.redraw_finished(pb.bar.message(), state);
