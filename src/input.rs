@@ -147,7 +147,7 @@ where
         let Event::Key(key) = event;
 
         #[cfg(feature = "multiline")]
-        if *key == Key::Enter && self.input.is_multiline() && self.input.is_editing() {
+        if self.input.is_multiline() && self.input.is_editing() {
             return State::Active;
         }
 
