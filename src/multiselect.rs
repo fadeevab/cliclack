@@ -205,7 +205,10 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
         let footer = if not_rendered_items > 0 {
             theme.format_footer_with_message(
                 &state.into(),
-                &format!("{} selected items hidden", not_rendered_items),
+                &format!(
+                    "{not_rendered_items} selected item{s} not displayed",
+                    s = if not_rendered_items > 1 { "s" } else { "" }
+                ),
             )
         } else {
             theme.format_footer(&state.into())
