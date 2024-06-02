@@ -44,11 +44,11 @@ impl<I: LabeledItem + Clone> FilteredView<I> {
         }
 
         match key {
-            // Need further processing of simple up and down actions.
+            // Need further processing of simple "up" and "down" actions.
             Key::ArrowDown | Key::ArrowUp => None,
-            // Need moving up and down the list if no input provided.
+            // Need moving up and down if no input provided.
             Key::ArrowLeft | Key::ArrowRight if self.input.is_empty() => None,
-            // Need submitting of the selected item.
+            // Need to submit the selected item.
             Key::Enter if !self.items.is_empty() => None,
             // Otherwise, no items found.
             Key::Enter => Some(State::Error("No items".into())),
