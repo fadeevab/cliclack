@@ -301,19 +301,6 @@ pub trait Theme {
         )
     }
 
-    /// Formats the footer of the prompt like [`Theme::format_footer`] but with a hint on ThemeState::Active.
-    fn format_footer_with_active_hint(&self, state: &ThemeState, hint: &str) -> String {
-        format!(
-            "{}\n", // '\n' vanishes by style applying, thus exclude it from styling
-            self.bar_color(state).apply_to(match state {
-                ThemeState::Active => format!("{S_BAR_END}  {hint}"),
-                ThemeState::Cancel => format!("{S_BAR_END}  Operation cancelled."),
-                ThemeState::Submit => format!("{S_BAR}"),
-                ThemeState::Error(err) => format!("{S_BAR_END}  {err}"),
-            })
-        )
-    }
-
     /// Formats the input cursor with the given style adding frame bars around.
     ///
     /// It hides the cursor when the input is not active.

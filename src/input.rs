@@ -198,7 +198,7 @@ where
         let part3 = theme.format_footer(&state.into());
         #[cfg(feature = "multiline")]
         let part3 = if self.input.multiline {
-            theme.format_footer_with_active_hint(
+            theme.format_footer_with_message(
                 &state.into(),
                 match self.input.editing {
                     true => "[Tab => ViewMode | ESC => Cancel]",
