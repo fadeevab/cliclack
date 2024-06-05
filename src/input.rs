@@ -147,8 +147,20 @@ where
         let Event::Key(key) = event;
 
         #[cfg(feature = "multiline")]
-        if self.input.multiline && self.input.editing {
-            return State::Active;
+        if self.input.editing {
+            if let Some(validator) = &self.validate_interactively {
+                if let Err(err) = validator(&self.input.to_string()) {
+                    return State::Error(err);
+                }
+
+                if self.input.to_string().parse::<T>().is_err() {
+                    return State::Error("Invalid value format".to_string());
+                }
+            }
+            if self.input.multiline {
+                // In multiline mode, if editing, state is always active. (ESC and Tab are handled before)
+                return State::Active;
+            }
         }
 
         if *key == Key::Enter && self.input.is_empty() {
@@ -159,6 +171,9 @@ where
             }
         }
 
+        // Cannot move it upper: If moved upper, when the input is empty
+        // and default is allowed, the default value may never be set.
+        #[cfg(not(feature = "multiline"))]
         if let Some(validator) = &self.validate_interactively {
             if let Err(err) = validator(&self.input.to_string()) {
                 return State::Error(err);
