@@ -19,17 +19,8 @@ indicatif = "0.17.8"
 once_cell = "1.18.0"
 strsim = "0.11.1"
 textwrap = "0.16.0"
-zeroize = { version = "1.6.0", features = ["derive"] }
+zeroize = {version = "1.6.0", features = ["derive"]}
 
 [dev-dependencies]
 ctrlc = "3.4.2"
 rand = "0.8.5"
-
-[[example]]
-name = "multiline_input"
-path = "examples/multiline_input.rs"
-required-features = ["multiline"]
-
-[features]
-default = ["multiline"]
-multiline = []

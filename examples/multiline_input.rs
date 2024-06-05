@@ -3,7 +3,7 @@ fn main() -> std::io::Result<()> {
 
     let res: String = Input::new("Normal test")
         .placeholder("Type here...")
-        .multiline(true)
+        .multiline()
         .interact()?;
     cliclack::note("Your input is:", res)?;
 

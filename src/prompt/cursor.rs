@@ -2,27 +2,10 @@ use std::fmt::{Display, Formatter, Result};
 
 use zeroize::ZeroizeOnDrop;
 
-#[derive(ZeroizeOnDrop, Clone)]
-#[cfg_attr(not(feature = "multiline"), derive(Default))]
+#[derive(ZeroizeOnDrop, Clone, Default)]
 pub struct StringCursor {
     value: Vec<char>,
     cursor: usize,
-    #[cfg(feature = "multiline")]
-    pub(crate) multiline: bool,
-    #[cfg(feature = "multiline")]
-    pub(crate) editing: bool,
-}
-
-#[cfg(feature = "multiline")]
-impl Default for StringCursor {
-    fn default() -> Self {
-        Self {
-            value: Vec::new(),
-            cursor: 0,
-            multiline: false,
-            editing: true,
-        }
-    }
 }
 
 /// Returns the indices of the first character of each word in the given string,
@@ -47,7 +30,6 @@ fn word_jump_indices(value: &[char]) -> Vec<usize> {
 }
 
 /// Returns the indices of the first character of each line in the given string
-#[cfg(feature = "multiline")]
 fn line_jump_indices(value: &[char]) -> Vec<usize> {
     let mut indices = vec![0];
     let mut in_line = false;
@@ -76,10 +58,6 @@ impl StringCursor {
     }
 
     pub fn insert(&mut self, chr: char) {
-        #[cfg(feature = "multiline")]
-        if !self.editing | (!self.multiline && chr == '\n') {
-            return;
-        }
         self.value.insert(self.cursor, chr);
         self.cursor += 1;
     }
@@ -96,11 +74,7 @@ impl StringCursor {
         }
     }
 
-    #[cfg(feature = "multiline")]
     pub fn move_up(&mut self) {
-        if !self.multiline {
-            return;
-        }
         let jumps = line_jump_indices(&self.value);
         let ix = jumps
             .binary_search(&self.cursor)
@@ -110,11 +84,7 @@ impl StringCursor {
         self.cursor = jumps[target_line] + offset;
     }
 
-    #[cfg(feature = "multiline")]
     pub fn move_down(&mut self) {
-        if !self.multiline {
-            return;
-        }
         let jumps = line_jump_indices(&self.value);
         let ix = jumps
             .binary_search(&self.cursor)
@@ -208,18 +178,6 @@ impl StringCursor {
 
     pub fn iter_mut(&mut self) -> impl Iterator<Item = &mut char> {
         self.value.iter_mut()
-    }
-
-    #[cfg(feature = "multiline")]
-    pub fn multiline(&mut self, multiline: bool) {
-        self.multiline = multiline;
-    }
-
-    #[cfg(feature = "multiline")]
-    pub fn switch_editing(&mut self) {
-        if self.multiline {
-            self.editing = !self.editing;
-        }
     }
 }
 

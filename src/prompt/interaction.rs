@@ -106,18 +106,12 @@ pub trait PromptInteraction<T> {
                     if let Some(cursor) = self.input() {
                         match key {
                             Key::Char(chr) if !chr.is_ascii_control() => cursor.insert(chr),
-                            #[cfg(feature = "multiline")]
-                            Key::Enter => cursor.insert('\n'),
-                            #[cfg(feature = "multiline")]
-                            Key::Tab => cursor.switch_editing(),
-                            Key::Backspace => cursor.delete_left(),
+                             Key::Backspace => cursor.delete_left(),
                             Key::Del => cursor.delete_right(),
                             Key::ArrowLeft => cursor.move_left(),
                             Key::ArrowRight => cursor.move_right(),
-                            #[cfg(feature = "multiline")]
-                            Key::ArrowUp => cursor.move_up(),
-                            #[cfg(feature = "multiline")]
-                            Key::ArrowDown => cursor.move_down(),
+                             Key::ArrowUp => cursor.move_up(),
+                             Key::ArrowDown => cursor.move_down(),
                             Key::Home => cursor.move_home(),
                             Key::End => cursor.move_end(),
 

@@ -14,6 +14,12 @@ use crate::{
 
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
+#[derive(Default)]
+struct MultilineEditing {
+    enabled: bool,
+    editing: bool,
+}
+
 /// A prompt that accepts a single line of text input.
 ///
 /// # Example
@@ -36,6 +42,7 @@ pub struct Input {
     input_required: bool,
     default: Option<String>,
     placeholder: StringCursor,
+    multiline: MultilineEditing,
     validate_on_enter: Option<ValidationCallback>,
     validate_interactively: Option<ValidationCallback>,
 }
@@ -73,16 +80,16 @@ impl Input {
         self
     }
 
-    /// Sets whether allow the multiline input. Default: `false`. Needs feature `multiline`.
+    /// Enables the multiline input.
     ///
-    /// If enable, the user should press `Tab` to switch between the `edit` and `view` mode.
+    /// The user should press `Tab` to switch between the `edit` and `view` mode.
     ///
     /// In the edit mode, the user can input multiple lines of text.
     ///
     /// In the view mode, the user can press `Enter` to submit the input.
-    #[cfg(feature = "multiline")]
-    pub fn multiline(mut self, multiline: bool) -> Self {
-        self.input.multiline(multiline);
+    pub fn multiline(mut self) -> Self {
+        self.multiline.enabled = true;
+        self.multiline.editing = true;
         self
     }
 
@@ -146,19 +153,24 @@ where
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
-        #[cfg(feature = "multiline")]
-        if self.input.editing && self.input.multiline {
-            if let Some(validator) = &self.validate_interactively {
-                if let Err(err) = validator(&self.input.to_string()) {
-                    return State::Error(err);
+        if self.multiline.enabled {
+            match key {
+                Key::Tab => {
+                    self.multiline.editing = !self.multiline.editing;
+                    return State::Active;
                 }
-
-                if self.input.to_string().parse::<T>().is_err() {
-                    return State::Error("Invalid value format".to_string());
+                Key::Enter => {
+                    if self.multiline.editing {
+                        self.input.insert('\n');
+                        return State::Active;
+                    }
+                }
+                _ => {
+                    if !self.multiline.editing {
+                        return State::Active;
+                    }
                 }
             }
-            // In multiline mode, if editing, state is always active. (ESC and Tab are handled before)
-            return State::Active;
         }
 
         if *key == Key::Enter && self.input.is_empty() {
@@ -208,20 +220,14 @@ where
         } else {
             theme.format_input(&state.into(), &self.input)
         };
-        #[cfg(not(feature = "multiline"))]
-        let part3 = theme.format_footer(&state.into());
-        #[cfg(feature = "multiline")]
-        let part3 = if self.input.multiline {
-            theme.format_footer_with_message(
-                &state.into(),
-                match self.input.editing {
-                    true => "[Tab => ViewMode | ESC => Cancel]",
-                    false => "[Tab => EditMode | Enter => Submit | ESC => Cancel]",
-                },
-            )
-        } else {
-            theme.format_footer(&state.into())
-        };
+        let part3 = theme.format_footer_with_message(
+            &state.into(),
+            match self.multiline.editing {
+                true if self.multiline.enabled => "[Tab] => View",
+                false if self.multiline.enabled => "[Tab] => Edit | Enter => Submit",
+                _ => "",
+            },
+        );
 
         part1 + &part2 + &part3
     }
