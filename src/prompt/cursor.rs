@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter, Result};
 
 use zeroize::ZeroizeOnDrop;
 
-#[derive(ZeroizeOnDrop, Clone, Default)]
+#[derive(Default, ZeroizeOnDrop, Clone)]
 pub struct StringCursor {
     value: Vec<char>,
     cursor: usize,

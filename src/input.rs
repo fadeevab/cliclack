@@ -35,6 +35,22 @@ struct MultilineEditing {
 /// # }
 /// # test().ok();
 /// ```
+///
+/// Multiline editing is also supported ([`Input::multiline`]).
+/// Press `Tab` to switch between the `edit` and `view` mode.
+///
+/// # Example
+///
+/// ```
+/// use cliclack::input;
+/// # fn test() -> std::io::Result<()> {
+/// let path: String = input("Input multiple lines: ")
+///     .multiline()
+///     .interact()?;
+/// # Ok(())
+/// # }
+/// # test().ok(); // Ignoring I/O runtime errors.
+/// ```
 #[derive(Default)]
 pub struct Input {
     prompt: String,
