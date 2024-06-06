@@ -9,12 +9,12 @@ fn main() -> std::io::Result<()> {
 
     let res: usize = Input::new("Only number:")
         .placeholder("Type here...")
-        .multiline(true)
+        .multiline()
         .interact()?;
     cliclack::note("Your input is:", res)?;
 
     let res: String = Input::new("Interactively validation:")
-        .multiline(true)
+        .multiline()
         .validate_interactively(|s: &String| match s.len() & 1 == 0 {
             true => Ok(()),
             false => Err("The length of the input should be even"),
@@ -23,13 +23,13 @@ fn main() -> std::io::Result<()> {
     cliclack::note("Your input is:", res)?;
 
     let res: String = Input::new("Default value test:")
-        .multiline(true)
+        .multiline()
         .default_input("Default value")
         .interact()?;
     cliclack::note("Your input is:", res)?;
 
     let res: String = Input::new("Default value with interactively validation test:")
-        .multiline(true)
+        .multiline()
         .default_input("Default value.")
         .validate_interactively(|s: &String| match s.len() & 1 == 0 {
             true => Ok(()),

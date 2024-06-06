@@ -316,7 +316,7 @@ pub trait Theme {
     fn format_input(&self, state: &ThemeState, cursor: &StringCursor) -> String {
         let new_style = &self.input_style(state);
 
-        let input = &match state {
+        let input = &mut match state {
             ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
             _ => new_style.apply_to(cursor).to_string(),
         };
