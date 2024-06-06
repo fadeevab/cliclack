@@ -216,15 +216,14 @@ pub trait Theme {
         }
     }
 
-    /// Highlights the cursor character in the input text formatting the whole
-    /// string with the given style.
-    fn cursor_with_style(&self, cursor: &StringCursor, new_style: &Style) -> String {
+    /// Highlights the cursor character
+    fn style_cursor(&self, cursor: &StringCursor) -> String {
         let (left, cursor, right) = cursor.split();
         format!(
             "{left}{cursor}{right}",
-            left = new_style.apply_to(left),
+            left = left,
             cursor = style(cursor).reverse(),
-            right = new_style.apply_to(right)
+            right = right
         )
     }
 
@@ -309,7 +308,7 @@ pub trait Theme {
         let new_style = &self.input_style(state);
 
         let input = &mut match state {
-            ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
+            ThemeState::Active | ThemeState::Error(_) => self.style_cursor(cursor),
             _ => new_style.apply_to(cursor).to_string(),
         };
         if input.ends_with('\n') {
@@ -317,7 +316,12 @@ pub trait Theme {
         }
 
         input.lines().fold(String::new(), |acc, line| {
-            format!("{}{}  {line}\n", acc, self.bar_color(state).apply_to(S_BAR),)
+            format!(
+                "{}{}  {}\n",
+                acc,
+                self.bar_color(state).apply_to(S_BAR),
+                new_style.apply_to(line)
+            )
         })
     }
 
@@ -331,12 +335,17 @@ pub trait Theme {
         let new_style = &self.placeholder_style(state);
 
         let placeholder = &match state {
-            ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
+            ThemeState::Active | ThemeState::Error(_) => self.style_cursor(cursor),
             ThemeState::Cancel => "".to_string(),
             _ => new_style.apply_to(cursor).to_string(),
         };
         placeholder.lines().fold(String::new(), |acc, line| {
-            format!("{}{}  {line}\n", acc, self.bar_color(state).apply_to(S_BAR))
+            format!(
+                "{}{}  {}\n",
+                acc,
+                self.bar_color(state).apply_to(S_BAR),
+                new_style.apply_to(line)
+            )
         })
     }
 
