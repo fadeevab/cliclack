@@ -156,6 +156,74 @@ impl Input {
         }
         <Self as PromptInteraction<T>>::interact(self)
     }
+
+    fn interactively_validate<T: FromStr>(&self) -> State<T> {
+        if let Some(validator) = &self.validate_interactively {
+            if let Err(err) = validator(&self.input.to_string()) {
+                return State::Error(err);
+            }
+
+            if self.input.to_string().parse::<T>().is_err() {
+                return State::Error("Invalid value format".to_string());
+            }
+        }
+        State::Active
+    }
+
+    fn submit_validate<T: FromStr>(&mut self) -> State<T> {
+        if self.input.is_empty() {
+            if let Some(default) = &self.default {
+                self.input.extend(default);
+            } else if self.input_required {
+                return State::Error("Input is required".to_string());
+            }
+        }
+
+        if let Some(validator) = &self.validate_on_enter {
+            if let Err(err) = validator(&self.input.to_string()) {
+                self.switch_mode::<T>();
+                return State::Error(err);
+            }
+        }
+        match self.input.to_string().parse::<T>() {
+            Ok(res) => State::Submit(res),
+            Err(_) => {
+                self.switch_mode::<T>();
+                State::Error("Invalid value format".to_string())
+            }
+        }
+    }
+
+    fn switch_mode<T: FromStr>(&mut self) -> State<T> {
+        if !self.multiline.enabled {
+            return State::Active;
+        }
+        if self.multiline.editing {
+            if let State::Error(err) = self.interactively_validate::<T>() {
+                return State::Error(err);
+            }
+        }
+        self.multiline.editing = !self.multiline.editing;
+        State::Active
+    }
+
+    fn tab<T: FromStr>(&mut self) -> State<T> {
+        self.switch_mode()
+    }
+
+    fn enter<T: FromStr>(&mut self) -> State<T> {
+        if self.multiline.enabled && self.multiline.editing {
+            self.input.insert('\n');
+            return State::Active;
+        }
+        // if not, gonna submit
+        self.submit_validate()
+    }
+
+    fn other<T: FromStr>(&mut self) -> State<T> {
+        // The char has been inserted, so we need to interactively validate it if need
+        self.interactively_validate()
+    }
 }
 
 impl<T> PromptInteraction<T> for Input
@@ -172,62 +240,11 @@ where
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
-        if self.multiline.enabled {
-            match key {
-                Key::Tab => {
-                    self.multiline.editing = !self.multiline.editing;
-                    return State::Active;
-                }
-                Key::Enter => {
-                    if self.multiline.editing {
-                        self.input.insert('\n');
-                        return State::Active;
-                    }
-                }
-                _ => {
-                    if !self.multiline.editing {
-                        return State::Active;
-                    }
-                }
-            }
+        match *key {
+            Key::Tab => self.tab(),
+            Key::Enter => self.enter(),
+            _ => self.other(),
         }
-
-        if *key == Key::Enter && self.input.is_empty() {
-            if let Some(default) = &self.default {
-                self.input.extend(default);
-            } else if self.input_required {
-                return State::Error("Input required".to_string());
-            }
-        }
-
-        // Cannot move this upper: If moved upper, when the input is empty
-        // and default is allowed, the default value may never be set, validation will fail.
-        // Cannot remove this although validated before: if removed, when editing is false,
-        // the validation will not be checked.
-        if let Some(validator) = &self.validate_interactively {
-            if let Err(err) = validator(&self.input.to_string()) {
-                return State::Error(err);
-            }
-
-            if self.input.to_string().parse::<T>().is_err() {
-                return State::Error("Invalid value format".to_string());
-            }
-        }
-
-        if *key == Key::Enter {
-            if let Some(validator) = &self.validate_on_enter {
-                if let Err(err) = validator(&self.input.to_string()) {
-                    return State::Error(err);
-                }
-            }
-
-            match self.input.to_string().parse::<T>() {
-                Ok(value) => return State::Submit(value),
-                Err(_) => return State::Error("Invalid value format".to_string()),
-            }
-        }
-
-        State::Active
     }
 
     fn render(&mut self, state: &State<T>) -> String {
