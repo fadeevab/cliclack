@@ -163,6 +163,9 @@ where
     T: FromStr,
 {
     fn input(&mut self) -> Option<&mut StringCursor> {
+        if self.multiline.enabled && !self.multiline.editing {
+            return None;
+        }
         Some(&mut self.input)
     }
 
