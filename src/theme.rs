@@ -216,14 +216,14 @@ pub trait Theme {
         }
     }
 
-    /// Highlights the cursor character
-    fn style_cursor(&self, cursor: &StringCursor) -> String {
+    /// Highlights the cursor character and apply the style
+    fn cursor_with_style(&self, cursor: &StringCursor, new_style: &Style) -> String {
         let (left, cursor, right) = cursor.split();
         format!(
             "{left}{cursor}{right}",
-            left = left,
+            left = new_style.apply_to(left),
             cursor = style(cursor).reverse(),
-            right = right
+            right = new_style.apply_to(right),
         )
     }
 
@@ -308,8 +308,8 @@ pub trait Theme {
         let new_style = &self.input_style(state);
 
         let input = &mut match state {
-            ThemeState::Active | ThemeState::Error(_) => self.style_cursor(cursor),
-            _ => new_style.apply_to(cursor).to_string(),
+            ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
+            _ => cursor.to_string(),
         };
         if input.ends_with('\n') {
             input.push('\n');
@@ -335,9 +335,9 @@ pub trait Theme {
         let new_style = &self.placeholder_style(state);
 
         let placeholder = &match state {
-            ThemeState::Active | ThemeState::Error(_) => self.style_cursor(cursor),
+            ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
             ThemeState::Cancel => "".to_string(),
-            _ => new_style.apply_to(cursor).to_string(),
+            _ => cursor.to_string(),
         };
         placeholder.lines().fold(String::new(), |acc, line| {
             format!(
