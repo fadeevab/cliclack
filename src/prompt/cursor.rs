@@ -164,14 +164,18 @@ impl StringCursor {
 
     pub fn split(&self) -> (String, String, String) {
         let left = String::from_iter(&self.value[..self.cursor]);
+        let mut cursor = String::from(' ');
+        let mut right = String::new();
 
-        let cursor = String::from_iter(&[self.current().unwrap_or(' ')]);
-
-        let right = if !self.value.is_empty() && self.cursor < self.value.len() - 1 {
-            String::from_iter(&self.value[self.cursor + 1..])
-        } else {
-            String::new()
+        match self.current() {
+            Some('\n') => right.push('\n'),
+            Some(chr) => cursor = chr.to_string(),
+            None => {}
         };
+
+        if !self.value.is_empty() && self.cursor < self.value.len() - 1 {
+            right.push_str(&String::from_iter(&self.value[self.cursor + 1..]));
+        }
 
         (left, cursor, right)
     }
