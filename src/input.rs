@@ -237,7 +237,7 @@ where
                 self.switch_mode()
             }
             Key::Tab => {
-                if self.multiline.editing {
+                if !self.multiline.enabled | self.multiline.editing {
                     for _ in 0..4 {
                         self.input.insert(' ');
                     }
