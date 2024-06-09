@@ -29,23 +29,12 @@ fn word_jump_indices(value: &[char]) -> Vec<usize> {
     indices
 }
 
-/// Returns the indices of the first character of each line in the given string
+/// Returns the indices of the start of each line in the given string
 fn line_jump_indices(value: &[char]) -> Vec<usize> {
-    let mut indices = vec![0];
-    let mut in_line = false;
-
-    for (i, ch) in value.iter().enumerate() {
-        if *ch == '\n' {
-            in_line = false;
-        } else if !in_line {
-            indices.push(i);
-            in_line = true;
-        }
-    }
-
-    indices.push(value.len());
-
-    indices
+    value.split(|c| *c == '\n').fold(vec![0], |mut acc, line| {
+        acc.push(acc.last().unwrap() + line.len() + 1);
+        acc
+    })
 }
 
 impl StringCursor {
@@ -76,27 +65,47 @@ impl StringCursor {
 
     pub fn move_up(&mut self) {
         let jumps = line_jump_indices(&self.value);
-        let ix = jumps
-            .binary_search(&self.cursor)
-            .unwrap_or_else(|i| i.saturating_sub(1)); // current line
-        let target_line = ix.saturating_sub(1);
-        let offset = std::cmp::min(self.cursor - jumps[ix], jumps[ix] - jumps[target_line]);
-        self.cursor = jumps[target_line] + offset;
+        self.cursor = match jumps.binary_search(&self.cursor) {
+            Ok(ix) if ix + 1 < jumps.len() => {
+                // happened to be at the start of a line
+                let target_line = ix.saturating_sub(1);
+                jumps[target_line]
+            }
+            Ok(ix) | Err(ix) => {
+                let ix = ix.saturating_sub(1); // current line
+                let target_line = ix.saturating_sub(1);
+                let offset = std::cmp::min(
+                    self.cursor - jumps[ix],
+                    (jumps[ix] - jumps[target_line]).saturating_sub(1),
+                );
+                jumps[target_line] + offset
+            }
+        }
     }
 
     pub fn move_down(&mut self) {
         let jumps = line_jump_indices(&self.value);
-        let ix = jumps
-            .binary_search(&self.cursor)
-            .unwrap_or_else(|i| i.saturating_sub(1)); // current line
-        let target_line = std::cmp::min(ix + 1, jumps.len().saturating_sub(1));
-        let offset = std::cmp::min(
-            self.cursor - jumps[ix],
-            jumps[std::cmp::min(target_line + 1, jumps.len().saturating_sub(1))]
-                - jumps[target_line],
-        );
-
-        self.cursor = jumps[target_line] + offset;
+        self.cursor = match jumps.binary_search(&self.cursor) {
+            Ok(ix) if ix + 1 < jumps.len() => {
+                // happened to be at the start of a line
+                let target_line = std::cmp::min(ix + 1, jumps.len().saturating_sub(2));
+                jumps[target_line]
+            }
+            Ok(ix) => {
+                // happened to be at the end of string
+                jumps[ix].saturating_sub(1)
+            }
+            Err(ix) => {
+                let ix = ix.saturating_sub(1); // current line
+                let target_line = std::cmp::min(ix + 1, jumps.len().saturating_sub(2));
+                let target_next = std::cmp::min(target_line + 1, jumps.len().saturating_sub(1));
+                let offset = std::cmp::min(
+                    self.cursor - jumps[ix],
+                    (jumps[target_next] - jumps[target_line]).saturating_sub(1),
+                );
+                jumps[target_line] + offset
+            }
+        }
     }
 
     pub fn move_left_by_word(&mut self) {
