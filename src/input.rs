@@ -105,7 +105,7 @@ impl Input {
     /// In the view mode, the user can press `Enter` to submit the input.
     pub fn multiline(mut self) -> Self {
         self.multiline.enabled = true;
-        self.multiline.editing = false;
+        self.multiline.editing = true;
         self
     }
 
@@ -152,6 +152,9 @@ impl Input {
             if let Some(default) = &self.default {
                 self.placeholder.extend(default);
                 self.placeholder.extend(" (default)");
+                if self.multiline.enabled {
+                    self.multiline.editing = false;
+                }
             }
         }
         <Self as PromptInteraction<T>>::interact(self)
