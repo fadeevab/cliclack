@@ -157,6 +157,7 @@ impl Input {
         <Self as PromptInteraction<T>>::interact(self)
     }
 
+    /// Interactively validate the input value.
     fn interactively_validate<T: FromStr>(&self) -> State<T> {
         if let Some(validator) = &self.validate_interactively {
             if let Err(err) = validator(&self.input.to_string()) {
@@ -170,6 +171,10 @@ impl Input {
         State::Active
     }
 
+    /// Submit the input value.
+    /// - If the input is empty, use the default value if it exists.
+    /// - If the input is empty and no default value is set, return an error.
+    /// - If validation fails or recving invalid format, switch to the view mode.
     fn submit_validate<T: FromStr>(&mut self) -> State<T> {
         if self.input.is_empty() {
             if let Some(default) = &self.default {
@@ -178,7 +183,6 @@ impl Input {
                 return State::Error("Input is required".to_string());
             }
         }
-
         if let Some(validator) = &self.validate_on_enter {
             if let Err(err) = validator(&self.input.to_string()) {
                 self.switch_mode::<T>();
@@ -194,6 +198,9 @@ impl Input {
         }
     }
 
+    /// Try mode switching.
+    /// - multiline off. return Active
+    /// - multiline on. Switch to view mode only if interactively validation passed.
     fn switch_mode<T: FromStr>(&mut self) -> State<T> {
         if !self.multiline.enabled {
             return State::Active;
@@ -205,24 +212,6 @@ impl Input {
         }
         self.multiline.editing = !self.multiline.editing;
         State::Active
-    }
-
-    fn tab<T: FromStr>(&mut self) -> State<T> {
-        self.switch_mode()
-    }
-
-    fn enter<T: FromStr>(&mut self) -> State<T> {
-        if self.multiline.enabled && self.multiline.editing {
-            self.input.insert('\n');
-            return State::Active;
-        }
-        // if not, gonna submit
-        self.submit_validate()
-    }
-
-    fn other<T: FromStr>(&mut self) -> State<T> {
-        // The char has been inserted, so we need to interactively validate it if need
-        self.interactively_validate()
     }
 }
 
@@ -241,9 +230,17 @@ where
         let Event::Key(key) = event;
 
         match *key {
-            Key::Tab => self.tab(),
-            Key::Enter => self.enter(),
-            _ => self.other(),
+            Key::Tab => self.switch_mode(),
+            Key::Enter => {
+                if self.multiline.enabled && self.multiline.editing {
+                    self.input.insert('\n');
+                    return State::Active;
+                }
+                // if not, gonna submit
+                self.submit_validate()
+            }
+            // The char has been inserted, so we need to interactively validate it if need
+            _ => self.interactively_validate(),
         }
     }
 
