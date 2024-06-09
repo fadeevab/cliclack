@@ -69,6 +69,21 @@
 //! # test().ok(); // Ignoring I/O runtime errors.
 //! ```
 //!
+//! If feature `multiline` enabled, the input prompt can accept multiple lines of text.
+//! Press `ESC` to quit edit mode, then `Enter` to submit or other keys to switch back.
+//!
+//! ```rust
+//! use cliclack::input;
+//!
+//! # fn test() -> std::io::Result<()> {
+//! let path: String = input("Input multiple lines: ")
+//!     .multiline()
+//!     .interact()?;
+//! # Ok(())
+//! # }
+//! # test().ok(); // Ignoring I/O runtime errors.
+//! ```
+//!
 //! ## Password
 //!
 //! The password prompt is similar to the input prompt, but it doesn't echo the

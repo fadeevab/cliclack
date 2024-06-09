@@ -37,7 +37,10 @@ struct MultilineEditing {
 /// ```
 ///
 /// Multiline editing is also supported ([`Input::multiline`]).
-/// Press `Tab` to switch between the `edit` and `view` mode.
+/// Press `ESC` to switch from the `edit` to `view` mode.
+///
+/// In `view` mode, press `Enter` to submit the input,
+/// and other keys to switch back to `edit` mode.
 ///
 /// # Example
 ///
