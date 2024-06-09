@@ -254,12 +254,11 @@ where
             }
             Key::Char(c) if !c.is_ascii_control() => {
                 if !self.multiline.editing && self.multiline.enabled {
+                    self.switch_mode::<T>();
                     self.input.insert(c);
-                    self.switch_mode::<T>()
-                } else {
-                    // The char has been inserted, so we need to interactively validate it if need
-                    self.interactively_validate()
                 }
+                // The char has been inserted, so we need to interactively validate it if need
+                self.interactively_validate()
             }
             _ => State::Active,
         }
