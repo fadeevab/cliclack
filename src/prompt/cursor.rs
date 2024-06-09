@@ -29,7 +29,7 @@ fn word_jump_indices(value: &[char]) -> Vec<usize> {
     indices
 }
 
-/// Returns the indices of the start of each line in the given string
+/// Returns the indices of the start of each line in the given string.
 fn line_jump_indices(value: &[char]) -> Vec<usize> {
     value.split(|c| *c == '\n').fold(vec![0], |mut acc, line| {
         acc.push(acc.last().unwrap() + line.len() + 1);
