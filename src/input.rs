@@ -253,7 +253,7 @@ where
                 self.submit_validate()
             }
             Key::Char(c) if !c.is_ascii_control() => {
-                if !self.multiline.editing {
+                if !self.multiline.editing && self.multiline.enabled {
                     self.input.insert(c);
                     self.switch_mode::<T>()
                 } else {
