@@ -115,6 +115,10 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
     fn on(&mut self, event: &Event) -> State<Vec<T>> {
         let Event::Key(key) = event;
 
+        if *key == Key::Escape {
+            return State::Cancel;
+        }
+
         if let Some(state) = self.filter.on(key, self.items.clone()) {
             if self.filter.items().is_empty() || self.cursor > self.filter.items().len() - 1 {
                 self.cursor = 0;

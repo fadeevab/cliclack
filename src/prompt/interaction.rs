@@ -99,8 +99,7 @@ pub trait PromptInteraction<T> {
             }
 
             match term.read_key() {
-                Ok(Key::Escape) => state = State::Cancel,
-
+                Ok(Key::Escape) if self.input().is_none() => state = State::Cancel,
                 Ok(key) => {
                     let word_editing = self.allow_word_editing();
                     if let Some(cursor) = self.input() {

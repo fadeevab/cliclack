@@ -105,7 +105,7 @@ impl Input {
     /// In the view mode, the user can press `Enter` to submit the input.
     pub fn multiline(mut self) -> Self {
         self.multiline.enabled = true;
-        self.multiline.editing = true;
+        self.multiline.editing = false;
         self
     }
 
@@ -174,7 +174,7 @@ impl Input {
     /// Submit the input value.
     /// - If the input is empty, use the default value if it exists.
     /// - If the input is empty and no default value is set, return an error.
-    /// - If validation fails or recving invalid format, switch to the view mode.
+    /// - If validation fails or recving invalid format, switch to editing mode.
     fn submit_validate<T: FromStr>(&mut self) -> State<T> {
         if self.input.is_empty() {
             if let Some(default) = &self.default {
@@ -199,12 +199,9 @@ impl Input {
     }
 
     /// Try mode switching.
-    /// - multiline off. return Active
-    /// - multiline on. Switch to view mode only if interactively validation passed.
+    /// - Switch to view mode if passed interactively validation .
+    /// - Switch to edit mode if in view mode.
     fn switch_mode<T: FromStr>(&mut self) -> State<T> {
-        if !self.multiline.enabled {
-            return State::Active;
-        }
         if self.multiline.editing {
             if let State::Error(err) = self.interactively_validate::<T>() {
                 return State::Error(err);
@@ -230,7 +227,20 @@ where
         let Event::Key(key) = event;
 
         match *key {
-            Key::Tab => self.switch_mode(),
+            Key::Escape => {
+                if !self.multiline.enabled | !self.multiline.editing {
+                    return State::Cancel;
+                }
+                self.switch_mode()
+            }
+            Key::Tab => {
+                if self.multiline.editing {
+                    for _ in 0..4 {
+                        self.input.insert(' ');
+                    }
+                }
+                State::Active
+            }
             Key::Enter => {
                 if self.multiline.enabled && self.multiline.editing {
                     self.input.insert('\n');
@@ -239,8 +249,16 @@ where
                 // if not, gonna submit
                 self.submit_validate()
             }
-            // The char has been inserted, so we need to interactively validate it if need
-            _ => self.interactively_validate(),
+            Key::Char(c) if !c.is_ascii_control() => {
+                if !self.multiline.editing {
+                    self.input.insert(c);
+                    self.switch_mode::<T>()
+                } else {
+                    // The char has been inserted, so we need to interactively validate it if need
+                    self.interactively_validate()
+                }
+            }
+            _ => State::Active,
         }
     }
 
@@ -256,8 +274,10 @@ where
         let part3 = theme.format_footer_with_message(
             &state.into(),
             match self.multiline.editing {
-                true if self.multiline.enabled => "[Tab] => View",
-                false if self.multiline.enabled => "[Tab] => Edit | Enter => Submit",
+                true if self.multiline.enabled => "ESC => View",
+                false if self.multiline.enabled => {
+                    "Enter => Submit | ESC => Cancel | Others => Edit"
+                }
                 _ => "",
             },
         );

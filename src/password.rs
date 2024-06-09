@@ -94,6 +94,10 @@ impl PromptInteraction<String> for Password {
     fn on(&mut self, event: &Event) -> State<String> {
         let Event::Key(key) = event;
 
+        if *key == Key::Escape {
+            return State::Cancel;
+        }
+
         if let Some(validator) = &self.validate_interactively {
             if let Err(err) = validator(&self.input.to_string()) {
                 return State::Error(err);
