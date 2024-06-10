@@ -221,7 +221,7 @@ impl Input {
         }
         self.multiline.editing = !self.multiline.editing;
         // Only Escape cares this return value.
-        // In this context, Active means Cancel, Cancel mean Active.
+        // In this context, Active means Cancel, Cancel means Active.
         if self.multiline.editing {
             State::Active
         } else {
