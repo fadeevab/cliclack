@@ -189,6 +189,12 @@ impl Input {
                 return State::Error("Input is required".to_string());
             }
         }
+        if !self.multiline.editing {
+            match self.interactively_validate() {
+                State::Active => {}
+                state => return state,
+            }
+        }
         if let Some(validator) = &self.validate_on_enter {
             if let Err(err) = validator(&self.input.to_string()) {
                 self.switch_mode::<T>();
@@ -214,7 +220,13 @@ impl Input {
             }
         }
         self.multiline.editing = !self.multiline.editing;
-        State::Active
+        // Only Escape cares this return value.
+        // In this context, Active means Cancel, Cancel mean Active.
+        if self.multiline.editing {
+            State::Active
+        } else {
+            State::Cancel
+        }
     }
 }
 
@@ -235,7 +247,8 @@ where
         match *key {
             Key::Escape => {
                 if !self.multiline.enabled | !self.multiline.editing {
-                    return State::Cancel;
+                    // When key == Escape, Active means Cancel
+                    return State::Active;
                 }
                 self.switch_mode()
             }
