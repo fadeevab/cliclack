@@ -105,7 +105,7 @@ impl Input {
     /// In the view mode, the user can press `Enter` to submit the input.
     pub fn multiline(mut self) -> Self {
         self.multiline.enabled = true;
-        self.multiline.editing = true;
+        self.multiline.editing = false;
         self
     }
 
@@ -174,21 +174,20 @@ where
 
         if self.multiline.enabled {
             match key {
-                Key::Tab => {
-                    self.multiline.editing = !self.multiline.editing;
-                    return State::Active;
+                Key::Escape if self.multiline.editing => {
+                    self.multiline.editing = false;
+                    return State::Cancel; // "cancel cancelling"
+                }
+                Key::Escape => {
+                    return State::Active; // actual cancelling
                 }
                 Key::Enter => {
                     if self.multiline.editing {
-                        self.input.insert('\n');
-                        return State::Active;
+                        self.input.insert('\n')
                     }
+                    // Else: Not switching to editing. Submitting the input.
                 }
-                _ => {
-                    if !self.multiline.editing {
-                        return State::Active;
-                    }
-                }
+                _ => self.multiline.editing = true,
             }
         }
 
@@ -214,7 +213,7 @@ where
             }
         }
 
-        if *key == Key::Enter {
+        if *key == Key::Enter && !self.multiline.editing {
             if let Some(validator) = &self.validate_on_enter {
                 if let Err(err) = validator(&self.input.to_string()) {
                     return State::Error(err);
@@ -242,8 +241,8 @@ where
         let part3 = theme.format_footer_with_message(
             &state.into(),
             match self.multiline.editing {
-                true if self.multiline.enabled => "[Tab] => View",
-                false if self.multiline.enabled => "[Tab] => Edit | Enter => Submit",
+                true if self.multiline.enabled => "[Esc]: view",
+                false if self.multiline.enabled => "[Enter]: submit",
                 _ => "",
             },
         );
