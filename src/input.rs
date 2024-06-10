@@ -251,8 +251,8 @@ where
         let part3 = theme.format_footer_with_message(
             &state.into(),
             match self.multiline {
-                Multiline::Editing => "[Esc]: preview",
-                Multiline::Preview => "[Enter]: submit",
+                Multiline::Editing => "[Esc](Preview)",
+                Multiline::Preview => "[Enter](Submit)",
                 _ => "",
             },
         );
