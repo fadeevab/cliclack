@@ -215,8 +215,10 @@ impl Input {
     /// - Switch to edit mode if in view mode.
     fn switch_mode<T: FromStr>(&mut self) -> State<T> {
         if self.multiline.editing {
-            if let State::Error(err) = self.interactively_validate::<T>() {
-                return State::Error(err);
+            if let State::Error(_) = self.interactively_validate::<T>() {
+                // If interactive validation failed and key == Escap,
+                // activate State::Cancel
+                return State::Active;
             }
         }
         self.multiline.editing = !self.multiline.editing;
