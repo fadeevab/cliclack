@@ -99,6 +99,18 @@ pub trait PromptInteraction<T> {
             }
 
             match term.read_key() {
+                Ok(Key::Escape) => {
+                    state = match self.on(&Event::Key(Key::Escape)) {
+                        // In the context that key == Escape,
+                        // Select, Password do not handle Escape, if got Active, it actually means Cancel.
+                        // In other word, Active means to activate State::Cancel
+                        State::Active => State::Cancel,
+                        // Input handles Escape. When key == Escape,
+                        // Cancel means to to cancel the State::Cancel
+                        State::Cancel => State::Active,
+                        state => state,
+                    };
+                }
                 Ok(key) => {
                     let word_editing = self.allow_word_editing();
                     if let Some(cursor) = self.input() {
@@ -147,21 +159,8 @@ pub trait PromptInteraction<T> {
                             _ => {}
                         }
                     }
-                    state = if key == Key::Escape {
-                        match self.on(&Event::Key(key)) {
-                            // In the context that key == Escape,
-                            // Select, Password do not handle Escape, if got Active, it actually means Cancel.
-                            // So regard Active as Cancel
-                            State::Active => State::Cancel,
-                            // Input handles Escape.
-                            // Notice that Active loses its original meaning when key==Escape,
-                            // so we use Cancel to represent Active, and Active to represent Cancel.
-                            State::Cancel => State::Active,
-                            state => state,
-                        }
-                    } else {
-                        self.on(&Event::Key(key))
-                    };
+
+                    state = self.on(&Event::Key(key));
                 }
 
                 // Handle Ctrl-C as a cancel event.

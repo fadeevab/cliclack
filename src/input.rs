@@ -221,7 +221,8 @@ impl Input {
         }
         self.multiline.editing = !self.multiline.editing;
         // Only Escape cares this return value.
-        // In this context, Active means Cancel, Cancel means Active.
+        // In this context, Active means to activate State::Cancel,
+        // Cancel means to cancel State::Cancel.
         if self.multiline.editing {
             State::Active
         } else {
@@ -247,7 +248,7 @@ where
         match *key {
             Key::Escape => {
                 if !self.multiline.enabled | !self.multiline.editing {
-                    // When key == Escape, Active means Cancel
+                    // When key == Escape, activate State::Cancel
                     return State::Active;
                 }
                 self.switch_mode()
@@ -292,10 +293,8 @@ where
         let part3 = theme.format_footer_with_message(
             &state.into(),
             match self.multiline.editing {
-                true if self.multiline.enabled => "ESC => View",
-                false if self.multiline.enabled => {
-                    "Enter => Submit | ESC => Cancel | Others => Edit"
-                }
+                true if self.multiline.enabled => "[ESC] => View",
+                false if self.multiline.enabled => "[Enter] => Submit",
                 _ => "",
             },
         );
