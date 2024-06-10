@@ -14,10 +14,12 @@ use crate::{
 
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
-#[derive(Default)]
-struct MultilineEditing {
-    enabled: bool,
-    editing: bool,
+#[derive(Default, PartialEq)]
+enum Multiline {
+    #[default]
+    Disabled,
+    Preview,
+    Editing,
 }
 
 /// A prompt that accepts a single line of text input.
@@ -58,7 +60,7 @@ pub struct Input {
     input_required: bool,
     default: Option<String>,
     placeholder: StringCursor,
-    multiline: MultilineEditing,
+    multiline: Multiline,
     validate_on_enter: Option<ValidationCallback>,
     validate_interactively: Option<ValidationCallback>,
 }
@@ -104,8 +106,7 @@ impl Input {
     ///
     /// In the view mode, the user can press `Enter` to submit the input.
     pub fn multiline(mut self) -> Self {
-        self.multiline.enabled = true;
-        self.multiline.editing = false;
+        self.multiline = Multiline::Editing;
         self
     }
 
@@ -152,6 +153,11 @@ impl Input {
             if let Some(default) = &self.default {
                 self.placeholder.extend(default);
                 self.placeholder.extend(" (default)");
+
+                if self.multiline == Multiline::Editing {
+                    // The preview mode is more convenient to quickly submit the default value.
+                    self.multiline = Multiline::Preview;
+                }
             }
         }
         <Self as PromptInteraction<T>>::interact(self)
@@ -163,7 +169,7 @@ where
     T: FromStr,
 {
     fn input(&mut self) -> Option<&mut StringCursor> {
-        if self.multiline.enabled && !self.multiline.editing {
+        if self.multiline == Multiline::Preview {
             return None;
         }
         Some(&mut self.input)
@@ -171,27 +177,34 @@ where
 
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
+        let mut submit = false;
 
-        if self.multiline.enabled {
-            match key {
-                Key::Escape if self.multiline.editing => {
-                    self.multiline.editing = false;
-                    return State::Cancel; // "cancel cancelling"
-                }
-                Key::Escape => {
-                    return State::Active; // actual cancelling
-                }
-                Key::Enter => {
-                    if self.multiline.editing {
-                        self.input.insert('\n')
-                    }
-                    // Else: Not switching to editing. Submitting the input.
-                }
-                _ => self.multiline.editing = true,
+        match key {
+            // Multiline: editing -> preview.
+            Key::Escape if self.multiline == Multiline::Editing => {
+                self.multiline = Multiline::Preview;
+                return State::Cancel; // Workaround for `Esc`: "cancel cancelling".
             }
+            Key::Enter => {
+                if self.multiline == Multiline::Editing {
+                    self.input.insert('\n')
+                } else {
+                    submit = true;
+                }
+            }
+            // Multiline: don't lose 1 char switching from the preview mode to editing.
+            Key::Char(c) if !c.is_ascii_control() && self.multiline == Multiline::Preview => {
+                self.input.insert(*c);
+            }
+            _ => {}
         }
 
-        if *key == Key::Enter && self.input.is_empty() {
+        // Multiline: preview -> editing.
+        if self.multiline == Multiline::Preview {
+            self.multiline = Multiline::Editing;
+        }
+
+        if submit && self.input.is_empty() {
             if let Some(default) = &self.default {
                 self.input.extend(default);
             } else if self.input_required {
@@ -199,10 +212,6 @@ where
             }
         }
 
-        // Cannot move this upper: If moved upper, when the input is empty
-        // and default is allowed, the default value may never be set, validation will fail.
-        // Cannot remove this although validated before: if removed, when editing is false,
-        // the validation will not be checked.
         if let Some(validator) = &self.validate_interactively {
             if let Err(err) = validator(&self.input.to_string()) {
                 return State::Error(err);
@@ -213,7 +222,7 @@ where
             }
         }
 
-        if *key == Key::Enter && !self.multiline.editing {
+        if submit {
             if let Some(validator) = &self.validate_on_enter {
                 if let Err(err) = validator(&self.input.to_string()) {
                     return State::Error(err);
@@ -240,9 +249,9 @@ where
         };
         let part3 = theme.format_footer_with_message(
             &state.into(),
-            match self.multiline.editing {
-                true if self.multiline.enabled => "[Esc]: view",
-                false if self.multiline.enabled => "[Enter]: submit",
+            match self.multiline {
+                Multiline::Editing => "[Esc]: preview",
+                Multiline::Preview => "[Enter]: submit",
                 _ => "",
             },
         );
