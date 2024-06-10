@@ -279,6 +279,13 @@ where
                 // The char has been inserted, so we need to interactively validate it if need
                 self.interactively_validate()
             }
+            Key::Backspace => {
+                if !self.multiline.editing && self.multiline.enabled {
+                    self.switch_mode::<T>();
+                    self.input.delete_left();
+                }
+                self.interactively_validate()
+            }
             _ => State::Active,
         }
     }
