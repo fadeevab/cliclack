@@ -196,6 +196,7 @@ where
             Key::Char(c) if !c.is_ascii_control() && self.multiline == Multiline::Preview => {
                 self.input.insert(*c);
             }
+            Key::Backspace => self.input.delete_left(),
             _ => {}
         }
 
