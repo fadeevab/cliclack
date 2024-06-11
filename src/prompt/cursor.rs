@@ -123,11 +123,19 @@ impl StringCursor {
     }
 
     pub fn move_home(&mut self) {
-        self.cursor = 0;
+        let jumps = line_jump_indices(&self.value);
+        self.cursor = match jumps.binary_search(&self.cursor) {
+            Ok(ix) if ix + 1 < jumps.len() => self.cursor, // happened to be at the start of a line
+            Ok(ix) | Err(ix) => jumps[ix.saturating_sub(1)],
+        }
     }
 
     pub fn move_end(&mut self) {
-        self.cursor = self.value.len();
+        let jumps = line_jump_indices(&self.value);
+        self.cursor = match jumps.binary_search(&self.cursor) {
+            Ok(ix) if ix + 1 < jumps.len() => jumps[ix + 1].saturating_sub(1), // happened to be at the start of a line
+            Ok(ix) | Err(ix) => jumps[ix].saturating_sub(1),
+        }
     }
 
     pub fn delete_left(&mut self) {
@@ -197,5 +205,63 @@ impl StringCursor {
 impl Display for StringCursor {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{}", String::from_iter(&self.value))
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    macro_rules! assert_cursor {
+        ($cursor: expr, $char: expr) => {
+            assert_eq!($cursor.current().unwrap_or(' '), $char);
+        };
+    }
+
+    macro_rules! assert_content {
+        ($cursor: expr, $content: expr) => {
+            assert_eq!($cursor.value, $content.chars().collect::<Vec<_>>());
+        };
+    }
+
+    #[test]
+    fn test_string_cursor() {
+        let mut cursor = StringCursor {
+            value: "hello\nworld".chars().collect(),
+            cursor: 0,
+        };
+        assert_cursor!(cursor, 'h');
+        assert_content!(cursor, "hello\nworld");
+        cursor.move_right();
+        assert_cursor!(cursor, 'e');
+        cursor.move_up();
+        assert_cursor!(cursor, 'h');
+        cursor.move_up();
+        assert_cursor!(cursor, 'h');
+        cursor.move_down();
+        assert_cursor!(cursor, 'w');
+        cursor.move_down();
+        assert_cursor!(cursor, 'w');
+        cursor.move_end();
+        assert_cursor!(cursor, ' ');
+        cursor.move_up();
+        assert_cursor!(cursor, '\n');
+        for c in "\nbeautiful".chars() {
+            cursor.insert(c);
+        }
+        assert_content!(cursor, "hello\nbeautiful\nworld");
+        cursor.move_up();
+        assert_cursor!(cursor, '\n');
+        cursor.move_down();
+        assert_cursor!(cursor, 'i');
+        cursor.move_end();
+        assert_cursor!(cursor, '\n');
+        cursor.move_end();
+        assert_cursor!(cursor, '\n');
+        cursor.move_down();
+        cursor.move_left();
+        assert_cursor!(cursor, 'd');
+        cursor.move_home();
+        assert_cursor!(cursor, 'w');
     }
 }
