@@ -40,7 +40,7 @@ enum Multiline {
 ///
 /// # Multiline Editing
 ///
-/// Multiline editing can be enabled by [`Input::multiline`].
+/// Use [`Input::multiline`] to enable multiline editing.
 ///
 /// ```
 /// use cliclack::input;
@@ -151,7 +151,7 @@ impl Input {
                 self.placeholder.extend(" (default)");
 
                 if self.multiline == Multiline::Editing {
-                    // The preview mode is more convenient to quickly submit the default value.
+                    // The preview mode is convenient for immediate submission of the default value.
                     self.multiline = Multiline::Preview;
                 }
             }
