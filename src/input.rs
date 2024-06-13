@@ -14,6 +14,14 @@ use crate::{
 
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 
+#[derive(Default, PartialEq)]
+enum Multiline {
+    #[default]
+    Disabled,
+    Preview,
+    Editing,
+}
+
 /// A prompt that accepts a single line of text input.
 ///
 /// # Example
@@ -29,6 +37,21 @@ type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
 /// # }
 /// # test().ok();
 /// ```
+///
+/// # Multiline Editing
+///
+/// Use [`Input::multiline`] to enable multiline editing.
+///
+/// ```
+/// use cliclack::input;
+/// # fn test() -> std::io::Result<()> {
+/// let path: String = input("Input multiple lines: ")
+///     .multiline()
+///     .interact()?;
+/// # Ok(())
+/// # }
+/// # test().ok(); // Ignoring I/O runtime errors.
+/// ```
 #[derive(Default)]
 pub struct Input {
     prompt: String,
@@ -36,6 +59,7 @@ pub struct Input {
     input_required: bool,
     default: Option<String>,
     placeholder: StringCursor,
+    multiline: Multiline,
     validate_on_enter: Option<ValidationCallback>,
     validate_interactively: Option<ValidationCallback>,
 }
@@ -70,6 +94,15 @@ impl Input {
     /// [`Input::default_input`] is used if no value is supplied.
     pub fn required(mut self, required: bool) -> Self {
         self.input_required = required;
+        self
+    }
+
+    /// Enables multiline input.
+    ///
+    /// 1. Press `Esc` to review and submit.
+    /// 2. Start typing to get back into the editing mode.
+    pub fn multiline(mut self) -> Self {
+        self.multiline = Multiline::Editing;
         self
     }
 
@@ -116,6 +149,11 @@ impl Input {
             if let Some(default) = &self.default {
                 self.placeholder.extend(default);
                 self.placeholder.extend(" (default)");
+
+                if self.multiline == Multiline::Editing {
+                    // The preview mode is convenient for immediate submission of the default value.
+                    self.multiline = Multiline::Preview;
+                }
             }
         }
         <Self as PromptInteraction<T>>::interact(self)
@@ -127,13 +165,43 @@ where
     T: FromStr,
 {
     fn input(&mut self) -> Option<&mut StringCursor> {
+        if self.multiline == Multiline::Preview {
+            return None;
+        }
         Some(&mut self.input)
     }
 
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
+        let mut submit = false;
 
-        if *key == Key::Enter && self.input.is_empty() {
+        match key {
+            // Multiline: editing -> preview.
+            Key::Escape if self.multiline == Multiline::Editing => {
+                self.multiline = Multiline::Preview;
+                return State::Cancel; // Workaround for `Esc`: "cancel cancelling".
+            }
+            Key::Enter => {
+                if self.multiline == Multiline::Editing {
+                    self.input.insert('\n')
+                } else {
+                    submit = true;
+                }
+            }
+            // Multiline: don't lose 1 char switching from the preview mode to editing.
+            Key::Char(c) if !c.is_ascii_control() && self.multiline == Multiline::Preview => {
+                self.input.insert(*c);
+            }
+            Key::Backspace if self.multiline == Multiline::Preview => self.input.delete_left(),
+            _ => {}
+        }
+
+        // Multiline: preview -> editing.
+        if self.multiline == Multiline::Preview {
+            self.multiline = Multiline::Editing;
+        }
+
+        if submit && self.input.is_empty() {
             if let Some(default) = &self.default {
                 self.input.extend(default);
             } else if self.input_required {
@@ -151,7 +219,7 @@ where
             }
         }
 
-        if *key == Key::Enter {
+        if submit {
             if let Some(validator) = &self.validate_on_enter {
                 if let Err(err) = validator(&self.input.to_string()) {
                     return State::Error(err);
@@ -170,14 +238,21 @@ where
     fn render(&mut self, state: &State<T>) -> String {
         let theme = THEME.lock().unwrap();
 
-        let line1 = theme.format_header(&state.into(), &self.prompt);
-        let line2 = if self.input.is_empty() {
+        let part1 = theme.format_header(&state.into(), &self.prompt);
+        let part2 = if self.input.is_empty() {
             theme.format_placeholder(&state.into(), &self.placeholder)
         } else {
             theme.format_input(&state.into(), &self.input)
         };
-        let line3 = theme.format_footer(&state.into());
+        let part3 = theme.format_footer_with_message(
+            &state.into(),
+            match self.multiline {
+                Multiline::Editing => "[Esc](Preview)",
+                Multiline::Preview => "[Enter](Submit)",
+                _ => "",
+            },
+        );
 
-        line1 + &line2 + &line3
+        part1 + &part2 + &part3
     }
 }

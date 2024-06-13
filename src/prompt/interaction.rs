@@ -99,7 +99,14 @@ pub trait PromptInteraction<T> {
             }
 
             match term.read_key() {
-                Ok(Key::Escape) => state = State::Cancel,
+                Ok(Key::Escape) => {
+                    state = State::Cancel;
+
+                    // WORKAROUND: for the `Esc` key, `Cancel` means "cancellation of cancellation".
+                    if let State::Cancel = self.on(&Event::Key(Key::Escape)) {
+                        state = State::Active;
+                    }
+                }
 
                 Ok(key) => {
                     let word_editing = self.allow_word_editing();
@@ -110,6 +117,8 @@ pub trait PromptInteraction<T> {
                             Key::Del => cursor.delete_right(),
                             Key::ArrowLeft => cursor.move_left(),
                             Key::ArrowRight => cursor.move_right(),
+                            Key::ArrowUp => cursor.move_up(),
+                            Key::ArrowDown => cursor.move_down(),
                             Key::Home => cursor.move_home(),
                             Key::End => cursor.move_end(),
 

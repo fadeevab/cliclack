@@ -224,7 +224,7 @@ pub trait Theme {
             "{left}{cursor}{right}",
             left = new_style.apply_to(left),
             cursor = style(cursor).reverse(),
-            right = new_style.apply_to(right)
+            right = new_style.apply_to(right),
         )
     }
 
@@ -308,15 +308,22 @@ pub trait Theme {
     fn format_input(&self, state: &ThemeState, cursor: &StringCursor) -> String {
         let new_style = &self.input_style(state);
 
-        let input = &match state {
+        let input = &mut match state {
             ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
-            _ => new_style.apply_to(cursor).to_string(),
+            _ => cursor.to_string(),
         };
+        if input.ends_with('\n') {
+            input.push('\n');
+        }
 
-        format!(
-            "{bar}  {input}\n",
-            bar = self.bar_color(state).apply_to(S_BAR)
-        )
+        input.lines().fold(String::new(), |acc, line| {
+            format!(
+                "{}{}  {}\n",
+                acc,
+                self.bar_color(state).apply_to(S_BAR),
+                new_style.apply_to(line)
+            )
+        })
     }
 
     /// Formats the input cursor with the dimmed style of placeholder.
@@ -331,13 +338,16 @@ pub trait Theme {
         let placeholder = &match state {
             ThemeState::Active | ThemeState::Error(_) => self.cursor_with_style(cursor, new_style),
             ThemeState::Cancel => "".to_string(),
-            _ => new_style.apply_to(cursor).to_string(),
+            _ => cursor.to_string(),
         };
-
-        format!(
-            "{bar}  {placeholder}\n",
-            bar = self.bar_color(state).apply_to(S_BAR)
-        )
+        placeholder.lines().fold(String::new(), |acc, line| {
+            format!(
+                "{}{}  {}\n",
+                acc,
+                self.bar_color(state).apply_to(S_BAR),
+                new_style.apply_to(line)
+            )
+        })
     }
 
     /// Returns the radio item without frame bars around the item.
