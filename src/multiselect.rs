@@ -85,7 +85,9 @@ where
         self
     }
 
-    /// Enable the filter mode.
+    /// Enables the filter mode ("fuzzy search").
+    ///
+    /// The filter mode allows to filter the items by typing.
     pub fn filter_mode(mut self) -> Self {
         self.filter.enable();
         self

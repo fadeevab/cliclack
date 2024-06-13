@@ -139,6 +139,12 @@
 //! # test().ok(); // Ignoring I/O runtime errors.
 //! ```
 //!
+//! ## Fuzzy Search
+//!
+//! Both [`Select`] and [`MultiSelect`] prompts support items filtering by
+//! typing enabled by [`Select::filter_mode`] and [`MultiSelect::filter_mode`]
+//! respectively.
+//!
 //! ## Spinner
 //!
 //! ```
