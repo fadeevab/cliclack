@@ -38,10 +38,9 @@ enum Multiline {
 /// # test().ok();
 /// ```
 ///
-/// Multiline editing is also supported ([`Input::multiline`]).
-/// Press `Tab` to switch between the `edit` and `view` mode.
+/// # Multiline Editing
 ///
-/// # Example
+/// Multiline editing can be enabled by [`Input::multiline`].
 ///
 /// ```
 /// use cliclack::input;
@@ -98,13 +97,10 @@ impl Input {
         self
     }
 
-    /// Enables the multiline input.
+    /// Enables multiline input.
     ///
-    /// The user should press `Tab` to switch between the `edit` and `view` mode.
-    ///
-    /// In the edit mode, the user can input multiple lines of text.
-    ///
-    /// In the view mode, the user can press `Enter` to submit the input.
+    /// 1. Press `Esc` to review and submit.
+    /// 2. Start typing to get back into the editing mode.
     pub fn multiline(mut self) -> Self {
         self.multiline = Multiline::Editing;
         self

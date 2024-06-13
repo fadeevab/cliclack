@@ -64,13 +64,14 @@ let path: String = input("Where should we create your project?")
     })
     .interact()?;
 ```
-If feature `multiline` enabled, the input prompt can accept multiple lines of text. Press `Tab` to switch between view and edit modes.
+If `multiline` is enabled, the input prompt can accept multiple lines of text.
+To review and submit the text, press `Esc` and then `Enter`.
 
 ```rust
 use cliclack::input;
 
 let path: String = input("Input multiple lines: ")
-    .multiline(true)
+    .multiline()
     .interact()?;
 ```
 
