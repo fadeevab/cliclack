@@ -64,7 +64,7 @@ let path: String = input("Where should we create your project?")
     })
     .interact()?;
 ```
-If `multiline` is enabled, the input prompt can accept multiple lines of text.
+With `multiline` the input prompt can accept multiple lines of text.
 To review and submit the text, press `Esc` and then `Enter`.
 
 ```rust
