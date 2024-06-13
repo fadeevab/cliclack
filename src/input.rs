@@ -22,7 +22,7 @@ enum Multiline {
     Editing,
 }
 
-/// A prompt that accepts a single line of text input.
+/// A prompt that accepts a text input: either single line or multiline.
 ///
 /// # Example
 ///
@@ -38,9 +38,9 @@ enum Multiline {
 /// # test().ok();
 /// ```
 ///
-/// # Multiline Editing
+/// # Multiline
 ///
-/// Use [`Input::multiline`] to enable multiline editing.
+/// [`Input::multiline`] enables multiline editing.
 ///
 /// ```
 /// use cliclack::input;

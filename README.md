@@ -47,6 +47,7 @@ outro("You're all set!")?;
 ### Input
 
 The input prompt accepts a single line of text trying to parse it into a target type.
+Multiline input can be enabled using the `multiline()` switch.
 
 ```rust
 use cliclack::input;
@@ -62,16 +63,6 @@ let path: String = input("Where should we create your project?")
             Ok(())
         }
     })
-    .interact()?;
-```
-With `multiline` the input prompt can accept multiple lines of text.
-To review and submit the text, press `Esc` and then `Enter`.
-
-```rust
-use cliclack::input;
-
-let path: String = input("Input multiple lines: ")
-    .multiline()
     .interact()?;
 ```
 
