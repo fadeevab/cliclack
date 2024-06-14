@@ -22,7 +22,7 @@ enum Multiline {
     Editing,
 }
 
-/// A prompt that accepts a text input: either single line or multiline.
+/// A prompt that accepts a text input: either single-line or multiline.
 ///
 /// # Example
 ///
@@ -40,12 +40,13 @@ enum Multiline {
 ///
 /// # Multiline
 ///
-/// [`Input::multiline`] enables multiline editing.
+/// [`Input::multiline`] enables multiline text editing.
 ///
 /// ```
-/// use cliclack::input;
+/// use cliclack::Input;
+///
 /// # fn test() -> std::io::Result<()> {
-/// let path: String = input("Input multiple lines: ")
+/// let path: String = Input::new("Input multiple lines: ")
 ///     .multiline()
 ///     .interact()?;
 /// # Ok(())

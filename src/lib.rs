@@ -47,8 +47,10 @@
 //!
 //! ## Input
 //!
-//! The input prompt accepts a single line of text trying to parse it into
-//! a target type.
+//! The input prompt accepts a single line (or multiple lines) of text
+//! trying to parse it into a target type.
+//!
+//! Multiline editing can be enabled by [`Input::multiline`].
 //!
 //! ```
 //! use cliclack::input;
