@@ -20,6 +20,7 @@ pub struct Password {
     prompt: String,
     mask: char,
     input: StringCursor,
+    allow_empty: bool,
     validate_on_enter: Option<ValidationCallback>,
     validate_interactively: Option<ValidationCallback>,
 }
@@ -37,6 +38,12 @@ impl Password {
     /// Sets the mask character. E.g. `*` or `•`.
     pub fn mask(mut self, mask: char) -> Self {
         self.mask = mask;
+        self
+    }
+
+    /// Sets whether empty passwords are allowed (`true``) or not (`false`).
+    pub fn allow_empty(mut self, allow: bool) -> Self {
+        self.allow_empty = allow;
         self
     }
 
@@ -101,7 +108,7 @@ impl PromptInteraction<String> for Password {
         }
 
         if *key == Key::Enter {
-            if self.input.is_empty() {
+            if self.input.is_empty() && ! self.allow_empty {
                 return State::Error("Input required".to_string());
             }
 
