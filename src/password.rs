@@ -41,9 +41,9 @@ impl Password {
         self
     }
 
-    /// Sets whether empty passwords are allowed (`true``) or not (`false`).
-    pub fn allow_empty(mut self, allow: bool) -> Self {
-        self.allow_empty = allow;
+    /// Allows an empty password (which is not allowed by default).
+    pub fn allow_empty(mut self) -> Self {
+        self.allow_empty = true;
         self
     }
 
