@@ -2,6 +2,10 @@ use std::fmt::{Display, Formatter, Result};
 
 use zeroize::ZeroizeOnDrop;
 
+/// A cursor for editing multiline strings.
+///
+/// Supports moving the cursor (left, right, up, down), backspace, delete, etc.
+#[doc(hidden)]
 #[derive(Default, ZeroizeOnDrop, Clone)]
 pub struct StringCursor {
     value: Vec<char>,
