@@ -271,8 +271,11 @@ use std::io;
 
 use theme::THEME;
 
-// 🎨 Re-export of the theme API.
+
+// 🎨 Export of the theme API.
 pub use theme::{reset_theme, set_theme, Theme, ThemeState};
+// 🎨 Re-export for some `Theme` trait methods.
+pub use prompt::cursor::StringCursor;
 
 pub use confirm::Confirm;
 pub use input::Input;
