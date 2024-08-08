@@ -151,7 +151,7 @@ impl ProgressBar {
         let theme = THEME.lock().unwrap();
         let options = self.options.read().unwrap();
 
-        let msg = theme.format_progress_with_state(
+        let render = theme.format_progress_with_state(
             &message.to_string(),
             options.grouped,
             options.last,
@@ -159,11 +159,11 @@ impl ProgressBar {
         );
 
         // Ignore a cleared progress bar.
-        if !msg.is_empty() {
-            self.bar.println(msg.clone());
+        if !message.to_string().is_empty() {
+            self.bar.println(render.clone());
         }
 
-        msg.lines().count()
+        render.lines().count()
     }
 
     /// Redraws the progress bar.
