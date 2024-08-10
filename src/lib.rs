@@ -270,6 +270,7 @@ mod option;
 pub mod error;
 
 use console::Term;
+use parse::CliFromStr;
 use std::fmt::Display;
 use std::io;
 
@@ -333,7 +334,7 @@ pub fn outro_note(prompt: impl Display, message: impl Display) -> io::Result<()>
 /// Constructs a new [`Input`] prompt.
 ///
 /// See [`Input`] for chainable methods.
-pub fn input(prompt: impl Display) -> Input {
+pub fn input<T: CliFromStr + Default>(prompt: impl Display) -> Input<T> {
     Input::new(prompt)
 }
 

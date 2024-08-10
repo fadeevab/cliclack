@@ -1,5 +1,6 @@
 use std::io;
 use std::fmt::Display;
+use std::marker::PhantomData;
 
 use console::Key;
 
@@ -56,7 +57,7 @@ enum Multiline {
 /// # test().ok(); // Ignoring I/O runtime errors.
 /// ```
 #[derive(Default)]
-pub struct Input {
+pub struct Input<T: CliFromStr> {
     prompt: String,
     input: StringCursor,
     input_required: bool,
@@ -65,14 +66,15 @@ pub struct Input {
     multiline: Multiline,
     validate_on_enter: Option<ValidationCallback>,
     validate_interactively: Option<ValidationCallback>,
+    _phantom: PhantomData<T>,
 }
 
-impl Input {
+impl<T: CliFromStr + Default> Input<T> {
     /// Creates a new input prompt.
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
-            input_required: true,
+            input_required: !is_option::<T>(),
             ..Default::default()
         }
     }
@@ -144,7 +146,7 @@ impl Input {
     }
 
     /// Starts the prompt interaction.
-    pub fn interact<T: CliFromStr + Default>(&mut self) -> io::Result<T>
+    pub fn interact(&mut self) -> io::Result<T>
     where
         T: CliFromStr,
     {
@@ -163,7 +165,7 @@ impl Input {
     }
 }
 
-impl<T> PromptInteraction<T> for Input
+impl<T> PromptInteraction<T> for Input<T>
 where
     T: CliFromStr + Default,
 {
@@ -207,7 +209,7 @@ where
         if submit && self.input.is_empty() {
             if let Some(default) = &self.default {
                 self.input.extend(default);
-            } else if is_option::<T>() {
+            } else if is_option::<T>() && !self.input_required {
                 return State::Submit(T::default())
             } else if self.input_required {
                 return State::Error("Input required".to_string());

@@ -22,6 +22,14 @@ fn main() -> std::io::Result<()> {
 
     log::remark(&format!("You entered: {:?}", email))?;
 
+    // But we can still use `required(true)` with an `Option<>` return type if we want...
+    // Don't know why you would, but you can.
+    let age: Option<i32> = cliclack::input("How old are you (required)?")
+        .required(true)
+        .interact()?;
+
+    log::remark(&format!("You entered: {:?}", age))?;
+
     // This case shows bad usage:
     // - The result will never be empty due to `default_input()` being set, so 
     //   `required()` has no effect. 
