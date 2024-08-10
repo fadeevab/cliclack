@@ -1,6 +1,6 @@
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddrV4, SocketAddrV6};
 
-use crate::CliError;
+use crate::error::CliError;
 
 /// A trait for parsing a type from a string. This is similar to `FromStr`, but
 /// is a trait we can implement for types we don't own.
@@ -63,6 +63,7 @@ impl<T: CliFromStr> CliFromStr for Option<T> {
     }
 }
 
+#[cfg(test)]
 mod tests {
     #[allow(unused_imports)]
     use crate::parse::CliFromStr;

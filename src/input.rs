@@ -3,6 +3,7 @@ use std::fmt::Display;
 
 use console::Key;
 
+use crate::option::is_option;
 use crate::{
     parse::CliFromStr,
     prompt::{
@@ -143,7 +144,7 @@ impl Input {
     }
 
     /// Starts the prompt interaction.
-    pub fn interact<T>(&mut self) -> io::Result<T>
+    pub fn interact<T: CliFromStr + Default>(&mut self) -> io::Result<T>
     where
         T: CliFromStr,
     {
@@ -164,7 +165,7 @@ impl Input {
 
 impl<T> PromptInteraction<T> for Input
 where
-    T: CliFromStr,
+    T: CliFromStr + Default,
 {
     fn input(&mut self) -> Option<&mut StringCursor> {
         if self.multiline == Multiline::Preview {
@@ -206,6 +207,8 @@ where
         if submit && self.input.is_empty() {
             if let Some(default) = &self.default {
                 self.input.extend(default);
+            } else if is_option::<T>() {
+                return State::Submit(T::default())
             } else if self.input_required {
                 return State::Error("Input required".to_string());
             }

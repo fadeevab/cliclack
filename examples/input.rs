@@ -1,21 +1,19 @@
 use cliclack::log;
 
 fn main() -> std::io::Result<()> {
-    // This case requires input will never return an empty string.
+    // This case demonstrates the default behavior of `input()` when a non-`Option<>`
+    // return type is used, i.e. `required(true)`.
     let name: String = cliclack::input("What's your name (required)?")
         .interact()?;
 
     log::remark(&format!("You entered: {}", name))?;
 
-    // This case does not require input. The result will be `None` if the user 
-    // does not provide any input (i.e. just presses <enter>), and `Some(18)` 
-    // if the user provides "18".
-    let age: Option<i32> = cliclack::input("How old are you (optional)?")
-        .placeholder("18")
-        .required(false)
+    // This case demonstrates the implicit behavior of `input()` when the return 
+    // type is an `Option<T>`, i.e. `required(false)`.
+    let email: Option<String> = cliclack::input("What's your email (optional)?")
         .interact()?;
 
-    log::remark(&format!("You entered: {:?}", age))?;
+    log::remark(&format!("You entered: {:?}", email))?;
 
     // This case shows bad usage:
     // - The result will never be empty due to `default_input()` being set, so 
