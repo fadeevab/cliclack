@@ -1,5 +1,5 @@
 use std::cell::RefCell;
-use std::io;
+use std::{io, usize};
 use std::{fmt::Display, rc::Rc};
 
 use console::Key;
@@ -33,6 +33,8 @@ pub struct Select<T> {
     cursor: usize,
     initial_value: Option<T>,
     filter: FilteredView<RadioButton<T>>,
+    window_size: usize,
+    window_pos: usize,
 }
 
 impl<T> Select<T>
@@ -47,6 +49,8 @@ where
             cursor: 0,
             initial_value: None,
             filter: FilteredView::default(),
+            window_size: usize::MAX,
+            window_pos: 0,
         }
     }
 
@@ -79,6 +83,13 @@ where
     /// The filter mode allows to filter the items by typing.
     pub fn filter_mode(mut self) -> Self {
         self.filter.enable();
+        self
+    }
+
+    /// Sets the window size. This is the maximum number of items to display
+    /// at once, triggering scrolling if necessary.
+    pub fn window_size(mut self, size: usize) -> Self {
+        self.window_size = size;
         self
     }
 
@@ -118,10 +129,17 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
+                if self.cursor < self.window_pos {
+                    self.window_pos = self.cursor;
+                }
             }
             Key::ArrowDown | Key::ArrowRight => {
-                if !self.filter.items().is_empty() && self.cursor < self.filter.items().len() - 1 {
+                let filtered_item_count = self.filter.items().len();
+                if !self.filter.items().is_empty() && self.cursor < filtered_item_count - 1 {
                     self.cursor += 1;
+                }
+                if self.cursor >= self.window_pos + self.window_size {
+                    self.window_pos = self.cursor - self.window_size + 1;
                 }
             }
             Key::Enter => {
@@ -153,6 +171,8 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
             .items()
             .iter()
             .enumerate()
+            .skip(self.window_pos)
+            .take(self.window_size)
             .map(|(i, item)| {
                 let item = item.borrow();
                 theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
