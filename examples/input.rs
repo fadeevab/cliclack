@@ -8,6 +8,13 @@ fn main() -> std::io::Result<()> {
 
     log::remark(&format!("You entered: {}", name))?;
 
+    // We can still use `required(false)` with a non-`Option<>` return type, of course.
+    let city: String = cliclack::input("What city do you live in (optional)?")
+        .required(false)
+        .interact()?;
+
+    log::remark(&format!("You entered: {}", city))?;
+
     // This case demonstrates the implicit behavior of `input()` when the return 
     // type is an `Option<T>`, i.e. `required(false)`.
     let email: Option<String> = cliclack::input("What's your email (optional)?")
