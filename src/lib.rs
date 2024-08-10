@@ -264,8 +264,10 @@ mod prompt;
 mod select;
 mod theme;
 mod validate;
+mod parse;
 
 use console::Term;
+use thiserror::Error;
 use std::fmt::Display;
 use std::io;
 
@@ -285,6 +287,20 @@ pub use password::Password;
 pub use progress::ProgressBar;
 pub use select::Select;
 pub use validate::Validate;
+
+/// Error type for CLI prompts.
+#[derive(Debug, Error)]
+pub enum CliError {
+    /// I/O error.
+    #[error("i/o error: {0}")]
+    Io(io::Error),
+    /// Error parsing a string to a target type.
+    #[error("parse error: {0}")]
+    Parse(String),
+    /// Validation error.
+    #[error("validation error: {0}")]
+    Validate(String),
+}
 
 fn term_write(line: impl Display) -> io::Result<()> {
     Term::stderr().write_str(line.to_string().as_str())

@@ -1,9 +1,10 @@
 use std::io;
-use std::{fmt::Display, str::FromStr};
+use std::fmt::Display;
 
 use console::Key;
 
 use crate::{
+    parse::CliFromStr,
     prompt::{
         cursor::StringCursor,
         interaction::{Event, PromptInteraction, State},
@@ -144,7 +145,7 @@ impl Input {
     /// Starts the prompt interaction.
     pub fn interact<T>(&mut self) -> io::Result<T>
     where
-        T: FromStr,
+        T: CliFromStr,
     {
         if self.placeholder.is_empty() {
             if let Some(default) = &self.default {
@@ -163,7 +164,7 @@ impl Input {
 
 impl<T> PromptInteraction<T> for Input
 where
-    T: FromStr,
+    T: CliFromStr,
 {
     fn input(&mut self) -> Option<&mut StringCursor> {
         if self.multiline == Multiline::Preview {
@@ -215,7 +216,7 @@ where
                 return State::Error(err);
             }
 
-            if self.input.to_string().parse::<T>().is_err() {
+            if T::try_parse(&self.input.to_string()).is_err() {
                 return State::Error("Invalid value format".to_string());
             }
         }
@@ -227,7 +228,7 @@ where
                 }
             }
 
-            match self.input.to_string().parse::<T>() {
+            match T::try_parse(&self.input.to_string()) {
                 Ok(value) => return State::Submit(value),
                 Err(_) => return State::Error("Invalid value format".to_string()),
             }
