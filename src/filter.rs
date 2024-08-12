@@ -25,18 +25,27 @@ impl<I: LabeledItem> Default for FilteredView<I> {
 }
 
 impl<I: LabeledItem + Clone> FilteredView<I> {
+    /// Enable filtering of the items in the view.
     pub fn enable(&mut self) {
         self.enabled = true;
     }
 
+    /// Set the items to be filtered.
     pub fn set(&mut self, items: Vec<Rc<RefCell<I>>>) {
         self.items = items;
     }
 
+    /// Return the filtered items in the view.
     pub fn items(&self) -> &[Rc<RefCell<I>>] {
         &self.items
     }
 
+    /// Get whether or not filtering is enabled.
+    pub fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    /// Handle the key event and update the state of the view.
     pub fn on<T>(&mut self, key: &Key, all_items: Vec<Rc<RefCell<I>>>) -> Option<State<T>> {
         if !self.enabled {
             // Pass over the control.

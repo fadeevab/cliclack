@@ -3,6 +3,7 @@ use std::{io, usize};
 use std::{fmt::Display, rc::Rc};
 
 use console::Key;
+use termsize::Size;
 
 use crate::{
     filter::{FilteredView, LabeledItem},
@@ -35,6 +36,7 @@ pub struct Select<T> {
     filter: FilteredView<RadioButton<T>>,
     window_size: usize,
     window_pos: usize,
+    term_size: Option<Size>,
 }
 
 impl<T> Select<T>
@@ -51,6 +53,7 @@ where
             filter: FilteredView::default(),
             window_size: usize::MAX,
             window_pos: 0,
+            term_size: termsize::get(),
         }
     }
 
@@ -101,6 +104,23 @@ where
                 "No items added to the list",
             ));
         }
+
+        // If the window size hasn't been specified manually, calculate it
+        // based on the current size of the terminal.
+        if let Some(size) = &self.term_size {
+            // Determine the optimal maximum height of the window.
+            let mut max_height = size.rows as usize - 3;
+            if self.filter.is_enabled() {
+                max_height -= 1;
+            }
+
+            // If the window size is not set or exceeds the maximum optimal height,
+            // use the optimal height instead.
+            if self.window_size == usize::MAX || self.window_size > max_height {
+                self.window_size = max_height;
+            }
+        }
+
         if let Some(initial_value) = &self.initial_value {
             self.cursor = self
                 .items
