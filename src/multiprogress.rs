@@ -41,24 +41,39 @@ impl MultiProgress {
     }
 
     /// Adds a progress bar and returns an internalized reference to it.
+    ///
+    /// The progress bar will be positioned below all other bars in the MultiProgress.
     pub fn add(&self, pb: ProgressBar) -> ProgressBar {
-        // Unset the last flag for all other progress bars: it affects rendering.
-        for bar in self.bars.write().unwrap().iter_mut() {
-            bar.options_write().last = false;
-            bar.redraw_active();
-        }
+        let bars_count = self.bars.read().unwrap().len();
+        self.insert(bars_count, pb)
+    }
 
+    /// Inserts a progress bar at a given index and returns an internalized reference to it.
+    ///
+    /// If the index is greater than or equal to the number of progress bars, the bar is added to the end.
+    pub fn insert(&self, index: usize, pb: ProgressBar) -> ProgressBar {
+        let bars_count = self.bars.read().unwrap().len();
+        let index = index.min(bars_count);
+        if index == bars_count {
+            // Unset the last flag for all other progress bars: it affects rendering.
+            for bar in self.bars.write().unwrap().iter_mut() {
+                bar.options_write().last = false;
+                bar.redraw_active();
+            }
+        }
         // Attention: deconstructing `pb` to avoid borrowing `pb.bar` twice.
         let ProgressBar { bar, options } = pb;
-        let bar = self.multi.add(bar);
+        let bar = self.multi.insert(index, bar);
         {
             let mut options = options.write().unwrap();
             options.grouped = true;
-            options.last = true;
+            if index == bars_count {
+                options.last = true;
+            }
         }
 
         let pb = ProgressBar { bar, options };
-        self.bars.write().unwrap().push(pb.clone());
+        self.bars.write().unwrap().insert(index, pb.clone());
         pb
     }
 
