@@ -92,7 +92,10 @@ impl MultiProgress {
         self.stop_with(&ThemeState::Error(error.to_string()))
     }
 
-    /// Print a log line above the multi-progress, optionally followed by an empty line
+    /// Print a log line above the multi-progress
+    ///
+    /// By default, there is no empty line between each log added with this function. To add an empty line, use a line
+    /// return character (`\n`) at the end of the message.
     pub fn println(&self, message: impl Display) {
         let theme = THEME.lock().unwrap();
         let symbol = theme.remark_symbol();
