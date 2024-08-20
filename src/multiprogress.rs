@@ -1,6 +1,9 @@
 use std::{
     fmt::Display,
-    sync::{Arc, RwLock},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc, RwLock,
+    },
 };
 
 use console::Term;
@@ -15,6 +18,7 @@ pub struct MultiProgress {
     multi: indicatif::MultiProgress,
     bars: Arc<RwLock<Vec<ProgressBar>>>,
     prompt: String,
+    logs: Arc<AtomicUsize>,
 }
 
 impl MultiProgress {
@@ -32,6 +36,7 @@ impl MultiProgress {
             multi,
             bars: Default::default(),
             prompt: prompt.to_string(),
+            logs: Default::default(),
         }
     }
 
@@ -57,6 +62,18 @@ impl MultiProgress {
         pb
     }
 
+    /// Print a log line above the multi-progress
+    ///
+    /// By default, there is no empty line between each log added with this function. To add an empty line, use a line
+    /// return character (`\n`) at the end of the message.
+    pub fn println(&self, message: impl Display) {
+        let theme = THEME.lock().unwrap();
+        let symbol = theme.remark_symbol();
+        let log = theme.format_log_with_spacing(&message.to_string(), &symbol, false);
+        self.logs.fetch_add(log.lines().count(), Ordering::SeqCst);
+        self.multi.println(log).ok();
+    }
+
     /// Stops the multi-progress bar with a submitted (successful) state.
     pub fn stop(&self) {
         self.stop_with(&ThemeState::Submit)
@@ -73,7 +90,7 @@ impl MultiProgress {
     }
 
     fn stop_with(&self, state: &ThemeState) {
-        let mut inner_height = 0;
+        let mut inner_height = self.logs.load(Ordering::SeqCst);
 
         // Redraw all progress bars.
         for pb in self.bars.read().unwrap().iter() {

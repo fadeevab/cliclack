@@ -656,20 +656,27 @@ pub trait Theme {
 
     /// Returns a log message rendering with a chosen symbol.
     fn format_log(&self, text: &str, symbol: &str) -> String {
+        self.format_log_with_spacing(text, symbol, true)
+    }
+
+    /// Returns a log message rendering with a chosen symbol, with an optional trailing empty line
+    fn format_log_with_spacing(&self, text: &str, symbol: &str, spacing: bool) -> String {
         let mut parts = vec![];
-        let mut lines = text.lines().chain("\n".lines());
+        let chain = match spacing {
+            true => "\n",
+            false => "",
+        };
+        let mut lines = text.lines().chain(chain.lines());
 
         if let Some(first) = lines.next() {
             parts.push(format!("{symbol}  {first}"));
         }
-
         for line in lines {
             parts.push(format!(
                 "{bar}  {line}",
                 bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR)
             ));
         }
-
         parts.push("".into());
         parts.join("\n")
     }
