@@ -659,7 +659,7 @@ pub trait Theme {
         self.format_log_with_spacing(text, symbol, true)
     }
 
-    /// Returns a log message rendering with a chosen symbol, with an optional trailing empty line
+    /// Returns a log message rendering with a chosen symbol, with an optional trailing empty line.
     fn format_log_with_spacing(&self, text: &str, symbol: &str, spacing: bool) -> String {
         let mut parts = vec![];
         let chain = match spacing {

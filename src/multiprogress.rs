@@ -42,7 +42,7 @@ impl MultiProgress {
 
     /// Adds a progress bar and returns an internalized reference to it.
     ///
-    /// The progress bar will be positioned below all other bars in the MultiProgress.
+    /// The progress bar will be positioned below all other bars in the [`MultiProgress`].
     pub fn add(&self, pb: ProgressBar) -> ProgressBar {
         let bars_count = self.bars.read().unwrap().len();
         self.insert(bars_count, pb)
@@ -77,9 +77,10 @@ impl MultiProgress {
         pb
     }
 
-    /// Print a log line above the multi-progress
+    /// Prints a log line above the multi-progress bar.
     ///
-    /// By default, there is no empty line between each log added with this function. To add an empty line, use a line
+    /// By default, there is no empty line between each log added with
+    /// this function. To add an empty line, use a line
     /// return character (`\n`) at the end of the message.
     pub fn println(&self, message: impl Display) {
         let theme = THEME.lock().unwrap();
