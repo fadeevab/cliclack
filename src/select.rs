@@ -1,8 +1,9 @@
 use std::cell::RefCell;
-use std::io;
+use std::{io, usize};
 use std::{fmt::Display, rc::Rc};
 
 use console::Key;
+use termsize::Size;
 
 use crate::{
     filter::{FilteredView, LabeledItem},
@@ -33,6 +34,9 @@ pub struct Select<T> {
     cursor: usize,
     initial_value: Option<T>,
     filter: FilteredView<RadioButton<T>>,
+    window_size: usize,
+    window_pos: usize,
+    term_size: Option<Size>,
 }
 
 impl<T> Select<T>
@@ -47,6 +51,9 @@ where
             cursor: 0,
             initial_value: None,
             filter: FilteredView::default(),
+            window_size: usize::MAX,
+            window_pos: 0,
+            term_size: termsize::get(),
         }
     }
 
@@ -82,6 +89,13 @@ where
         self
     }
 
+    /// Sets the window size. This is the maximum number of items to display
+    /// at once, triggering scrolling if necessary.
+    pub fn window_size(mut self, size: usize) -> Self {
+        self.window_size = size;
+        self
+    }
+
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<T> {
         if self.items.is_empty() {
@@ -90,6 +104,23 @@ where
                 "No items added to the list",
             ));
         }
+
+        // If the window size hasn't been specified manually, calculate it
+        // based on the current size of the terminal.
+        if let Some(size) = &self.term_size {
+            // Determine the optimal maximum height of the window.
+            let mut max_height = size.rows as usize - 3;
+            if self.filter.is_enabled() {
+                max_height -= 1;
+            }
+
+            // If the window size is not set or exceeds the maximum optimal height,
+            // use the optimal height instead.
+            if self.window_size == usize::MAX || self.window_size > max_height {
+                self.window_size = max_height;
+            }
+        }
+
         if let Some(initial_value) = &self.initial_value {
             self.cursor = self
                 .items
@@ -118,10 +149,17 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
+                if self.cursor < self.window_pos {
+                    self.window_pos = self.cursor;
+                }
             }
             Key::ArrowDown | Key::ArrowRight => {
-                if !self.filter.items().is_empty() && self.cursor < self.filter.items().len() - 1 {
+                let filtered_item_count = self.filter.items().len();
+                if !self.filter.items().is_empty() && self.cursor < filtered_item_count - 1 {
                     self.cursor += 1;
+                }
+                if self.cursor >= self.window_pos + self.window_size {
+                    self.window_pos = self.cursor - self.window_size + 1;
                 }
             }
             Key::Enter => {
@@ -153,6 +191,8 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
             .items()
             .iter()
             .enumerate()
+            .skip(self.window_pos)
+            .take(self.window_size)
             .map(|(i, item)| {
                 let item = item.borrow();
                 theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)
