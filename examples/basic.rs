@@ -1,3 +1,5 @@
+mod select;
+
 use std::{thread, time::Duration};
 
 use console::style;

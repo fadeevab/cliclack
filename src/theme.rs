@@ -10,6 +10,7 @@ const S_STEP_ACTIVE: Emoji = Emoji("◆", "*");
 const S_STEP_CANCEL: Emoji = Emoji("■", "x");
 const S_STEP_ERROR: Emoji = Emoji("▲", "x");
 const S_STEP_SUBMIT: Emoji = Emoji("◇", "o");
+const S_STEP_SKIPPED: Emoji = Emoji("◌", "□");
 
 const S_BAR_START: Emoji = Emoji("┌", "T");
 const S_BAR: Emoji = Emoji("│", "|");
@@ -42,6 +43,8 @@ pub enum ThemeState {
     Cancel,
     /// `Enter` key hit.
     Submit,
+    /// `Ctrl+S` key hit.
+    Skipped,
     /// Validation error occurred.
     Error(String),
 }
@@ -51,7 +54,7 @@ impl<T> From<&State<T>> for ThemeState {
         match state {
             State::Active => Self::Active,
             State::Cancel => Self::Cancel,
-            State::Submit(_) => Self::Submit,
+            State::Submit(_) | State::Skipped => Self::Submit,
             State::Error(e) => Self::Error(e.clone()),
         }
     }
@@ -103,6 +106,7 @@ pub trait Theme {
             ThemeState::Active => Style::new().cyan(),
             ThemeState::Cancel => Style::new().red(),
             ThemeState::Submit => Style::new().bright().black(),
+            ThemeState::Skipped => Style::new().bright().black(),
             ThemeState::Error(_) => Style::new().yellow(),
         }
     }
@@ -123,6 +127,7 @@ pub trait Theme {
             ThemeState::Active => color.apply_to(S_STEP_ACTIVE),
             ThemeState::Cancel => color.apply_to(S_STEP_CANCEL),
             ThemeState::Submit => color.apply_to(S_STEP_SUBMIT),
+            ThemeState::Skipped => color.apply_to(S_STEP_SKIPPED),
             ThemeState::Error(_) => color.apply_to(S_STEP_ERROR),
         }
         .to_string()
@@ -204,6 +209,7 @@ pub trait Theme {
         match state {
             ThemeState::Cancel => Style::new().dim().strikethrough(),
             ThemeState::Submit => Style::new().dim(),
+            ThemeState::Skipped => Style::new().on_red(),
             _ => Style::new(),
         }
     }
@@ -297,6 +303,7 @@ pub trait Theme {
                 ThemeState::Active => format!("{S_BAR_END}  {message}"),
                 ThemeState::Cancel => format!("{S_BAR_END}  Operation cancelled."),
                 ThemeState::Submit => format!("{S_BAR}"),
+                ThemeState::Skipped => format!("{S_BAR_END}  *skipped*"),
                 ThemeState::Error(err) => format!("{S_BAR_END}  {err}"),
             })
         )
@@ -400,6 +407,12 @@ pub trait Theme {
     ) -> String {
         match state {
             ThemeState::Cancel | ThemeState::Submit if !selected => return String::new(),
+            ThemeState::Skipped => {
+                return format!(
+                    "{bar}  *skipped*\n",
+                    bar = self.bar_color(state).apply_to(S_BAR),
+                )
+            }
             _ => {}
         }
 
