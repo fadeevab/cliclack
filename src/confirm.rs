@@ -48,7 +48,14 @@ impl PromptInteraction<bool> for Confirm {
         let Event::Key(key) = event;
 
         match key {
-            Key::ArrowDown | Key::ArrowRight | Key::ArrowUp | Key::ArrowLeft => {
+            Key::ArrowDown
+            | Key::ArrowRight
+            | Key::ArrowUp
+            | Key::ArrowLeft
+            | Key::Char('h')
+            | Key::Char('k')
+            | Key::Char('j')
+            | Key::Char('l') => {
                 self.input = !self.input;
             }
             Key::Char('y') | Key::Char('Y') => {
