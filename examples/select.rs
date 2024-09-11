@@ -4,7 +4,7 @@ fn main() -> std::io::Result<()> {
     let maybe = select("select an option (press Tab to skip)")
         .item("1", "Cool feature 1", "")
         .item("2", "Cool feature 2", "")
-        .required(false)
+        .optional()
         .interact()?;
 
     outro("Outro message")?;

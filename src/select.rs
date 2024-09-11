@@ -4,7 +4,6 @@ use std::{fmt::Display, rc::Rc};
 
 use console::Key;
 
-use crate::log::info;
 use crate::prompt::interaction::SkippablePrompt;
 use crate::{
     filter::{FilteredView, LabeledItem},
@@ -28,9 +27,13 @@ impl<T> LabeledItem for RadioButton<T> {
     }
 }
 
+pub struct Optional;
+
+pub struct Required;
+
 /// A prompt that asks for one selection from a list of options.
-pub struct Select<T> {
-    required: bool,
+pub struct Select<T, State = Required> {
+    state: std::marker::PhantomData<State>,
     prompt: String,
     items: Vec<Rc<RefCell<RadioButton<T>>>>,
     cursor: usize,
@@ -38,35 +41,32 @@ pub struct Select<T> {
     filter: FilteredView<RadioButton<T>>,
 }
 
-pub struct SkippableSelect<T> {
-    required: bool,
-    prompt: String,
-    items: Vec<Rc<RefCell<RadioButton<T>>>>,
-    cursor: usize,
-    initial_value: Option<T>,
-    filter: FilteredView<RadioButton<T>>,
-}
-
-impl<T> Select<T>
+impl<T> Select<T, Required>
 where
     T: Clone + Eq,
 {
     /// Creates a new selection prompt.
-    pub fn new(prompt: impl Display) -> Self {
+    pub fn new(prompt: impl Display) -> Select<T, Required> {
         Self {
+            state: std::marker::PhantomData::<Required>,
             prompt: prompt.to_string(),
             items: Vec::new(),
             cursor: 0,
             initial_value: None,
             filter: FilteredView::default(),
-            required: true,
         }
     }
 
     /// Set the `required` setting
-    pub fn required(mut self, required: bool) -> SkippableSelect<T> {
-        self.required = required;
-        SkippableSelect::from(self)
+    pub fn optional(self) -> Select<T, Optional> {
+        Select::<T, Optional> {
+            state: std::marker::PhantomData::<Optional>,
+            prompt: self.prompt,
+            items: self.items,
+            cursor: self.cursor,
+            initial_value: self.initial_value,
+            filter: self.filter,
+        }
     }
 
     /// Adds an item to the selection prompt.
@@ -121,22 +121,10 @@ where
     }
 }
 
-impl<T> SkippableSelect<T>
+impl<T> Select<T, Optional>
 where
     T: Clone + Eq,
 {
-    /// Creates a new selection prompt.
-    pub fn new(prompt: impl Display) -> Self {
-        Self {
-            prompt: prompt.to_string(),
-            items: Vec::new(),
-            cursor: 0,
-            initial_value: None,
-            filter: FilteredView::default(),
-            required: false,
-        }
-    }
-
     /// Adds an item to the selection prompt.
     pub fn item(mut self, value: T, label: impl Display, hint: impl Display) -> Self {
         self.items.push(Rc::new(RefCell::new(RadioButton {
@@ -189,20 +177,7 @@ where
     }
 }
 
-impl<T: Clone> From<Select<T>> for SkippableSelect<T> {
-    fn from(value: Select<T>) -> Self {
-        Self {
-            required: value.required,
-            prompt: value.prompt,
-            items: value.items,
-            cursor: value.cursor,
-            initial_value: value.initial_value,
-            filter: value.filter,
-        }
-    }
-}
-
-impl<T: Clone> SkippablePrompt<T> for SkippableSelect<T> {
+impl<T: Clone> SkippablePrompt<T> for Select<T, Optional> {
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
@@ -227,12 +202,7 @@ impl<T: Clone> SkippablePrompt<T> for SkippableSelect<T> {
             Key::Enter => {
                 return State::Submit(self.filter.items()[self.cursor].borrow().value.clone());
             }
-            // Esc
-            Key::Tab => {
-                if !self.required {
-                    return State::Skipped;
-                }
-            }
+            Key::Tab => return State::Skipped,
             _ => {}
         }
 
@@ -274,7 +244,7 @@ impl<T: Clone> SkippablePrompt<T> for SkippableSelect<T> {
     }
 }
 
-impl<T: Clone> PromptInteraction<T> for Select<T> {
+impl<T: Clone> PromptInteraction<T> for Select<T, Required> {
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
 
