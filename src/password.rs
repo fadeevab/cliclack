@@ -108,7 +108,7 @@ impl PromptInteraction<String> for Password {
         }
 
         if *key == Key::Enter {
-            if self.input.is_empty() && ! self.allow_empty {
+            if self.input.is_empty() && !self.allow_empty {
                 return State::Error("Input required".to_string());
             }
 

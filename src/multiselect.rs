@@ -125,12 +125,12 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
         }
 
         match key {
-            Key::ArrowLeft | Key::ArrowUp => {
+            Key::ArrowLeft | Key::ArrowUp | Key::Char('k') | Key::Char('h') => {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
             }
-            Key::ArrowRight | Key::ArrowDown => {
+            Key::ArrowRight | Key::ArrowDown | Key::Char('j') | Key::Char('l') => {
                 if !self.filter.items().is_empty() && self.cursor < self.filter.items().len() - 1 {
                     self.cursor += 1;
                 }
