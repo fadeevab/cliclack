@@ -8,9 +8,16 @@ pub(crate) trait LabeledItem {
     fn label(&self) -> &str;
 }
 
+/// The list of items gathered (filtered) by interactive input using
+/// `FilteredView::on` event in a selection prompt.
 pub(crate) struct FilteredView<I: LabeledItem> {
+    /// Enables the filtered view.
     enabled: bool,
+
+    /// Collects the input from the user.
     input: StringCursor,
+
+    /// Represents a view of the filtered items.
     items: Vec<Rc<RefCell<I>>>,
 }
 
@@ -25,18 +32,25 @@ impl<I: LabeledItem> Default for FilteredView<I> {
 }
 
 impl<I: LabeledItem + Clone> FilteredView<I> {
+    /// Enables the filtered view.
     pub fn enable(&mut self) {
         self.enabled = true;
     }
 
+    /// Sets a predefined set of items for the view.
     pub fn set(&mut self, items: Vec<Rc<RefCell<I>>>) {
         self.items = items;
     }
 
+    /// Returns the items in the view.
     pub fn items(&self) -> &[Rc<RefCell<I>>] {
         &self.items
     }
 
+    /// Collects the input and filters the items from the list of all items.
+    ///
+    /// Uses the Jaro-Winkler similarity algorithm to score the items
+    /// ([`strsim::jaro_winkler`]).
     pub fn on<T>(&mut self, key: &Key, all_items: Vec<Rc<RefCell<I>>>) -> Option<State<T>> {
         if !self.enabled {
             // Pass over the control.
@@ -94,6 +108,8 @@ impl<I: LabeledItem + Clone> FilteredView<I> {
         }
     }
 
+    /// Returns the input cursor if the filter is enabled.
+    /// It makes the outer code to handle the input.
     pub fn input(&mut self) -> Option<&mut StringCursor> {
         if !self.enabled {
             return None;
