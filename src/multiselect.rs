@@ -4,6 +4,7 @@ use std::{fmt::Display, rc::Rc};
 
 use console::Key;
 
+use crate::prompt::term::TermSize;
 use crate::{
     filter::{FilteredView, LabeledItem},
     prompt::{
@@ -35,6 +36,7 @@ pub struct MultiSelect<T> {
     initial_values: Option<Vec<T>>,
     required: bool,
     filter: FilteredView<Checkbox<T>>,
+    term: TermSize,
 }
 
 impl<T> MultiSelect<T>
@@ -50,6 +52,7 @@ where
             initial_values: None,
             required: true,
             filter: FilteredView::default(),
+            term: TermSize::default(),
         }
     }
 
@@ -89,7 +92,14 @@ where
     ///
     /// The filter mode allows to filter the items by typing.
     pub fn filter_mode(mut self) -> Self {
+        self.term.set_size(self.term.get_size() - 1);
         self.filter.enable();
+        self
+    }
+
+    /// Set the max number of items that are able to be displayed at once
+    pub fn set_size(mut self, size: usize) -> Self {
+        self.term.set_size(size);
         self
     }
 
@@ -129,10 +139,18 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
+
+                if self.cursor < self.term.get_pos() {
+                    self.term.set_pos(self.cursor);
+                }
             }
             Key::ArrowRight | Key::ArrowDown | Key::Char('j') | Key::Char('l') => {
                 if !self.filter.items().is_empty() && self.cursor < self.filter.items().len() - 1 {
                     self.cursor += 1;
+                }
+
+                if self.cursor >= self.term.get_pos() + self.term.get_size() {
+                    self.term.set_pos(self.cursor - self.term.get_size() + 1);
                 }
             }
             Key::Char(' ') => {
@@ -185,7 +203,13 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
         };
 
         let mut items_render = String::new();
-        for (i, item) in items_to_render.iter().map(|i| i.borrow()).enumerate() {
+        for (i, item) in items_to_render
+            .iter()
+            .map(|i| i.borrow())
+            .enumerate()
+            .skip(self.term.get_pos())
+            .take(self.term.get_size())
+        {
             items_render.push_str(&theme.format_multiselect_item(
                 &state.into(),
                 item.selected,
