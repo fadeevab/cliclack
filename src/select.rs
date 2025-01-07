@@ -81,7 +81,8 @@ where
     ///
     /// The filter mode allows to filter the items by typing.
     pub fn filter_mode(mut self) -> Self {
-        self.term.set_size(self.term.get_size() - 1);
+        let term_size = self.term.get_size();
+        self.term.set_size(term_size.checked_sub(1).unwrap_or(term_size as usize));
         self.filter.enable();
         self
     }

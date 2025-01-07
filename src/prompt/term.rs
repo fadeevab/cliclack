@@ -8,7 +8,7 @@ impl Default for TermSize {
         let mut window_size = usize::MAX;
 
         if let Some(termsize) = termsize::get() {
-            window_size = termsize.rows as usize - 3;
+            window_size = (termsize.rows as usize).checked_sub(3).unwrap_or(termsize.rows as usize);
         }
 
         Self {
