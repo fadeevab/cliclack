@@ -22,6 +22,9 @@ textwrap = "0.16.0"
 zeroize = {version = "1.6.0", features = ["derive"]}
 termsize = "0.1"
 
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [dev-dependencies]
 ctrlc = "3.4.2"
 rand = "0.8.5"

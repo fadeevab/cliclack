@@ -250,7 +250,7 @@
 //! cargo run --example theme
 //! ```
 
-#![forbid(unsafe_code)]
+// #![forbid(unsafe_code)]
 #![warn(missing_docs, unused_qualifications)]
 
 mod confirm;
