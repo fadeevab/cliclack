@@ -1,30 +1,32 @@
 pub(crate) struct TermSize {
-    window_size: usize,
+    window_max_rows: usize,
     window_pos: usize,
 }
 
 impl Default for TermSize {
     fn default() -> Self {
-        let mut window_size = usize::MAX;
+        let mut window_max_rows = usize::MAX;
 
         if let Some(termsize) = termsize::get() {
-            window_size = (termsize.rows as usize).checked_sub(3).unwrap_or(termsize.rows as usize);
+            window_max_rows = (termsize.rows as usize)
+                .checked_sub(3)
+                .unwrap_or(termsize.rows as usize);
         }
 
         Self {
-            window_size,
+            window_max_rows,
             window_pos: 0,
         }
     }
 }
 
 impl TermSize {
-    pub fn get_size(&self) -> usize {
-        self.window_size
+    pub fn get_max_rows(&self) -> usize {
+        self.window_max_rows
     }
 
-    pub fn set_size(&mut self, size: usize) {
-        self.window_size = size;
+    pub fn set_max_rows(&mut self, rows: usize) {
+        self.window_max_rows = rows;
     }
 
     pub fn get_pos(&self) -> usize {
