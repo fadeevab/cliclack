@@ -35,20 +35,20 @@ impl ProgressBar {
             options: Default::default(),
         };
 
-        this.options_write().template = THEME.lock().unwrap().default_progress_template();
+        this.options_write().template = THEME.read().unwrap().default_progress_template();
 
         this
     }
 
     /// Sets a default spinner visual template for the progress bar.
     pub fn with_spinner_template(self) -> Self {
-        self.options_write().template = THEME.lock().unwrap().default_spinner_template();
+        self.options_write().template = THEME.read().unwrap().default_spinner_template();
         self
     }
 
     /// Sets a default visual template for downloading.
     pub fn with_download_template(self) -> Self {
-        self.options_write().template = THEME.lock().unwrap().default_download_template();
+        self.options_write().template = THEME.read().unwrap().default_download_template();
         self
     }
 
@@ -93,7 +93,7 @@ impl ProgressBar {
 
     /// Starts the progress bar.
     pub fn start(&self, message: impl Display) {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
         let options = self.options();
 
         self.bar.set_style(
@@ -148,7 +148,7 @@ impl ProgressBar {
     ///
     /// The method is semi-open for multi-progress bar purposes.
     pub(crate) fn redraw_finished(&self, message: impl Display, state: &ThemeState) -> usize {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
         let options = self.options.read().unwrap();
 
         let render = theme.format_progress_with_state(
@@ -177,7 +177,7 @@ impl ProgressBar {
 
     /// Redraws the progress bar without changing the message.
     fn redraw_active_as_started(&self) {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
         let options = self.options();
 
         self.bar.set_style(
@@ -194,7 +194,7 @@ impl ProgressBar {
 
     /// Redraws the progress bar without changing the message.
     fn redraw_active_as_stopped(&self) {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
         let options = self.options();
 
         self.bar.set_style(

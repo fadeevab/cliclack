@@ -297,19 +297,19 @@ pub fn clear_screen() -> io::Result<()> {
 
 /// Prints a header of the prompt sequence.
 pub fn intro(title: impl Display) -> io::Result<()> {
-    term_write(THEME.lock().unwrap().format_intro(&title.to_string()))
+    term_write(THEME.read().unwrap().format_intro(&title.to_string()))
 }
 
 /// Prints a footer of the prompt sequence.
 pub fn outro(message: impl Display) -> io::Result<()> {
-    term_write(THEME.lock().unwrap().format_outro(&message.to_string()))
+    term_write(THEME.read().unwrap().format_outro(&message.to_string()))
 }
 
 /// Prints a footer of the prompt sequence with a failure style.
 pub fn outro_cancel(message: impl Display) -> io::Result<()> {
     term_write(
         THEME
-            .lock()
+            .read()
             .unwrap()
             .format_outro_cancel(&message.to_string()),
     )
@@ -319,7 +319,7 @@ pub fn outro_cancel(message: impl Display) -> io::Result<()> {
 pub fn outro_note(prompt: impl Display, message: impl Display) -> io::Result<()> {
     term_write(
         THEME
-            .lock()
+            .read()
             .unwrap()
             .format_outro_note(&prompt.to_string(), &message.to_string()),
     )
@@ -385,7 +385,7 @@ pub fn multi_progress(prompt: impl Display) -> MultiProgress {
 pub fn note(prompt: impl Display, message: impl Display) -> io::Result<()> {
     term_write(
         THEME
-            .lock()
+            .read()
             .unwrap()
             .format_note(&prompt.to_string(), &message.to_string()),
     )
@@ -398,7 +398,7 @@ pub mod log {
     fn log(text: impl Display, symbol: impl Display) -> io::Result<()> {
         term_write(
             THEME
-                .lock()
+                .read()
                 .unwrap()
                 .format_log(&text.to_string(), &symbol.to_string()),
         )
@@ -406,37 +406,37 @@ pub mod log {
 
     /// Prints a remark message.
     pub fn remark(text: impl Display) -> io::Result<()> {
-        let symbol = THEME.lock().unwrap().remark_symbol();
+        let symbol = THEME.read().unwrap().remark_symbol();
         log(text, symbol)
     }
 
     /// Prints an info message.
     pub fn info(text: impl Display) -> io::Result<()> {
-        let symbol = THEME.lock().unwrap().info_symbol();
+        let symbol = THEME.read().unwrap().info_symbol();
         log(text, symbol)
     }
 
     /// Prints a warning message.
     pub fn warning(message: impl Display) -> io::Result<()> {
-        let symbol = THEME.lock().unwrap().warning_symbol();
+        let symbol = THEME.read().unwrap().warning_symbol();
         log(message, symbol)
     }
 
     /// Prints an error message.
     pub fn error(message: impl Display) -> io::Result<()> {
-        let symbol = THEME.lock().unwrap().error_symbol();
+        let symbol = THEME.read().unwrap().error_symbol();
         log(message, symbol)
     }
 
     /// Prints a success message.
     pub fn success(message: impl Display) -> io::Result<()> {
-        let symbol = THEME.lock().unwrap().active_symbol();
+        let symbol = THEME.read().unwrap().active_symbol();
         log(message, symbol)
     }
 
     /// Prints a submitted step message.
     pub fn step(message: impl Display) -> io::Result<()> {
-        let symbol = THEME.lock().unwrap().submit_symbol();
+        let symbol = THEME.read().unwrap().submit_symbol();
         log(message, symbol)
     }
 }

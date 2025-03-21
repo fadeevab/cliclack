@@ -237,7 +237,7 @@ where
     }
 
     fn render(&mut self, state: &State<T>) -> String {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
 
         let part1 = theme.format_header(&state.into(), &self.prompt);
         let part2 = if self.input.is_empty() {

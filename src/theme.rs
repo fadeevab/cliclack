@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::sync::RwLock;
 
 use console::{style, Emoji, Style};
 use once_cell::sync::Lazy;
@@ -691,19 +691,19 @@ impl Theme for ClackTheme {}
 /// The global theme instance (singleton).
 ///
 /// It can be set with [`set_theme`] function.
-pub(crate) static THEME: Lazy<Mutex<Box<dyn Theme + Send + Sync>>> =
-    Lazy::new(|| Mutex::new(Box::new(ClackTheme)));
+pub(crate) static THEME: Lazy<RwLock<Box<dyn Theme + Send + Sync>>> =
+    Lazy::new(|| RwLock::new(Box::new(ClackTheme)));
 
 /// Sets the global theme, which is used by all prompts.
 ///
 /// See [`reset_theme`] for returning to the default theme.
 pub fn set_theme<T: Theme + Sync + Send + 'static>(theme: T) {
-    *THEME.lock().unwrap() = Box::new(theme);
+    *THEME.write().unwrap() = Box::new(theme);
 }
 
 /// Resets the global theme to the default one.
 pub fn reset_theme() {
-    *THEME.lock().unwrap() = Box::new(ClackTheme);
+    *THEME.write().unwrap() = Box::new(ClackTheme);
 }
 
 #[cfg(test)]

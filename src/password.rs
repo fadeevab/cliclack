@@ -30,7 +30,7 @@ impl Password {
     pub fn new(prompt: impl Display) -> Self {
         Self {
             prompt: prompt.to_string(),
-            mask: THEME.lock().unwrap().password_mask(),
+            mask: THEME.read().unwrap().password_mask(),
             ..Default::default()
         }
     }
@@ -132,7 +132,7 @@ impl PromptInteraction<String> for Password {
             *chr = self.mask;
         }
 
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
 
         let line1 = theme.format_header(&state.into(), &self.prompt);
         let line2 = theme.format_input(&state.into(), &masked);

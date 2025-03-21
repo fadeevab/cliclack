@@ -24,7 +24,7 @@ pub struct MultiProgress {
 impl MultiProgress {
     /// Creates a new multi-progress bar with a given prompt.
     pub fn new(prompt: impl Display) -> Self {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
         let multi = indicatif::MultiProgress::new();
 
         let header =
@@ -83,7 +83,7 @@ impl MultiProgress {
     /// this function. To add an empty line, use a line
     /// return character (`\n`) at the end of the message.
     pub fn println(&self, message: impl Display) {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
         let symbol = theme.remark_symbol();
         let log = theme.format_log_with_spacing(&message.to_string(), &symbol, false);
         self.logs.fetch_add(log.lines().count(), Ordering::SeqCst);
@@ -123,7 +123,7 @@ impl MultiProgress {
         term.clear_last_lines(HEADER_HEIGHT).ok();
         term.write_str(
             &THEME
-                .lock()
+                .read()
                 .unwrap()
                 .format_header(state, (self.prompt.clone() + "\n ").trim_end()),
         )
