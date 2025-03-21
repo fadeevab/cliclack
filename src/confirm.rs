@@ -74,7 +74,7 @@ impl PromptInteraction<bool> for Confirm {
     }
 
     fn render(&mut self, state: &State<bool>) -> String {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
         let line1 = theme.format_header(&state.into(), &self.prompt);
         let line2 = theme.format_confirm(&state.into(), self.input);
         let line3 = theme.format_footer(&state.into());
