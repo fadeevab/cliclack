@@ -91,6 +91,11 @@ impl ProgressBar {
         self.bar.set_length(len);
     }
 
+    /// Sets the position of the progress bar.
+    pub fn set_position(&self, pos: u64) {
+        self.bar.set_position(pos);
+    }
+
     /// Starts the progress bar.
     pub fn start(&self, message: impl Display) {
         let theme = THEME.read().unwrap();
