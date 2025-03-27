@@ -48,6 +48,14 @@ impl MultiProgress {
         self.insert(bars_count, pb)
     }
 
+    /// Inserts a progress bar before the previous one and returns an internalized reference to it.
+    ///
+    /// The progress bar will be positioned before the previous progress bar in the [`MultiProgress`].
+    pub fn insert_before(&self, pb: ProgressBar) -> ProgressBar {
+        let bars_count = self.bars.read().unwrap().len();
+        self.insert(bars_count.saturating_sub(1), pb)
+    }
+
     /// Inserts a progress bar at a given index and returns an internalized reference to it.
     ///
     /// If the index is greater than or equal to the number of progress bars, the bar is added to the end.
