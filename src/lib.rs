@@ -258,6 +258,7 @@ mod filter;
 mod input;
 mod multiprogress;
 mod multiselect;
+mod view;
 mod password;
 mod progress;
 mod prompt;

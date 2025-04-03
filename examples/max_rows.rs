@@ -9,7 +9,7 @@ fn main() -> std::io::Result<()> {
     // to see the automatic window-size adjustment.
     let selected = cliclack::select("Select an item")
         .items(&items)
-        .set_max_rows(10) // Specify a custom window-size
+        .max_rows(10) // Specify the maximum number of rows
         .filter_mode() // Try filtering on "1"
         .interact()?;
 

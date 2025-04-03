@@ -4,7 +4,6 @@ use std::{fmt::Display, rc::Rc};
 
 use console::Key;
 
-use crate::prompt::term::TermSize;
 use crate::{
     filter::{FilteredView, LabeledItem},
     prompt::{
@@ -12,6 +11,7 @@ use crate::{
         interaction::{Event, PromptInteraction, State},
     },
     theme::THEME,
+    view::ListView,
 };
 
 #[derive(Clone)]
@@ -34,7 +34,7 @@ pub struct Select<T> {
     cursor: usize,
     initial_value: Option<T>,
     filter: FilteredView<RadioButton<T>>,
-    term: TermSize,
+    view: ListView,
 }
 
 impl<T> Select<T>
@@ -49,7 +49,7 @@ where
             cursor: 0,
             initial_value: None,
             filter: FilteredView::default(),
-            term: TermSize::default(),
+            view: ListView::default(),
         }
     }
 
@@ -81,16 +81,18 @@ where
     ///
     /// The filter mode allows to filter the items by typing.
     pub fn filter_mode(mut self) -> Self {
-        let term_size = self.term.get_max_rows();
-        self.term
-            .set_max_rows(term_size.checked_sub(1).unwrap_or(term_size as usize));
         self.filter.enable();
         self
     }
 
-    /// Set the max number of rows of items that are able to be displayed at once
-    pub fn set_max_rows(mut self, size: usize) -> Self {
-        self.term.set_max_rows(size);
+    /// The maximum visible number of items.
+    ///
+    /// If the number of items is greater than the maximum number of rows,
+    /// the list will be scrolled.
+    ///
+    /// By default, the selection prompt will display all items at once.
+    pub fn max_rows(mut self, height: usize) -> Self {
+        self.view.height = height;
         self
     }
 
@@ -131,8 +133,8 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                     self.cursor -= 1;
                 }
 
-                if self.cursor < self.term.get_pos() {
-                    self.term.set_pos(self.cursor);
+                if self.cursor < self.view.start {
+                    self.view.start = self.cursor;
                 }
             }
             Key::ArrowDown | Key::ArrowRight | Key::Char('j') | Key::Char('l') => {
@@ -140,8 +142,8 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                     self.cursor += 1;
                 }
 
-                if self.cursor >= self.term.get_pos() + self.term.get_max_rows() {
-                    self.term.set_pos(self.cursor - self.term.get_max_rows() + 1);
+                if self.cursor >= self.view.start + self.view.height {
+                    self.view.start = self.cursor - self.view.height + 1;
                 }
             }
             Key::Enter => {
@@ -173,8 +175,8 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
             .items()
             .iter()
             .enumerate()
-            .skip(self.term.get_pos())
-            .take(self.term.get_max_rows())
+            .skip(self.view.start)
+            .take(self.view.height)
             .map(|(i, item)| {
                 let item = item.borrow();
                 theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)

@@ -4,7 +4,7 @@ use std::{fmt::Display, rc::Rc};
 
 use console::Key;
 
-use crate::prompt::term::TermSize;
+use crate::view::ListView;
 use crate::{
     filter::{FilteredView, LabeledItem},
     prompt::{
@@ -36,7 +36,7 @@ pub struct MultiSelect<T> {
     initial_values: Option<Vec<T>>,
     required: bool,
     filter: FilteredView<Checkbox<T>>,
-    term: TermSize,
+    page: ListView,
 }
 
 impl<T> MultiSelect<T>
@@ -52,7 +52,7 @@ where
             initial_values: None,
             required: true,
             filter: FilteredView::default(),
-            term: TermSize::default(),
+            page: ListView::default(),
         }
     }
 
@@ -92,16 +92,18 @@ where
     ///
     /// The filter mode allows to filter the items by typing.
     pub fn filter_mode(mut self) -> Self {
-        let term_size = self.term.get_max_rows();
-        self.term
-            .set_max_rows(term_size.checked_sub(1).unwrap_or(term_size));
         self.filter.enable();
         self
     }
 
-    /// Set the max number of rows of items that are able to be displayed at once
-    pub fn set_max_rows(mut self, size: usize) -> Self {
-        self.term.set_max_rows(size);
+    /// The maximum visible number of items.
+    ///
+    /// If the number of items is greater than the maximum number of rows,
+    /// the list will be scrolled.
+    ///
+    /// By default, the selection prompt will display all items at once.
+    pub fn max_rows(mut self, height: usize) -> Self {
+        self.page.height = height;
         self
     }
 
@@ -142,8 +144,8 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                     self.cursor -= 1;
                 }
 
-                if self.cursor < self.term.get_pos() {
-                    self.term.set_pos(self.cursor);
+                if self.cursor < self.page.start {
+                    self.page.start = self.cursor;
                 }
             }
             Key::ArrowRight | Key::ArrowDown | Key::Char('j') | Key::Char('l') => {
@@ -151,8 +153,8 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                     self.cursor += 1;
                 }
 
-                if self.cursor >= self.term.get_pos() + self.term.get_max_rows() {
-                    self.term.set_pos(self.cursor - self.term.get_max_rows() + 1);
+                if self.cursor >= self.page.start + self.page.height {
+                    self.page.start = self.cursor - self.page.height + 1;
                 }
             }
             Key::Char(' ') => {
@@ -209,8 +211,8 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
             .iter()
             .map(|i| i.borrow())
             .enumerate()
-            .skip(self.term.get_pos())
-            .take(self.term.get_max_rows())
+            .skip(self.page.start)
+            .take(self.page.height)
         {
             items_render.push_str(&theme.format_multiselect_item(
                 &state.into(),
