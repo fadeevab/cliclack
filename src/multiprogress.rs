@@ -44,7 +44,7 @@ impl MultiProgress {
     ///
     /// The progress bar will be positioned below all other bars in the [`MultiProgress`].
     pub fn add(&self, pb: ProgressBar) -> ProgressBar {
-        let bars_count = self.bars.read().unwrap().len();
+        let bars_count = self.length();
         self.insert(bars_count, pb)
     }
 
@@ -52,7 +52,7 @@ impl MultiProgress {
     ///
     /// If the index is greater than or equal to the number of progress bars, the bar is added to the end.
     pub fn insert(&self, index: usize, pb: ProgressBar) -> ProgressBar {
-        let bars_count = self.bars.read().unwrap().len();
+        let bars_count = self.length();
         let index = index.min(bars_count);
         if index == bars_count {
             // Unset the last flag for all other progress bars: it affects rendering.
@@ -75,6 +75,11 @@ impl MultiProgress {
         let pb = ProgressBar { bar, options };
         self.bars.write().unwrap().insert(index, pb.clone());
         pb
+    }
+
+    /// Returns the number of progress bars in the [`MultiProgress`].
+    pub fn length(&self) -> usize {
+        self.bars.read().unwrap().len()
     }
 
     /// Prints a log line above the multi-progress bar.
