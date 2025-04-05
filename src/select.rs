@@ -156,7 +156,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
     }
 
     fn render(&mut self, state: &State<T>) -> String {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
 
         let header_display = theme.format_header(&state.into(), &self.prompt);
         let footer_display = theme.format_footer(&state.into());

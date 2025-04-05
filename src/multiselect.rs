@@ -183,7 +183,7 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
     }
 
     fn render(&mut self, state: &State<Vec<T>>) -> String {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
 
         // Render the static header.
         let header = theme.format_header(&state.into(), &self.prompt);

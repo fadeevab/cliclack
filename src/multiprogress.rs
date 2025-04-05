@@ -24,7 +24,7 @@ pub struct MultiProgress {
 impl MultiProgress {
     /// Creates a new multi-progress bar with a given prompt.
     pub fn new(prompt: impl Display) -> Self {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
         let multi = indicatif::MultiProgress::new();
 
         let header =
@@ -44,7 +44,7 @@ impl MultiProgress {
     ///
     /// The progress bar will be positioned below all other bars in the [`MultiProgress`].
     pub fn add(&self, pb: ProgressBar) -> ProgressBar {
-        let bars_count = self.bars.read().unwrap().len();
+        let bars_count = self.length();
         self.insert(bars_count, pb)
     }
 
@@ -52,7 +52,7 @@ impl MultiProgress {
     ///
     /// If the index is greater than or equal to the number of progress bars, the bar is added to the end.
     pub fn insert(&self, index: usize, pb: ProgressBar) -> ProgressBar {
-        let bars_count = self.bars.read().unwrap().len();
+        let bars_count = self.length();
         let index = index.min(bars_count);
         if index == bars_count {
             // Unset the last flag for all other progress bars: it affects rendering.
@@ -77,13 +77,18 @@ impl MultiProgress {
         pb
     }
 
+    /// Returns the number of progress bars in the [`MultiProgress`].
+    pub fn length(&self) -> usize {
+        self.bars.read().unwrap().len()
+    }
+
     /// Prints a log line above the multi-progress bar.
     ///
     /// By default, there is no empty line between each log added with
     /// this function. To add an empty line, use a line
     /// return character (`\n`) at the end of the message.
     pub fn println(&self, message: impl Display) {
-        let theme = THEME.lock().unwrap();
+        let theme = THEME.read().unwrap();
         let symbol = theme.remark_symbol();
         let log = theme.format_log_with_spacing(&message.to_string(), &symbol, false);
         self.logs.fetch_add(log.lines().count(), Ordering::SeqCst);
@@ -123,7 +128,7 @@ impl MultiProgress {
         term.clear_last_lines(HEADER_HEIGHT).ok();
         term.write_str(
             &THEME
-                .lock()
+                .read()
                 .unwrap()
                 .format_header(state, (self.prompt.clone() + "\n ").trim_end()),
         )
