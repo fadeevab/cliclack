@@ -11,6 +11,7 @@ use crate::{
         interaction::{Event, PromptInteraction, State},
     },
     theme::THEME,
+    view::ListView,
 };
 
 #[derive(Clone)]
@@ -33,6 +34,7 @@ pub struct Select<T> {
     cursor: usize,
     initial_value: Option<T>,
     filter: FilteredView<RadioButton<T>>,
+    view: ListView,
 }
 
 impl<T> Select<T>
@@ -47,6 +49,7 @@ where
             cursor: 0,
             initial_value: None,
             filter: FilteredView::default(),
+            view: ListView::default(),
         }
     }
 
@@ -79,6 +82,17 @@ where
     /// The filter mode allows to filter the items by typing.
     pub fn filter_mode(mut self) -> Self {
         self.filter.enable();
+        self
+    }
+
+    /// The maximum visible number of items.
+    ///
+    /// If the number of items is greater than the maximum number of rows,
+    /// the list will be scrolled.
+    ///
+    /// By default, the selection prompt will display all items at once.
+    pub fn max_rows(mut self, height: usize) -> Self {
+        self.view.height = height;
         self
     }
 
@@ -118,10 +132,18 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
+
+                if self.cursor < self.view.start {
+                    self.view.start = self.cursor;
+                }
             }
             Key::ArrowDown | Key::ArrowRight | Key::Char('j') | Key::Char('l') => {
                 if !self.filter.items().is_empty() && self.cursor < self.filter.items().len() - 1 {
                     self.cursor += 1;
+                }
+
+                if self.cursor >= self.view.start + self.view.height {
+                    self.view.start = self.cursor - self.view.height + 1;
                 }
             }
             Key::Enter => {
@@ -153,6 +175,8 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
             .items()
             .iter()
             .enumerate()
+            .skip(self.view.start)
+            .take(self.view.height)
             .map(|(i, item)| {
                 let item = item.borrow();
                 theme.format_select_item(&state.into(), self.cursor == i, &item.label, &item.hint)

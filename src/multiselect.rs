@@ -4,6 +4,7 @@ use std::{fmt::Display, rc::Rc};
 
 use console::Key;
 
+use crate::view::ListView;
 use crate::{
     filter::{FilteredView, LabeledItem},
     prompt::{
@@ -35,6 +36,7 @@ pub struct MultiSelect<T> {
     initial_values: Option<Vec<T>>,
     required: bool,
     filter: FilteredView<Checkbox<T>>,
+    page: ListView,
 }
 
 impl<T> MultiSelect<T>
@@ -50,6 +52,7 @@ where
             initial_values: None,
             required: true,
             filter: FilteredView::default(),
+            page: ListView::default(),
         }
     }
 
@@ -93,6 +96,17 @@ where
         self
     }
 
+    /// The maximum visible number of items.
+    ///
+    /// If the number of items is greater than the maximum number of rows,
+    /// the list will be scrolled.
+    ///
+    /// By default, the selection prompt will display all items at once.
+    pub fn max_rows(mut self, height: usize) -> Self {
+        self.page.height = height;
+        self
+    }
+
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<Vec<T>> {
         if self.items.is_empty() {
@@ -129,10 +143,18 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
+
+                if self.cursor < self.page.start {
+                    self.page.start = self.cursor;
+                }
             }
             Key::ArrowRight | Key::ArrowDown | Key::Char('j') | Key::Char('l') => {
                 if !self.filter.items().is_empty() && self.cursor < self.filter.items().len() - 1 {
                     self.cursor += 1;
+                }
+
+                if self.cursor >= self.page.start + self.page.height {
+                    self.page.start = self.cursor - self.page.height + 1;
                 }
             }
             Key::Char(' ') => {
@@ -185,7 +207,13 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
         };
 
         let mut items_render = String::new();
-        for (i, item) in items_to_render.iter().map(|i| i.borrow()).enumerate() {
+        for (i, item) in items_to_render
+            .iter()
+            .map(|i| i.borrow())
+            .enumerate()
+            .skip(self.page.start)
+            .take(self.page.height)
+        {
             items_render.push_str(&theme.format_multiselect_item(
                 &state.into(),
                 item.selected,
