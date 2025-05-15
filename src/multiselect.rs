@@ -161,6 +161,15 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                 let mut item = self.filter.items()[self.cursor].borrow_mut();
                 item.selected = !item.selected;
             }
+            Key::Char('a') => {
+                let items = self.filter.items();
+                let all_selected = items.iter().all(|item| item.borrow().selected);
+
+                for item_ref in items {
+                    let mut item = item_ref.borrow_mut();
+                    item.selected = !all_selected;
+                }
+            }
             Key::Enter => {
                 let selected_items = self
                     .items
