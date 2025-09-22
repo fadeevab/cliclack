@@ -157,6 +157,15 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                     self.page.start = self.cursor - self.page.height + 1;
                 }
             }
+            Key::Tab => {
+                let any_selected = self.items.iter().any(|item| item.borrow().selected);
+
+                let target_state = !any_selected;
+
+                for item in &self.items {
+                    item.borrow_mut().selected = target_state;
+                }
+            }
             Key::Char(' ') => {
                 let mut item = self.filter.items()[self.cursor].borrow_mut();
                 item.selected = !item.selected;
@@ -236,7 +245,7 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
             theme.format_footer_with_message(
                 &state.into(),
                 &format!(
-                    "{not_rendered_items} selected item{s} not displayed",
+                    "{not_rendered_items} selected item{s} not displayed - Tab: toggle all",
                     s = if not_rendered_items > 1 { "s" } else { "" }
                 ),
             )
