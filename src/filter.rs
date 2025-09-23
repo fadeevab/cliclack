@@ -66,6 +66,7 @@ impl<I: LabeledItem + Clone> FilteredView<I> {
             Key::Enter if !self.items.is_empty() => None,
             // Otherwise, no items found.
             Key::Enter => Some(State::Error("No items".into())),
+            Key::Tab => Some(State::Active),
             // Ignore spaces passing through.
             Key::Char(' ') => {
                 self.input.delete_left();
