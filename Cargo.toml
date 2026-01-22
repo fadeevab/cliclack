@@ -1,6 +1,6 @@
 [package]
 name = "cliclack"
-version = "0.3.7"
+version = "0.3.8"
 
 authors = ["Alexander Fadeev <fadeevab.com@gmail.com>"]
 categories = ["command-line-interface"]
@@ -12,6 +12,11 @@ keywords = ["prompt", "cli", "command-line", "terminal", "console"]
 license = "MIT"
 readme = "README.md"
 repository = "https://github.com/fadeevab/cliclack"
+
+exclude = [
+    # Contains unnecessary binary blobs for the resulting crate.
+    "media/**"
+]
 
 [dependencies]
 console = "0.15.8"
