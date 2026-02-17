@@ -2,7 +2,7 @@ use std::{sync::mpsc::channel, time::Duration};
 
 use cliclack::{clear_screen, intro, log::remark, outro, outro_cancel, progress_bar};
 use console::{style, Term};
-use rand::{thread_rng, Rng};
+use rand::random_range;
 
 enum Message {
     Interrupt,
@@ -30,7 +30,7 @@ fn main() -> std::io::Result<()> {
     // Simulate doing some stuff....
     for _ in 0..100 {
         // Use a random timeout to simulate some work.
-        let timeout = Duration::from_millis(thread_rng().gen_range(10..75));
+        let timeout = Duration::from_millis(random_range(10..75));
 
         // Check if we received a message from the channel.
         if let Ok(Message::Interrupt) = rx.recv_timeout(timeout) {

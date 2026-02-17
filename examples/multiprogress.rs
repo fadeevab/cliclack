@@ -2,7 +2,7 @@ use std::{sync::mpsc::channel, time::Duration};
 
 use cliclack::{clear_screen, intro, log::remark, multi_progress, outro, progress_bar, spinner};
 use console::{style, Term};
-use rand::{thread_rng, Rng};
+use rand::random_range;
 
 enum Message {
     Interrupt,
@@ -42,7 +42,7 @@ fn main() -> std::io::Result<()> {
     // Simulate doing some stuff....
     while !pb1.is_finished() || !pb2.is_finished() || !pb3.is_finished() {
         // Use a random timeout to simulate some work.
-        let timeout = Duration::from_millis(thread_rng().gen_range(10..75));
+        let timeout = Duration::from_millis(random_range(10..75));
 
         // Check if we received a message from the channel.
         if let Ok(Message::Interrupt) = rx.recv_timeout(timeout) {
@@ -59,19 +59,19 @@ fn main() -> std::io::Result<()> {
         }
 
         if pb1.position() < pb1.length().unwrap() {
-            pb1.inc(thread_rng().gen_range(1..20));
+            pb1.inc(random_range(1..20));
         } else if !pb1.is_finished() {
             pb1.stop(format!("{} Downloading files", style("✔").green()));
         }
 
         if pb3.position() < pb2.length().unwrap() {
-            pb2.inc(thread_rng().gen_range(1..13));
+            pb2.inc(random_range(1..13));
         } else if !pb2.is_finished() {
             pb2.stop(format!("{} Copying files", style("✔").green()));
         }
 
         if pb3.position() < pb3.length().unwrap() {
-            pb3.set_position(pb3.position() + thread_rng().gen_range(1..16));
+            pb3.set_position(pb3.position() + random_range(1..16));
         } else if !pb3.is_finished() {
             pb3.stop(format!("{} Verifying download", style("✔").green()));
         }

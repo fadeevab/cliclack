@@ -2,7 +2,7 @@ use std::{sync::mpsc::channel, time::Duration};
 
 use cliclack::{clear_screen, intro, log::remark, outro, outro_cancel, progress_bar};
 use console::{style, Term};
-use rand::{thread_rng, Rng};
+use rand::random_range;
 
 enum Message {
     Interrupt,
@@ -33,7 +33,7 @@ fn main() -> std::io::Result<()> {
     // Loop until the progress bar reaches the total number of bytes
     while download.position() < TOTAL_BYTES {
         // Use a random timeout to simulate some work.
-        let timeout = Duration::from_millis(thread_rng().gen_range(10..150));
+        let timeout = Duration::from_millis(random_range(10..150));
 
         // Check if we received a message from the channel.
         if let Ok(Message::Interrupt) = rx.recv_timeout(timeout) {
@@ -48,7 +48,7 @@ fn main() -> std::io::Result<()> {
         }
 
         // Increment the progress bar with a random number of bytes.
-        download.inc(thread_rng().gen_range(1_000..200_000));
+        download.inc(random_range(1_000..200_000));
     }
 
     // Once we're done, we stop the progress bar and print the outro message.
