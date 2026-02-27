@@ -5,7 +5,7 @@ use std::{fmt::Display, rc::Rc};
 use console::Key;
 
 use crate::{
-    filter::{FilteredView, LabeledItem},
+    filter::FilteredView,
     prompt::{
         cursor::StringCursor,
         interaction::{Event, PromptInteraction, State},
@@ -21,8 +21,8 @@ struct RadioButton<T> {
     hint: String,
 }
 
-impl<T> LabeledItem for RadioButton<T> {
-    fn label(&self) -> &str {
+impl<T> AsRef<str> for RadioButton<T> {
+    fn as_ref(&self) -> &str {
         &self.label
     }
 }

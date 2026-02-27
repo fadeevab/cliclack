@@ -2,26 +2,29 @@ use std::{cell::RefCell, rc::Rc};
 
 use console::Key;
 
-use crate::prompt::{cursor::StringCursor, interaction::State};
-
-pub(crate) trait LabeledItem {
-    fn label(&self) -> &str;
-}
+use crate::{
+    autocomplete::Autocomplete,
+    prompt::{cursor::StringCursor, interaction::State},
+};
 
 /// The list of items gathered (filtered) by interactive input using
 /// `FilteredView::on` event in a selection prompt.
-pub(crate) struct FilteredView<I: LabeledItem> {
+///
+/// The filter keeps and tracks the list of items to be rendered, however,
+/// the items list can be shrunk due to enabled filtering.
+pub(crate) struct FilteredView<I: AsRef<str>> {
     /// Enables the filtered view.
     enabled: bool,
-
     /// Collects the input from the user.
     input: StringCursor,
-
     /// Represents a view of the filtered items.
     items: Vec<Rc<RefCell<I>>>,
 }
 
-impl<I: LabeledItem> Default for FilteredView<I> {
+impl<I> Default for FilteredView<I>
+where
+    I: AsRef<str>,
+{
     fn default() -> Self {
         Self {
             enabled: false,
@@ -31,15 +34,22 @@ impl<I: LabeledItem> Default for FilteredView<I> {
     }
 }
 
-impl<I: LabeledItem + Clone> FilteredView<I> {
-    /// Enables the filtered view.
-    pub fn enable(&mut self) {
-        self.enabled = true;
+impl<I> FilteredView<I>
+where
+    I: AsRef<str>,
+{
+    /// Sets the items to be filtered.
+    ///
+    /// The reason of having this method is having an ability to support
+    /// a builder pattern of the selection prompt, where the items are added one by one,
+    /// and the filter can be enabled and initialized at different moment of time.
+    pub fn set(&mut self, items: Vec<Rc<RefCell<I>>>) {
+        self.items = items;
     }
 
     /// Sets a predefined set of items for the view.
-    pub fn set(&mut self, items: Vec<Rc<RefCell<I>>>) {
-        self.items = items;
+    pub fn enable(&mut self) {
+        self.enabled = true;
     }
 
     /// Returns the items in the view.
@@ -73,31 +83,7 @@ impl<I: LabeledItem + Clone> FilteredView<I> {
             }
             // Refresh the filtered items for the rest of the keys.
             _ if !self.input.is_empty() => {
-                let input_lower = self.input.to_string();
-                let filter_words: Vec<_> = input_lower.split_whitespace().collect();
-
-                let mut filtered_and_scored_items: Vec<_> = all_items
-                    .into_iter()
-                    .map(|item| {
-                        let label = item.borrow().label().to_lowercase();
-                        let input = self.input.to_string().to_lowercase();
-                        let similarity = strsim::jaro_winkler(&label, &input);
-                        let bonus = filter_words
-                            .iter()
-                            .all(|word| label.contains(&word.to_lowercase()))
-                            as usize as f64;
-                        (similarity + bonus, item)
-                    })
-                    .filter(|(similarity, _)| *similarity > 0.6)
-                    .collect();
-
-                filtered_and_scored_items.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-
-                self.items = filtered_and_scored_items
-                    .into_iter()
-                    .map(|(_, item)| item)
-                    .collect();
-
+                self.items = all_items.suggestions(&self.input.to_string());
                 Some(State::Active)
             }
             // Reset the items to the original list.
