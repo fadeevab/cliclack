@@ -6,7 +6,7 @@ use console::Key;
 
 use crate::view::ListView;
 use crate::{
-    filter::{FilteredView, LabeledItem},
+    filter::FilteredView,
     prompt::{
         cursor::StringCursor,
         interaction::{Event, PromptInteraction, State},
@@ -22,8 +22,8 @@ struct Checkbox<T> {
     selected: bool,
 }
 
-impl<T> LabeledItem for Checkbox<T> {
-    fn label(&self) -> &str {
+impl<T> AsRef<str> for Checkbox<T> {
+    fn as_ref(&self) -> &str {
         &self.label
     }
 }
