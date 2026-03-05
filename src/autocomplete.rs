@@ -1,7 +1,3 @@
-use std::path::PathBuf;
-
-use crate::filter::filter_strings;
-
 pub type AutocompleteResult = Result<Vec<String>, String>;
 
 pub trait Autocomplete: Send {
@@ -10,8 +6,8 @@ pub trait Autocomplete: Send {
 }
 
 impl Autocomplete for Vec<String> {
-    fn get_suggestions(&mut self, input: &str) -> AutocompleteResult {
-        Ok(filter_strings(input, self))
+    fn get_suggestions(&mut self, _input: &str) -> AutocompleteResult {
+        Ok(self.clone())
     }
 
     fn get_completion(&mut self, _input: &str, highlighted: Option<String>) -> Option<String> {

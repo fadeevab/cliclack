@@ -1,10 +1,11 @@
 use std::io;
-use std::{fmt::Display, str::FromStr};
+use std::{cell::RefCell, fmt::Display, rc::Rc, str::FromStr};
 
 use console::Key;
 
 use crate::{
-    autocomplete::{Autocomplete},
+    autocomplete::Autocomplete,
+    filter::{FilteredView, LabeledItem},
     prompt::{
         cursor::StringCursor,
         interaction::{Event, PromptInteraction, State},
@@ -14,6 +15,17 @@ use crate::{
 };
 
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
+
+#[derive(Clone)]
+struct StringWrapper {
+    value: String,
+}
+
+impl LabeledItem for StringWrapper {
+    fn label(&self) -> &str {
+        &self.value
+    }
+}
 
 #[derive(Default, PartialEq)]
 enum Multiline {
@@ -68,6 +80,8 @@ pub struct Input {
     autocompletion_index: Option<usize>,
     autocompletion_query: String,
     autocomplete_on_enter: bool,
+    filter: FilteredView<StringWrapper>,
+    all_suggestions: Vec<Rc<RefCell<StringWrapper>>>,
 }
 
 impl Input {
@@ -169,7 +183,18 @@ impl Input {
     /// When the user presses Tab or uses arrow keys, they can cycle through
     /// matching suggestions.
     pub fn autocomplete(mut self, suggestions: Vec<String>) -> Self {
-        self.autocompleter = Some(Box::new(suggestions));
+        self.all_suggestions = suggestions
+            .into_iter()
+            .map(|s| Rc::new(RefCell::new(StringWrapper { value: s })))
+            .collect();
+        self.filter.set(self.all_suggestions.clone());
+        self.filter.enable();
+        self.autocompleter = Some(Box::new(
+            self.all_suggestions
+                .iter()
+                .map(|s| s.borrow().value.clone())
+                .collect::<Vec<_>>(),
+        ));
         self
     }
 
@@ -193,9 +218,30 @@ impl Input {
         self
     }
 
-    fn get_filtered_suggestions(&mut self, query: &str) -> Vec<String> {
-        if let Some(ref mut completer) = self.autocompleter {
-            match completer.get_suggestions(query) {
+    pub fn filter_mode(mut self) -> Self {
+        self.filter.enable();
+        self
+    }
+
+    fn get_filtered_suggestions(&mut self) -> Vec<String> {
+        if self.filter.enabled() {
+            if let Some(input) = self.filter.input() {
+                let input_str = input.to_string();
+                if input_str.is_empty() {
+                    return vec![];
+                }
+            }
+            self.filter
+                .items()
+                .iter()
+                .map(|item| item.borrow().value.clone())
+                .collect()
+        } else if let Some(ref mut completer) = self.autocompleter {
+            let query = self.input.to_string();
+            if query.is_empty() {
+                return vec![];
+            }
+            match completer.get_suggestions(&query) {
                 Ok(suggestions) => suggestions,
                 Err(_) => vec![],
             }
@@ -213,6 +259,9 @@ where
         if self.multiline == Multiline::Preview {
             return None;
         }
+        if self.filter.input().is_some() {
+            return self.filter.input();
+        }
         Some(&mut self.input)
     }
 
@@ -220,16 +269,15 @@ where
         let Event::Key(key) = event;
         let mut submit = false;
 
+        if let Some(state) = self.filter.on(key, self.all_suggestions.clone()) {
+            return state;
+        }
+
         let query = self.input.to_string();
-        let filter_query = if self.autocompletion_query.is_empty() {
-            query.clone()
-        } else {
-            self.autocompletion_query.clone()
-        };
 
         match key {
             Key::Tab if self.autocompleter.is_some() => {
-                let filtered_suggestions = self.get_filtered_suggestions(&filter_query);
+                let filtered_suggestions = self.get_filtered_suggestions();
                 if filtered_suggestions.is_empty() {
                     return State::Active;
                 }
@@ -252,11 +300,15 @@ where
                 if let Some(idx) = self.autocompletion_index {
                     self.input.clear();
                     self.input.extend(&filtered_suggestions[idx]);
+                    if let Some(fc) = self.filter.input() {
+                        fc.clear();
+                        fc.extend(&filtered_suggestions[idx]);
+                    }
                 }
                 return State::Active;
             }
             Key::ArrowDown if self.autocompleter.is_some() => {
-                let filtered_suggestions = self.get_filtered_suggestions(&filter_query);
+                let filtered_suggestions = self.get_filtered_suggestions();
                 if filtered_suggestions.is_empty() {
                     return State::Active;
                 }
@@ -279,11 +331,15 @@ where
                 if let Some(idx) = self.autocompletion_index {
                     self.input.clear();
                     self.input.extend(&filtered_suggestions[idx]);
+                    if let Some(fc) = self.filter.input() {
+                        fc.clear();
+                        fc.extend(&filtered_suggestions[idx]);
+                    }
                 }
                 return State::Active;
             }
             Key::ArrowUp if self.autocompleter.is_some() => {
-                let filtered_suggestions = self.get_filtered_suggestions(&filter_query);
+                let filtered_suggestions = self.get_filtered_suggestions();
                 if filtered_suggestions.is_empty() {
                     return State::Active;
                 }
@@ -306,6 +362,10 @@ where
                 if let Some(idx) = self.autocompletion_index {
                     self.input.clear();
                     self.input.extend(&filtered_suggestions[idx]);
+                    if let Some(fc) = self.filter.input() {
+                        fc.clear();
+                        fc.extend(&filtered_suggestions[idx]);
+                    }
                 }
                 return State::Active;
             }
@@ -335,8 +395,17 @@ where
             _ => {}
         }
 
+        // When filter is active (autocomplete mode), keystrokes go to the filter cursor.
+        // Copy the filter cursor value into self.input so the submit path can read it.
+        if submit && self.input.is_empty() && self.filter.enabled() {
+            let val = self.filter.input().map(|i| i.to_string()).unwrap_or_default();
+            if !val.is_empty() {
+                self.input.extend(&val);
+            }
+        }
+
         if submit && self.autocomplete_on_enter && self.autocompletion_index.is_none() {
-            let suggestions = self.get_filtered_suggestions(&self.input.to_string());
+            let suggestions = self.get_filtered_suggestions();
             if !suggestions.is_empty() {
                 self.input.clear();
                 self.input.extend(&suggestions[0]);
@@ -384,24 +453,16 @@ where
     fn render(&mut self, state: &State<T>) -> String {
         let theme = THEME.read().unwrap();
 
-        let filter_query = if self.autocompletion_query.is_empty() {
-            self.input.to_string()
-        } else {
-            self.autocompletion_query.clone()
-        };
+        let filtered_suggestions: Vec<String> = self.get_filtered_suggestions();
 
-        let filtered_suggestions: Vec<String> = self.get_filtered_suggestions(&filter_query);
-
-        let suggestions = if !matches!(state, State::Active) {
-            String::new()
-        } else if filtered_suggestions.is_empty() {
+        let suggestions = if !matches!(state, State::Active) || filtered_suggestions.is_empty() {
             String::new()
         } else {
             let suggestions_text = filtered_suggestions
                 .iter()
                 .enumerate()
                 .map(|(i, choice)| {
-                    let is_selected = self.autocompletion_index.map_or(false, |idx| idx == i);
+                    let is_selected = self.autocompletion_index == Some(i);
                     theme.format_autocomplete_item(&state.into(), choice, is_selected)
                 })
                 .collect::<Vec<_>>()
@@ -410,7 +471,13 @@ where
         };
 
         let prompt = theme.format_header(&state.into(), &self.prompt);
-        let input = if self.input.is_empty() {
+
+        let filter_input = if let Some(input) = self.filter.input() {
+            match state {
+                State::Submit(_) | State::Cancel => "".to_string(),
+                _ => theme.format_input(&state.into(), input),
+            }
+        } else if self.input.is_empty() {
             theme.format_placeholder(&state.into(), &self.placeholder)
         } else {
             theme.format_input(&state.into(), &self.input)
@@ -437,6 +504,6 @@ where
             footer
         };
 
-        prompt + &input + &footer + &suggestions
+        prompt + &filter_input + &footer + &suggestions
     }
 }

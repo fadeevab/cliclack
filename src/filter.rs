@@ -8,34 +8,6 @@ pub(crate) trait LabeledItem {
     fn label(&self) -> &str;
 }
 
-/// Filters a list of strings using fuzzy matching (Jaro-Winkler).
-pub fn filter_strings(input: &str, items: &[String]) -> Vec<String> {
-    if input.is_empty() {
-        return vec![];
-    }
-
-    let input_lower = input.to_lowercase();
-    let filter_words: Vec<_> = input_lower.split_whitespace().collect();
-
-    let mut filtered_and_scored: Vec<_> = items
-        .iter()
-        .map(|item| {
-            let label = item.to_lowercase();
-            let similarity = strsim::jaro_winkler(&label, &input_lower);
-            let bonus = filter_words.iter().all(|word| label.contains(word)) as usize as f64;
-            (similarity + bonus, item.clone())
-        })
-        .filter(|(score, _)| *score > 0.6)
-        .collect();
-
-    filtered_and_scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-
-    filtered_and_scored
-        .into_iter()
-        .map(|(_, item)| item)
-        .collect()
-}
-
 /// The list of items gathered (filtered) by interactive input using
 /// `FilteredView::on` event in a selection prompt.
 pub(crate) struct FilteredView<I: LabeledItem> {
@@ -65,6 +37,11 @@ impl<I: LabeledItem + Clone> FilteredView<I> {
         self.enabled = true;
     }
 
+    /// Returns whether the filter is enabled.
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+
     /// Sets a predefined set of items for the view.
     pub fn set(&mut self, items: Vec<Rc<RefCell<I>>>) {
         self.items = items;
@@ -86,8 +63,8 @@ impl<I: LabeledItem + Clone> FilteredView<I> {
         }
 
         match key {
-            // Need further processing of simple "up" and "down" actions.
-            Key::ArrowDown | Key::ArrowUp => None,
+            // Need further processing of simple "up", "down", and "tab" actions.
+            Key::ArrowDown | Key::ArrowUp | Key::Tab => None,
             // Need moving up and down if no input provided.
             Key::ArrowLeft | Key::ArrowRight if self.input.is_empty() => None,
             // Need to submit the selected item.
