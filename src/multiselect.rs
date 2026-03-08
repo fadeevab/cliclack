@@ -14,6 +14,9 @@ use crate::{
     theme::THEME,
 };
 
+const CTRL_P: char = '\x10';
+const CTRL_N: char = '\x0e';
+
 #[derive(Clone)]
 struct Checkbox<T> {
     value: T,
@@ -139,7 +142,7 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
         }
 
         match key {
-            Key::ArrowLeft | Key::ArrowUp | Key::Char('k') | Key::Char('h') => {
+            Key::ArrowLeft | Key::ArrowUp | Key::Char('k') | Key::Char('h') | Key::Char(CTRL_P) => {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
@@ -148,7 +151,11 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                     self.page.start = self.cursor;
                 }
             }
-            Key::ArrowRight | Key::ArrowDown | Key::Char('j') | Key::Char('l') => {
+            Key::ArrowRight
+            | Key::ArrowDown
+            | Key::Char('j')
+            | Key::Char('l')
+            | Key::Char(CTRL_N) => {
                 if !self.filter.items().is_empty() && self.cursor < self.filter.items().len() - 1 {
                     self.cursor += 1;
                 }

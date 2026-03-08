@@ -14,6 +14,9 @@ use crate::{
     view::ListView,
 };
 
+const CTRL_P: char = '\x10';
+const CTRL_N: char = '\x0e';
+
 #[derive(Clone)]
 struct RadioButton<T> {
     value: T,
@@ -128,7 +131,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         }
 
         match key {
-            Key::ArrowUp | Key::ArrowLeft | Key::Char('k') | Key::Char('h') => {
+            Key::ArrowUp | Key::ArrowLeft | Key::Char('k') | Key::Char('h') | Key::Char(CTRL_P) => {
                 if self.cursor > 0 {
                     self.cursor -= 1;
                 }
@@ -137,7 +140,11 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
                     self.view.start = self.cursor;
                 }
             }
-            Key::ArrowDown | Key::ArrowRight | Key::Char('j') | Key::Char('l') => {
+            Key::ArrowDown
+            | Key::ArrowRight
+            | Key::Char('j')
+            | Key::Char('l')
+            | Key::Char(CTRL_N) => {
                 if !self.filter.items().is_empty() && self.cursor < self.filter.items().len() - 1 {
                     self.cursor += 1;
                 }
