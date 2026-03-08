@@ -3,6 +3,11 @@ use std::io::{self, Read, Write};
 
 use super::cursor::StringCursor;
 
+const CTRL_A: char = '\x01';
+const CTRL_E: char = '\x05';
+const CTRL_P: char = '\x10';
+const CTRL_N: char = '\x0e';
+
 pub enum State<T> {
     Active,
     Submit(T),
@@ -117,10 +122,10 @@ pub trait PromptInteraction<T> {
                             Key::Del => cursor.delete_right(),
                             Key::ArrowLeft => cursor.move_left(),
                             Key::ArrowRight => cursor.move_right(),
-                            Key::ArrowUp => cursor.move_up(),
-                            Key::ArrowDown => cursor.move_down(),
-                            Key::Home => cursor.move_home(),
-                            Key::End => cursor.move_end(),
+                            Key::ArrowUp | Key::Char(CTRL_P) => cursor.move_up(),
+                            Key::ArrowDown | Key::Char(CTRL_N) => cursor.move_down(),
+                            Key::Home | Key::Char(CTRL_A) => cursor.move_home(),
+                            Key::End | Key::Char(CTRL_E) => cursor.move_end(),
 
                             // Alt-Backspace
                             Key::Char('\u{17}') if word_editing => cursor.delete_word_to_the_left(),
