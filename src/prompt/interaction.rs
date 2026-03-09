@@ -109,6 +109,14 @@ pub trait PromptInteraction<T> {
                 }
 
                 Ok(key) => {
+                    // Emacs-style keybindings.
+                    let key = match key {
+                        Key::Char('\x01') => Key::Home,      // Ctrl-A
+                        Key::Char('\x05') => Key::End,       // Ctrl-E
+                        Key::Char('\x10') => Key::ArrowUp,   // Ctrl-P
+                        Key::Char('\x0e') => Key::ArrowDown, // Ctrl-N
+                        _ => key,
+                    };
                     let word_editing = self.allow_word_editing();
                     if let Some(cursor) = self.input() {
                         match key {
