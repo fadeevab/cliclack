@@ -253,18 +253,19 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs, unused_qualifications)]
 
+mod autocomplete;
 mod confirm;
 mod filter;
 mod input;
 mod multiprogress;
 mod multiselect;
-mod view;
 mod password;
 mod progress;
 mod prompt;
 mod select;
 mod theme;
 mod validate;
+mod view;
 
 use console::Term;
 use std::fmt::Display;
@@ -277,6 +278,7 @@ pub use theme::{reset_theme, set_theme, Theme, ThemeState};
 // 🎨 Re-export for some `Theme` trait methods.
 pub use prompt::cursor::StringCursor;
 
+pub use autocomplete::{Autocomplete, AutocompleteResult};
 pub use confirm::Confirm;
 pub use input::Input;
 pub use multiprogress::MultiProgress;

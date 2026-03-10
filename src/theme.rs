@@ -301,7 +301,7 @@ pub trait Theme {
             })
         )
     }
-
+    
     /// Formats the input cursor with the given style adding frame bars around.
     ///
     /// It hides the cursor when the input is not active.
@@ -324,6 +324,24 @@ pub trait Theme {
                 new_style.apply_to(line)
             )
         })
+    }
+
+    /// Formats an autocomplete suggestion item.
+    fn format_autocomplete_item(&self, state: &ThemeState, item: &str, selected: bool) -> String {
+        if selected {
+            format!(
+                "  {}  {}",
+                self.bar_color(state).apply_to(S_BAR),
+                self.bar_color(state).apply_to(item)
+            )
+        } else {
+            let style = self.input_style(state);
+            format!(
+                "  {}  {}",
+                self.bar_color(state).apply_to(S_BAR),
+                style.apply_to(item)
+            )
+        }
     }
 
     /// Formats the input cursor with the dimmed style of placeholder.

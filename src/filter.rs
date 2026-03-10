@@ -37,6 +37,11 @@ impl<I: LabeledItem + Clone> FilteredView<I> {
         self.enabled = true;
     }
 
+    /// Returns whether the filter is enabled.
+    pub fn enabled(&self) -> bool {
+        self.enabled
+    }
+
     /// Sets a predefined set of items for the view.
     pub fn set(&mut self, items: Vec<Rc<RefCell<I>>>) {
         self.items = items;
@@ -58,8 +63,8 @@ impl<I: LabeledItem + Clone> FilteredView<I> {
         }
 
         match key {
-            // Need further processing of simple "up" and "down" actions.
-            Key::ArrowDown | Key::ArrowUp => None,
+            // Need further processing of simple "up", "down", and "tab" actions.
+            Key::ArrowDown | Key::ArrowUp | Key::Tab => None,
             // Need moving up and down if no input provided.
             Key::ArrowLeft | Key::ArrowRight if self.input.is_empty() => None,
             // Need to submit the selected item.

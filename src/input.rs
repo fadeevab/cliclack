@@ -1,9 +1,11 @@
 use std::io;
-use std::{fmt::Display, str::FromStr};
+use std::{cell::RefCell, fmt::Display, rc::Rc, str::FromStr};
 
 use console::Key;
 
 use crate::{
+    autocomplete::Autocomplete,
+    filter::{FilteredView, LabeledItem},
     prompt::{
         cursor::StringCursor,
         interaction::{Event, PromptInteraction, State},
@@ -13,6 +15,17 @@ use crate::{
 };
 
 type ValidationCallback = Box<dyn Fn(&String) -> Result<(), String>>;
+
+#[derive(Clone)]
+struct StringWrapper {
+    value: String,
+}
+
+impl LabeledItem for StringWrapper {
+    fn label(&self) -> &str {
+        &self.value
+    }
+}
 
 #[derive(Default, PartialEq)]
 enum Multiline {
@@ -63,6 +76,12 @@ pub struct Input {
     multiline: Multiline,
     validate_on_enter: Option<ValidationCallback>,
     validate_interactively: Option<ValidationCallback>,
+    autocompleter: Option<Box<dyn Autocomplete>>,
+    autocompletion_index: Option<usize>,
+    autocompletion_query: String,
+    autocomplete_on_enter: bool,
+    filter: FilteredView<StringWrapper>,
+    all_suggestions: Vec<Rc<RefCell<StringWrapper>>>,
 }
 
 impl Input {
@@ -152,12 +171,83 @@ impl Input {
                 self.placeholder.extend(" (default)");
 
                 if self.multiline == Multiline::Editing {
-                    // The preview mode is convenient for immediate submission of the default value.
                     self.multiline = Multiline::Preview;
                 }
             }
         }
         <Self as PromptInteraction<T>>::interact(self)
+    }
+
+    /// Sets a list of suggestions for autocompletion.
+    ///
+    /// When the user presses Tab or uses arrow keys, they can cycle through
+    /// matching suggestions.
+    pub fn autocomplete(mut self, suggestions: Vec<String>) -> Self {
+        self.all_suggestions = suggestions
+            .into_iter()
+            .map(|s| Rc::new(RefCell::new(StringWrapper { value: s })))
+            .collect();
+        self.filter.set(self.all_suggestions.clone());
+        self.filter.enable();
+        self.autocompleter = Some(Box::new(
+            self.all_suggestions
+                .iter()
+                .map(|s| s.borrow().value.clone())
+                .collect::<Vec<_>>(),
+        ));
+        self
+    }
+
+    /// Sets a dynamic autocomplete handler function.
+    ///
+    /// The handler is called with the current input to get suggestions on each keystroke.
+    pub fn autocomplete_with<F>(mut self, handler: F) -> Self
+    where
+        F: Fn(&str) -> crate::autocomplete::AutocompleteResult + Send + 'static,
+    {
+        self.autocompleter = Some(Box::new(handler));
+        self
+    }
+
+    /// Enables auto-selecting the first suggestion when pressing Enter.
+    ///
+    /// If there are matching suggestions, the first one will be automatically
+    /// selected and filled in when the user presses Enter.
+    pub fn autocomplete_on_enter(mut self) -> Self {
+        self.autocomplete_on_enter = true;
+        self
+    }
+
+    pub fn filter_mode(mut self) -> Self {
+        self.filter.enable();
+        self
+    }
+
+    fn get_filtered_suggestions(&mut self) -> Vec<String> {
+        if self.filter.enabled() {
+            if let Some(input) = self.filter.input() {
+                let input_str = input.to_string();
+                if input_str.is_empty() {
+                    return vec![];
+                }
+            }
+            self.filter
+                .items()
+                .iter()
+                .map(|item| item.borrow().value.clone())
+                .collect()
+        } else if let Some(ref mut completer) = self.autocompleter {
+            let query = self.input.to_string();
+            if query.is_empty() {
+                return vec![];
+            }
+            match completer.get_suggestions(&query) {
+                Ok(suggestions) => suggestions,
+                Err(_) => vec![],
+            }
+        } else {
+            vec![]
+        }
     }
 }
 
@@ -169,6 +259,9 @@ where
         if self.multiline == Multiline::Preview {
             return None;
         }
+        if self.filter.input().is_some() {
+            return self.filter.input();
+        }
         Some(&mut self.input)
     }
 
@@ -176,11 +269,109 @@ where
         let Event::Key(key) = event;
         let mut submit = false;
 
+        if let Some(state) = self.filter.on(key, self.all_suggestions.clone()) {
+            return state;
+        }
+
+        let query = self.input.to_string();
+
         match key {
-            // Multiline: editing -> preview.
+            Key::Tab if self.autocompleter.is_some() => {
+                let filtered_suggestions = self.get_filtered_suggestions();
+                if filtered_suggestions.is_empty() {
+                    return State::Active;
+                }
+
+                if self.autocompletion_query.is_empty() {
+                    self.autocompletion_query = query.clone();
+                }
+
+                let new_index = match self.autocompletion_index {
+                    None => Some(0),
+                    Some(idx) => {
+                        if idx >= filtered_suggestions.len() - 1 {
+                            None
+                        } else {
+                            Some(idx + 1)
+                        }
+                    }
+                };
+                self.autocompletion_index = new_index;
+                if let Some(idx) = self.autocompletion_index {
+                    self.input.clear();
+                    self.input.extend(&filtered_suggestions[idx]);
+                    if let Some(fc) = self.filter.input() {
+                        fc.clear();
+                        fc.extend(&filtered_suggestions[idx]);
+                    }
+                }
+                return State::Active;
+            }
+            Key::ArrowDown if self.autocompleter.is_some() => {
+                let filtered_suggestions = self.get_filtered_suggestions();
+                if filtered_suggestions.is_empty() {
+                    return State::Active;
+                }
+
+                if self.autocompletion_query.is_empty() {
+                    self.autocompletion_query = query.clone();
+                }
+
+                let new_index = match self.autocompletion_index {
+                    None => Some(0),
+                    Some(idx) => {
+                        if idx >= filtered_suggestions.len() - 1 {
+                            Some(0)
+                        } else {
+                            Some(idx + 1)
+                        }
+                    }
+                };
+                self.autocompletion_index = new_index;
+                if let Some(idx) = self.autocompletion_index {
+                    self.input.clear();
+                    self.input.extend(&filtered_suggestions[idx]);
+                    if let Some(fc) = self.filter.input() {
+                        fc.clear();
+                        fc.extend(&filtered_suggestions[idx]);
+                    }
+                }
+                return State::Active;
+            }
+            Key::ArrowUp if self.autocompleter.is_some() => {
+                let filtered_suggestions = self.get_filtered_suggestions();
+                if filtered_suggestions.is_empty() {
+                    return State::Active;
+                }
+
+                if self.autocompletion_query.is_empty() {
+                    self.autocompletion_query = query.clone();
+                }
+
+                let new_index = match self.autocompletion_index {
+                    None => Some(filtered_suggestions.len() - 1),
+                    Some(idx) => {
+                        if idx == 0 {
+                            Some(filtered_suggestions.len() - 1)
+                        } else {
+                            Some(idx - 1)
+                        }
+                    }
+                };
+                self.autocompletion_index = new_index;
+                if let Some(idx) = self.autocompletion_index {
+                    self.input.clear();
+                    self.input.extend(&filtered_suggestions[idx]);
+                    if let Some(fc) = self.filter.input() {
+                        fc.clear();
+                        fc.extend(&filtered_suggestions[idx]);
+                    }
+                }
+                return State::Active;
+            }
             Key::Escape if self.multiline == Multiline::Editing => {
                 self.multiline = Multiline::Preview;
-                return State::Cancel; // Workaround for `Esc`: "cancel cancelling".
+                return State::Cancel;
             }
             Key::Enter => {
                 if self.multiline == Multiline::Editing {
@@ -189,15 +380,38 @@ where
                     submit = true;
                 }
             }
-            // Multiline: don't lose 1 char switching from the preview mode to editing.
             Key::Char(c) if !c.is_ascii_control() && self.multiline == Multiline::Preview => {
                 self.input.insert(*c);
             }
             Key::Backspace if self.multiline == Multiline::Preview => self.input.delete_left(),
+            Key::Char(c) if !c.is_ascii_control() => {
+                self.autocompletion_index = None;
+                self.autocompletion_query.clear();
+            }
+            Key::Backspace => {
+                self.autocompletion_index = None;
+                self.autocompletion_query.clear();
+            }
             _ => {}
         }
 
-        // Multiline: preview -> editing.
+        // When filter is active (autocomplete mode), keystrokes go to the filter cursor.
+        // Copy the filter cursor value into self.input so the submit path can read it.
+        if submit && self.input.is_empty() && self.filter.enabled() {
+            let val = self.filter.input().map(|i| i.to_string()).unwrap_or_default();
+            if !val.is_empty() {
+                self.input.extend(&val);
+            }
+        }
+
+        if submit && self.autocomplete_on_enter && self.autocompletion_index.is_none() {
+            let suggestions = self.get_filtered_suggestions();
+            if !suggestions.is_empty() {
+                self.input.clear();
+                self.input.extend(&suggestions[0]);
+            }
+        }
+
         if self.multiline == Multiline::Preview {
             self.multiline = Multiline::Editing;
         }
@@ -239,21 +453,57 @@ where
     fn render(&mut self, state: &State<T>) -> String {
         let theme = THEME.read().unwrap();
 
-        let part1 = theme.format_header(&state.into(), &self.prompt);
-        let part2 = if self.input.is_empty() {
+        let filtered_suggestions: Vec<String> = self.get_filtered_suggestions();
+
+        let suggestions = if !matches!(state, State::Active) || filtered_suggestions.is_empty() {
+            String::new()
+        } else {
+            let suggestions_text = filtered_suggestions
+                .iter()
+                .enumerate()
+                .map(|(i, choice)| {
+                    let is_selected = self.autocompletion_index == Some(i);
+                    theme.format_autocomplete_item(&state.into(), choice, is_selected)
+                })
+                .collect::<Vec<_>>()
+                .join("\n");
+            format!("{}\n", suggestions_text)
+        };
+
+        let prompt = theme.format_header(&state.into(), &self.prompt);
+
+        let filter_input = if let Some(input) = self.filter.input() {
+            match state {
+                State::Submit(_) | State::Cancel => "".to_string(),
+                _ => theme.format_input(&state.into(), input),
+            }
+        } else if self.input.is_empty() {
             theme.format_placeholder(&state.into(), &self.placeholder)
         } else {
             theme.format_input(&state.into(), &self.input)
         };
-        let part3 = theme.format_footer_with_message(
-            &state.into(),
-            match self.multiline {
-                Multiline::Editing => "[Esc](Preview)",
-                Multiline::Preview => "[Enter](Submit)",
-                _ => "",
-            },
-        );
 
-        part1 + &part2 + &part3
+        let mut footer_message = match self.multiline {
+            Multiline::Editing => "[Esc](Preview)",
+            Multiline::Preview => "[Enter](Submit)",
+            _ => "",
+        };
+
+        if self.autocompleter.is_some() && !filtered_suggestions.is_empty() {
+            footer_message = "";
+        }
+
+        let footer = theme.format_footer_with_message(&state.into(), footer_message);
+
+        let footer = if matches!(state, State::Active)
+            && self.autocompleter.is_some()
+            && !filtered_suggestions.is_empty()
+        {
+            theme.format_footer_with_message(&state.into(), "\r└ ◇")
+        } else {
+            footer
+        };
+
+        prompt + &filter_input + &footer + &suggestions
     }
 }
