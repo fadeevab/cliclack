@@ -35,18 +35,20 @@ impl Autocomplete {
 
         // Temporarily cap the cursor, in case the suggestions list has shrunk.
         // It allows to keep the original cursor position unless arrows are pressed.
-        let cursor = self.cursor.map(|line| line.min(len - 1));
+        let cursor = self.cursor.unwrap_or(0).min(len - 1);
 
-        // It works like this:
-        // - if the cursor is not set, it will be set on the first arrow key press
-        // - otherwise, the cursor will be moved up and down in a circular manner
         match key {
+            // If the cursor is not set, it will be set on the first arrow key press.
+            Key::ArrowUp | Key::ArrowDown if self.cursor.is_none() => {
+                self.cursor = Some(cursor);
+                return None;
+            }
             // Move the cursor up in a circular manner.
-            Key::ArrowUp => self.cursor = Some((cursor.unwrap_or(0).saturating_sub(1)) % len),
+            Key::ArrowUp => self.cursor = Some(cursor.saturating_sub(1) % len),
             // Move the cursor down in a circular manner.
-            Key::ArrowDown => self.cursor = Some((cursor.unwrap_or(0) + 1) % len),
+            Key::ArrowDown => self.cursor = Some((cursor + 1) % len),
             // Submit the currently highlighted suggestion if cursor is set.
-            Key::Tab => return cursor.map(|c| self.items[c].clone()),
+            Key::Tab | Key::Enter => return self.cursor.map(|_| self.items[cursor].clone()),
             // Other keys refresh the suggestions, capping the cursor.
             _ => {
                 self.items = self.source.suggest(query);
