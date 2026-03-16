@@ -75,47 +75,28 @@ impl StringCursor {
     /// Moves the cursor one position up considering multiline representation.
     pub fn move_up(&mut self) {
         let jumps = line_jump_indices(&self.value);
-        self.cursor = match jumps.binary_search(&self.cursor) {
-            Ok(ix) if ix + 1 < jumps.len() => {
-                // Happened to be at the start of a line.
-                let target_line = ix.saturating_sub(1);
-                jumps[target_line]
-            }
-            Ok(ix) | Err(ix) => {
-                let ix = ix.saturating_sub(1); // current line
-                let target_line = ix.saturating_sub(1);
-                let offset = std::cmp::min(
-                    self.cursor - jumps[ix],
-                    (jumps[ix] - jumps[target_line]).saturating_sub(1),
-                );
-                jumps[target_line] + offset
-            }
+        let line = jumps.partition_point(|&j| j <= self.cursor) - 1;
+
+        if line > 0 {
+            let col = self.cursor - jumps[line];
+            let target = line - 1;
+            let target_len = jumps[target + 1] - jumps[target] - 1;
+            self.cursor = jumps[target] + col.min(target_len);
         }
     }
 
     /// Moves the cursor one position down considering multiline representation.
     pub fn move_down(&mut self) {
         let jumps = line_jump_indices(&self.value);
-        self.cursor = match jumps.binary_search(&self.cursor) {
-            Ok(ix) if ix + 1 < jumps.len() => {
-                // Happened to be at the start of a line.
-                let target_line = std::cmp::min(ix + 1, jumps.len().saturating_sub(2));
-                jumps[target_line]
-            }
-            Ok(ix) => {
-                // Happened to be at the end of string.
-                jumps[ix].saturating_sub(1)
-            }
-            Err(ix) => {
-                let ix = ix.saturating_sub(1); // current line
-                let target_line = std::cmp::min(ix + 1, jumps.len().saturating_sub(2));
-                let target_next = std::cmp::min(target_line + 1, jumps.len().saturating_sub(1));
-                let offset = std::cmp::min(
-                    self.cursor - jumps[ix],
-                    (jumps[target_next] - jumps[target_line]).saturating_sub(1),
-                );
-                jumps[target_line] + offset
-            }
+        let num_lines = jumps.len() - 1;
+        let line = jumps.partition_point(|&j| j <= self.cursor) - 1;
+        let col = self.cursor - jumps[line];
+
+        if line < num_lines - 1 {
+            // Move to the same column on the next line, clamped to its length.
+            let target = line + 1;
+            let target_len = jumps[target + 1] - jumps[target] - 1;
+            self.cursor = jumps[target] + col.min(target_len);
         }
     }
 
@@ -247,7 +228,7 @@ mod test {
     }
 
     #[test]
-    fn test_string_cursor() {
+    fn cursor_movements() {
         let mut cursor = StringCursor {
             value: "hello\nworld".chars().collect(),
             cursor: 0,
@@ -257,13 +238,13 @@ mod test {
         cursor.move_right();
         assert_cursor!(cursor, 'e');
         cursor.move_up();
-        assert_cursor!(cursor, 'h');
+        assert_cursor!(cursor, 'e');
         cursor.move_up();
-        assert_cursor!(cursor, 'h');
+        assert_cursor!(cursor, 'e');
         cursor.move_down();
-        assert_cursor!(cursor, 'w');
+        assert_cursor!(cursor, 'o');
         cursor.move_down();
-        assert_cursor!(cursor, 'w');
+        assert_cursor!(cursor, 'o');
         cursor.move_end();
         assert_cursor!(cursor, ' ');
         cursor.move_up();
@@ -285,5 +266,18 @@ mod test {
         assert_cursor!(cursor, 'd');
         cursor.move_home();
         assert_cursor!(cursor, 'w');
+    }
+
+    #[test]
+    fn move_up_on_single_line_keeps_cursor_position() {
+        let mut cursor = StringCursor {
+            value: "hello".chars().collect(),
+            cursor: 2,
+        };
+
+        cursor.move_up();
+
+        assert_eq!(cursor.cursor, 2);
+        assert_cursor!(cursor, 'l');
     }
 }
