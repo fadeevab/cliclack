@@ -302,6 +302,11 @@ pub trait Theme {
         )
     }
 
+    /// Formats the footer for the autocomplete prompt (like `└◇ {message}`).
+    fn format_footer_for_autocomplete(&self, state: &ThemeState, message: &str) -> String {
+        self.format_footer_with_message(state, message)
+    }
+
     /// Formats the input cursor with the given style adding frame bars around.
     ///
     /// It hides the cursor when the input is not active.

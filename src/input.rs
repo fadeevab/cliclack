@@ -276,14 +276,18 @@ where
         } else {
             theme.format_input(&state.into(), &self.input)
         };
-        let part3 = theme.format_footer_with_message(
-            &state.into(),
-            match self.multiline {
-                Multiline::Editing => "[Esc](Preview)",
-                Multiline::Preview => "[Enter](Submit)",
-                _ => "",
-            },
-        );
+        let part3 = if self.autocomplete.is_some() {
+            theme.format_footer_for_autocomplete(&state.into(), "")
+        } else {
+            theme.format_footer_with_message(
+                &state.into(),
+                match self.multiline {
+                    Multiline::Editing => "[Esc](Preview)",
+                    Multiline::Preview => "[Enter](Submit)",
+                    _ => "",
+                },
+            )
+        };
         let part4 = if let Some(autocomplete) = &self.autocomplete {
             autocomplete.render(state)
         } else {
