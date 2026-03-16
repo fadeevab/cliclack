@@ -145,6 +145,11 @@ impl Input {
     }
 
     /// Enables autocomplete suggestions for the input.
+    ///
+    /// Multiple autocomplete suggestion sources are supported:
+    /// 1. `Vec<String>`: suggestions are matched by their own contents via a fuzzy search.
+    /// 2. `Vec<Rc<RefCell<T>>>`: suggestions are matched by their labels taken from `item.as_ref()`.
+    /// 3. `Fn(&str) -> Vec<T>`: dynamic suggestions computed for the given input query.
     pub fn autocomplete<S>(mut self, source: S) -> Self
     where
         S: Suggest<Result = String> + 'static,
