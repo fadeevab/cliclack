@@ -9,7 +9,6 @@ fn main() -> io::Result<()> {
     cliclack::intro(style(" autocomplete ").on_cyan().black())?;
 
     let languages = vec![
-        "rust".to_string(),
         "javascript".to_string(),
         "typescript".to_string(),
         "python".to_string(),
@@ -18,17 +17,18 @@ fn main() -> io::Result<()> {
         "c".to_string(),
         "cpp".to_string(),
         "ruby".to_string(),
+        "rust".to_string(),
         "swift".to_string(),
         "kotlin".to_string(),
         "php".to_string(),
     ];
 
     let language: String = cliclack::input("Pick a language")
-        .default_input(languages.first().unwrap())
+        .default_input("rust")
         .autocomplete(languages)
         .interact()?;
 
-    let _food: String = cliclack::input("What's your favorite food?")
+    let food: String = cliclack::input("What's your favorite food?")
         .autocomplete(|_query: &str| {
             // Pretend being dynamic.
             vec![
@@ -39,7 +39,7 @@ fn main() -> io::Result<()> {
         })
         .interact()?;
 
-    cliclack::outro(format!("Selected: {language}"))?;
+    cliclack::outro(format!("Selected: {language} and {food}"))?;
 
     Ok(())
 }

@@ -194,10 +194,16 @@ where
         let mut submit = false;
 
         if let Some(autocompletion) = &mut self.autocomplete {
-            if let Some(completion) = autocompletion.on(key, &self.input.to_string()) {
-                self.input.clear();
-                self.input.extend(&completion);
-                self.input.move_end();
+            if let Some(state) = autocompletion.on(key, &self.input.to_string()) {
+                match state {
+                    State::Submit(value) => {
+                        self.input.clear();
+                        self.input.extend(&value);
+                        self.input.move_end();
+                    }
+                    State::Cancel => return State::Cancel, // Workaround for `Esc`: "cancel cancelling".
+                    _ => {}
+                }
             }
         }
 
