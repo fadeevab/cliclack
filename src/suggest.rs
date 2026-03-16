@@ -48,12 +48,12 @@ impl Suggest for Vec<String> {
 /// Useful for dynamic suggestions computed directly for the given input.
 impl<F, T> Suggest for F
 where
-    F: for<'a> Fn(&'a str) -> Vec<T>,
+    F: Fn(&str) -> Vec<T>,
 {
     type Result = T;
 
     fn suggest(&self, input: &str) -> Vec<Self::Result> {
-        (self)(input)
+        self(input)
     }
 }
 
