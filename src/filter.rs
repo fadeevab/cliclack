@@ -2,10 +2,8 @@ use std::{cell::RefCell, rc::Rc};
 
 use console::Key;
 
-use crate::{
-    autocomplete::Autocomplete,
-    prompt::{cursor::StringCursor, interaction::State},
-};
+use crate::prompt::{cursor::StringCursor, interaction::State};
+use crate::suggest::Suggest;
 
 /// The list of items gathered (filtered) by interactive input using
 /// `FilteredView::on` event in a selection prompt.
@@ -57,11 +55,11 @@ where
         &self.items
     }
 
-    /// Collects the input and filters the items from the list of all items.
-    ///
-    /// Uses the Jaro-Winkler similarity algorithm to score the items
-    /// ([`strsim::jaro_winkler`]).
-    pub fn on<T>(&mut self, key: &Key, all_items: Vec<Rc<RefCell<I>>>) -> Option<State<T>> {
+    /// Collects the input and filters the items from the list of suggestions.
+    pub fn on<T, S>(&mut self, key: &Key, all_items: &S) -> Option<State<T>>
+    where
+        S: Suggest<Result = Rc<RefCell<I>>>,
+    {
         if !self.enabled {
             // Pass over the control.
             return None;
@@ -82,13 +80,8 @@ where
                 None
             }
             // Refresh the filtered items for the rest of the keys.
-            _ if !self.input.is_empty() => {
-                self.items = all_items.suggestions(&self.input.to_string());
-                Some(State::Active)
-            }
-            // Reset the items to the original list.
             _ => {
-                self.items = all_items.to_vec();
+                self.items = all_items.suggest(&self.input.to_string());
                 Some(State::Active)
             }
         }

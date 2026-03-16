@@ -263,6 +263,7 @@ mod password;
 mod progress;
 mod prompt;
 mod select;
+mod suggest;
 mod theme;
 mod validate;
 mod view;
@@ -278,7 +279,6 @@ pub use theme::{reset_theme, set_theme, Theme, ThemeState};
 // 🎨 Re-export for some `Theme` trait methods.
 pub use prompt::cursor::StringCursor;
 
-pub use autocomplete::Autocomplete;
 pub use confirm::Confirm;
 pub use input::Input;
 pub use multiprogress::MultiProgress;
@@ -286,6 +286,7 @@ pub use multiselect::MultiSelect;
 pub use password::Password;
 pub use progress::ProgressBar;
 pub use select::Select;
+pub use suggest::Suggest;
 pub use validate::Validate;
 
 fn term_write(line: impl Display) -> io::Result<()> {

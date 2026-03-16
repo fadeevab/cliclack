@@ -3,6 +3,8 @@ use std::{fmt::Display, str::FromStr};
 
 use console::Key;
 
+use crate::autocomplete::Autocomplete;
+use crate::suggest::Suggest;
 use crate::{
     prompt::{
         cursor::StringCursor,
@@ -63,6 +65,7 @@ pub struct Input {
     multiline: Multiline,
     validate_on_enter: Option<ValidationCallback>,
     validate_interactively: Option<ValidationCallback>,
+    autocomplete: Option<Autocomplete>,
 }
 
 impl Input {
@@ -141,6 +144,15 @@ impl Input {
         self
     }
 
+    /// Enables autocomplete suggestions for the input.
+    pub fn autocomplete<S>(mut self, source: S) -> Self
+    where
+        S: Suggest<Result = String> + 'static,
+    {
+        self.autocomplete = Some(Autocomplete::new(source));
+        self
+    }
+
     /// Starts the prompt interaction.
     pub fn interact<T>(&mut self) -> io::Result<T>
     where
@@ -175,6 +187,13 @@ where
     fn on(&mut self, event: &Event) -> State<T> {
         let Event::Key(key) = event;
         let mut submit = false;
+
+        if let Some(autocompletion) = &mut self.autocomplete {
+            if let Some(completion) = autocompletion.on(key, &self.input.to_string()) {
+                self.input.clear();
+                self.input.extend(&completion);
+            }
+        }
 
         match key {
             // Multiline: editing -> preview.
@@ -245,7 +264,12 @@ where
         } else {
             theme.format_input(&state.into(), &self.input)
         };
-        let part3 = theme.format_footer_with_message(
+        let part3 = if let Some(autocomplete) = &self.autocomplete {
+            autocomplete.render(state)
+        } else {
+            String::new()
+        };
+        let part4 = theme.format_footer_with_message(
             &state.into(),
             match self.multiline {
                 Multiline::Editing => "[Esc](Preview)",
@@ -254,6 +278,6 @@ where
             },
         );
 
-        part1 + &part2 + &part3
+        part1 + &part2 + &part3 + &part4
     }
 }
