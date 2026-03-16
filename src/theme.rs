@@ -480,11 +480,11 @@ pub trait Theme {
     }
 
     /// Returns the full autocomplete item formatting with frame bars around.
-    fn format_autocomplete_item(&self, state: &ThemeState, active: bool, label: &str) -> String {
+    fn format_autocomplete_item(&self, _state: &ThemeState, active: bool, label: &str) -> String {
         format!(
             "{bar}  {item}\n",
-            bar = self.bar_color(state).apply_to(S_BAR),
-            item = self.simple_item(state, active, label)
+            bar = self.bar_color(&ThemeState::Submit).apply_to(S_BAR),
+            item = self.simple_item(&ThemeState::Submit, active, label)
         )
     }
 

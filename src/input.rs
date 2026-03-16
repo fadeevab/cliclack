@@ -192,6 +192,7 @@ where
             if let Some(completion) = autocompletion.on(key, &self.input.to_string()) {
                 self.input.clear();
                 self.input.extend(&completion);
+                self.input.move_end();
             }
         }
 
@@ -264,12 +265,7 @@ where
         } else {
             theme.format_input(&state.into(), &self.input)
         };
-        let part3 = if let Some(autocomplete) = &self.autocomplete {
-            autocomplete.render(state)
-        } else {
-            String::new()
-        };
-        let part4 = theme.format_footer_with_message(
+        let part3 = theme.format_footer_with_message(
             &state.into(),
             match self.multiline {
                 Multiline::Editing => "[Esc](Preview)",
@@ -277,6 +273,11 @@ where
                 _ => "",
             },
         );
+        let part4 = if let Some(autocomplete) = &self.autocomplete {
+            autocomplete.render(state)
+        } else {
+            String::new()
+        };
 
         part1 + &part2 + &part3 + &part4
     }
