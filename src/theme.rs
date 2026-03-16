@@ -468,6 +468,26 @@ pub trait Theme {
         )
     }
 
+    /// Returns the simple item without checkbox, hints, and frame bars around the item.
+    fn simple_item(
+        &self,
+        state: &ThemeState,
+        active: bool, // when cursors highlights item
+        label: &str,
+    ) -> String {
+        let label_style = self.checkbox_style(state, false, active);
+        label_style.apply_to(label).to_string()
+    }
+
+    /// Returns the full autocomplete item formatting with frame bars around.
+    fn format_autocomplete_item(&self, state: &ThemeState, active: bool, label: &str) -> String {
+        format!(
+            "{bar}  {item}\n",
+            bar = self.bar_color(state).apply_to(S_BAR),
+            item = self.simple_item(state, active, label)
+        )
+    }
+
     /// Returns the full confirmation prompt rendering.
     fn format_confirm(&self, state: &ThemeState, confirm: bool) -> String {
         let yes = self.radio_item(state, confirm, "Yes", "");

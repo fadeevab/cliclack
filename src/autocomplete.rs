@@ -1,100 +1,89 @@
-use std::{cell::RefCell, rc::Rc};
+use console::Key;
 
-/// Provides autocomplete suggestions for an input string.
-///
-/// Designed to work with different data sources without requiring cloning,
-/// allowing results to be borrowed, shared (Rc), or owned.
-pub trait Autocomplete {
-    /// The type of autocomplete suggestions.
-    type Result<'a>
-    where
-        Self: 'a;
+use crate::{prompt::interaction::State, theme::THEME, Suggest};
 
-    /// Returns the candidate suggestions for the given `input`.
-    fn suggestions(&self, input: &str) -> Vec<Self::Result<'_>>;
+pub(crate) struct Autocomplete {
+    /// The list of suggestions to be rendered.
+    source: Box<dyn Suggest<Result = String>>,
+    /// The list of suggestions to be rendered.
+    items: Vec<String>,
+    /// The index of the currently selected suggestion.
+    cursor: usize,
 }
 
-/// Turns a vector of shared displayable elements into a fuzzy autocomplete source.
-///
-/// Labels are taken from `item.as_ref()`. Suggestions keep
-/// shared ownership by returning `Rc<RefCell<T>>` values.
-impl<T> Autocomplete for Vec<Rc<RefCell<T>>>
-where
-    T: AsRef<str>,
-{
-    type Result<'a>
-        = Rc<RefCell<T>>
+impl Autocomplete {
+    /// Creates a new autocompletion popup with the given suggestions.
+    pub fn new<S>(suggestions: S) -> Self
     where
-        Self: 'a;
+        S: Suggest<Result = String> + 'static,
+    {
+        Self {
+            source: Box::new(suggestions),
+            items: Vec::new(),
+            cursor: 0,
+        }
+    }
 
-    fn suggestions(&self, input: &str) -> Vec<Rc<RefCell<T>>> {
-        let labeled_items = self
+    /// Returns the list of suggestions for the given input.
+    pub fn items(&self) -> &Vec<String> {
+        &self.items
+    }
+
+    /// Returns the currently highlighted suggestion.
+    pub fn highlighted(&self) -> Option<&String> {
+        self.items.get(self.cursor)
+    }
+
+    /// Tracks the state of the autocompletion popup.
+    pub fn on(&mut self, key: &Key, query: &str) -> Option<String> {
+        if self.items.is_empty() {
+            self.items = self.source.suggest(query);
+            return None;
+        }
+
+        // Temporarily cap the cursor, in case the suggestions list has shrunk.
+        // It allows to keep the original cursor position unless arrows are pressed.
+        let cursor = self.cursor.min(self.items.len().saturating_sub(1));
+
+        match key {
+            // Move the cursor up in a circular manner.
+            Key::ArrowUp => self.cursor = (cursor.saturating_sub(1)) % self.items.len(),
+            // Move the cursor down in a circular manner.
+            Key::ArrowDown => self.cursor = (cursor + 1) % self.items.len(),
+            // Submit the currently highlighted suggestion.
+            Key::Tab => return Some(self.items[cursor].clone()),
+            // Other keys refresh the suggestions, capping the cursor.
+            _ => {
+                self.items = self.source.suggest(query);
+            }
+        }
+        None
+    }
+
+    /// Renders autocomplete popup suggestions under the input line.
+    pub fn render<T>(&self, state: &State<T>) -> String {
+        match state {
+            State::Submit(_) | State::Cancel => return String::new(),
+            _ => {}
+        }
+
+        if self.items.is_empty() {
+            return String::new();
+        }
+
+        // Temporarily cap the cursor, in case the suggestions list has shrunk.
+        // It allows to keep the original cursor position unless arrows are pressed.
+        let cursor = self.cursor.min(self.items.len().saturating_sub(1));
+
+        let theme = THEME.read().unwrap();
+
+        let empty_line = [theme.format_autocomplete_item(&state.into(), false, "")].into_iter();
+        let items = self
+            .items
             .iter()
-            .map(|i| (i.borrow().as_ref().to_lowercase(), Rc::clone(i)));
-        fuzzy(labeled_items, &input.to_lowercase())
+            .enumerate()
+            .map(|(i, item)| theme.format_autocomplete_item(&state.into(), cursor == i, item));
+
+        empty_line.chain(items).collect()
     }
-}
-
-/// Turns a vector of strings into a fuzzy autocomplete source.
-///
-/// Each string is matched by its own contents and suggestions are returned
-/// as borrowed `&str` slices into the original vector.
-impl Autocomplete for Vec<String> {
-    type Result<'a>
-        = &'a str
-    where
-        Self: 'a;
-
-    fn suggestions(&self, input: &str) -> Vec<&str> {
-        let labeled_items = self.iter().map(|s| (s.to_lowercase(), s.as_str()));
-        fuzzy(labeled_items, &input.to_lowercase())
-    }
-}
-
-/// Turns a handler function into a dynamic autocomplete source.
-///
-/// Useful for dynamic suggestion sources that compute and return matches
-/// directly for the given input.
-impl<F, T> Autocomplete for F
-where
-    F: for<'a> Fn(&'a str) -> Vec<T>,
-{
-    type Result<'a>
-        = T
-    where
-        Self: 'a;
-
-    fn suggestions(&self, input: &str) -> Vec<Self::Result<'_>> {
-        (self)(input)
-    }
-}
-
-/// Ranks items by fuzzy similarity between their labels and the input.
-///
-/// Empty or whitespace input keeps all items in original order.
-///
-/// Otherwise:
-/// - Uses Jaro-Winkler similarity between label and input.
-/// - Adds a bonus if all whitespace-separated input words appear in the label.
-/// - Filters weak matches (score <= 0.6) and sorts by score descending.
-///
-/// Labels are used only for scoring. The output contains the associated items.
-fn fuzzy<I>(items: impl Iterator<Item = (String, I)>, input: &str) -> Vec<I> {
-    if input.trim().is_empty() {
-        return items.map(|(_, item)| item).collect();
-    }
-
-    let filter_words: Vec<_> = input.split_whitespace().collect();
-
-    let mut scored: Vec<_> = items
-        .map(|(label, item)| {
-            let similarity = strsim::jaro_winkler(&label, input);
-            let bonus = filter_words.iter().all(|word| label.contains(*word)) as usize as f64;
-            (similarity + bonus, item)
-        })
-        .filter(|(score, _)| *score > 0.6)
-        .collect();
-
-    scored.sort_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-    scored.into_iter().map(|(_, item)| item).collect()
 }
