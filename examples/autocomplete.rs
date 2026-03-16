@@ -28,6 +28,17 @@ fn main() -> io::Result<()> {
         .autocomplete(languages)
         .interact()?;
 
+    let _food: String = cliclack::input("What's your favorite food?")
+        .autocomplete(|_query: &str| {
+            // Pretend being dynamic.
+            vec![
+                "pizza".to_string(),
+                "sushi".to_string(),
+                "ice cream".to_string(),
+            ]
+        })
+        .interact()?;
+
     cliclack::outro(format!("Selected: {language}"))?;
 
     Ok(())
