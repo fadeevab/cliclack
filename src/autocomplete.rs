@@ -25,7 +25,7 @@ impl Autocomplete {
     }
 
     /// Tracks the state of the autocompletion popup.
-    pub fn on(&mut self, key: &Key, query: &str) -> Option<String> {
+    pub fn on(&mut self, key: &Key, query: &str) -> Option<State<String>> {
         if self.items.is_empty() {
             self.items = self.source.suggest(query);
             return None;
@@ -48,7 +48,17 @@ impl Autocomplete {
             // Move the cursor down in a circular manner.
             Key::ArrowDown => self.cursor = Some((cursor + 1) % len),
             // Submit the currently highlighted suggestion if cursor is set.
-            Key::Tab | Key::Enter => return self.cursor.map(|_| self.items[cursor].clone()),
+            Key::Tab | Key::Enter => {
+                return self
+                    .cursor
+                    .map(|_| State::Submit(self.items[cursor].clone()))
+            }
+            // Hide the autocompletion drop-down, and tell the prompt to not close the entire app.
+            Key::Escape => {
+                self.items.clear();
+                self.cursor = None;
+                return Some(State::Cancel);
+            }
             // Other keys refresh the suggestions, capping the cursor.
             _ => {
                 self.items = self.source.suggest(query);
