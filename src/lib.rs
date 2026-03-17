@@ -151,7 +151,7 @@
 //!
 //! The [`Input::autocomplete`] method enables autocompletion of the input text by suggestions.
 //!
-//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="70%">
+//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="50%">
 //!
 //! ```
 //! # fn test() -> std::io::Result<()> {
