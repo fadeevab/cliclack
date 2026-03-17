@@ -59,10 +59,10 @@ impl Autocomplete {
                 self.cursor = None;
                 return Some(State::Cancel);
             }
-            // Other keys refresh the suggestions, capping the cursor.
-            _ => {
-                self.items = self.source.suggest(query);
-            }
+            // Other keys may clear suggestions if the query is empty.
+            _ if query.is_empty() => self.items.clear(),
+            // Other keys refresh the suggestions.
+            _ => self.items = self.source.suggest(query),
         }
         None
     }
