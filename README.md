@@ -66,6 +66,15 @@ let path: String = input("Where should we create your project?")
     .interact()?;
 ```
 
+### Autocomplete
+
+`autocomplete()` switch enables autocompletion of the input text using
+either a list of suggestions or a dynamic handler.
+
+<div align="center">
+  <img alt="CliClack Autocompletion" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="420">
+</div>
+
 ### 🎨 Theme
 
 A custom theme can be applied for UI rendering. An example of theme customization:
