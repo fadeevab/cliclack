@@ -147,6 +147,31 @@
 //! typing enabled by [`Select::filter_mode`] and [`MultiSelect::filter_mode`]
 //! respectively.
 //!
+//! ## Input Autocomplete
+//!
+//! The [`Input::autocomplete`] method enables autocompletion of the input text by suggestions.
+//!
+//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="70%">
+//!
+//! ```
+//! # fn test() -> std::io::Result<()> {
+//! use cliclack::input;
+//!
+//! let language: String = input("Pick a language")
+//!     .default_input("rust")
+//!     .autocomplete(vec![
+//!         "typescript".to_string(),
+//!         "python".to_string(),
+//!         "go".to_string(),
+//!         "c".to_string(),
+//!      ])
+//!     .interact()?;
+//! # Ok(())
+//! # }
+//! # test().ok(); // Ignoring I/O runtime errors.
+//!
+//! ```
+//!
 //! ## Spinner
 //!
 //! ```
