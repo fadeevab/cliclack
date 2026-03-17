@@ -47,7 +47,8 @@ outro("You're all set!")?;
 ### Input
 
 The input prompt accepts a single line of text trying to parse it into a target type.
-Multiline input can be enabled using the `multiline()` switch.
+Multiline input can be enabled using the `multiline()` switch, and autocomplete
+using `autocomplete()`.
 
 ```rust
 use cliclack::input;
@@ -65,15 +66,6 @@ let path: String = input("Where should we create your project?")
     })
     .interact()?;
 ```
-
-### Autocomplete
-
-`autocomplete()` switch enables autocompletion of the input text using
-either a list of suggestions or a dynamic handler.
-
-<div align="center">
-  <img alt="CliClack Autocompletion" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="420">
-</div>
 
 ### 🎨 Theme
 
@@ -93,6 +85,14 @@ Starting from `cliclack = "0.2.3"`, progress bars and multi-progress bars are su
 
 <div align="center">
   <img alt="CliClack Multi Progress Bar" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-multi-progress-bar.gif" width="600" />
+</div>
+
+### Autocomplete
+
+Starting from `cliclack = "0.5.0"`, autocompletion for input prompt is supported.
+
+<div align="center">
+  <img alt="CliClack Autocompletion" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="400">
 </div>
 
 ### See more
