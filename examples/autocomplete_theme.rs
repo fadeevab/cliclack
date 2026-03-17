@@ -3,6 +3,7 @@ use console::style;
 use std::io;
 
 struct AutocompleteTheme;
+
 impl Theme for AutocompleteTheme {
     fn format_footer_for_autocomplete(&self, state: &ThemeState, _message: &str) -> String {
         match state {
