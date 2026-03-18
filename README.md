@@ -87,12 +87,12 @@ Starting from `cliclack = "0.2.3"`, progress bars and multi-progress bars are su
   <img alt="CliClack Multi Progress Bar" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-multi-progress-bar.gif" width="600" />
 </div>
 
-### Autocomplete
+### 🔍 Autocomplete
 
-Starting from `cliclack = "0.5.0"`, autocompletion for input prompt is supported.
+Starting from `cliclack = "0.5.0"`, the input prompt supports autocompletion.
 
 <div align="center">
-  <img alt="CliClack Autocompletion" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="400">
+  <img alt="CliClack Autocompletion" src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="350">
 </div>
 
 ### See more
