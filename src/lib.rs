@@ -235,7 +235,7 @@
 //!
 //! Plain text output without any interaction.
 //!
-//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-logs.gif" width="40%">
+//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-logs.jpg" width="40%">
 //!
 //! ```
 //! # fn test() -> std::io::Result<()> {
