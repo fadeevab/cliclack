@@ -605,14 +605,27 @@ pub trait Theme {
         S_PROGRESS.to_string()
     }
 
-    /// Returns the multiline note message rendering, taking into account whether
-    /// or not it's an inline vs. outro note.
-    fn format_note_generic(&self, is_outro: bool, prompt: &str, message: &str) -> String {
-        let message = format!("\n{message}\n");
-        let width = 2 + message
+    /// Returns the multiline note message rendering with a symbol,
+    /// taking into account whether or not it's an inline vs. outro note.
+    fn format_note_with_symbol(
+        &self,
+        is_outro: bool,
+        symbol: &str,
+        prompt: &str,
+        message: &str,
+    ) -> String {
+        // Handle an empty prompt.
+        let (prompt, message) = if prompt.is_empty() {
+            // Visually, omitting an empty line inside of the block above the message.
+            (String::new(), message.to_string() + "\n")
+        } else {
+            // Add spaces around the prompt and a new line above the message (below the header).
+            (format!("  {prompt} "), format!("\n{message}\n"))
+        };
+        let width = message
             .split('\n')
-            .fold(0usize, |acc, line| display_width(line).max(acc))
-            .max(display_width(prompt));
+            .fold(0usize, |acc, line| (display_width(line) + 2).max(acc))
+            .max(display_width(&prompt));
 
         let bar_color = self.bar_color(&ThemeState::Submit);
         let text_color = self.input_style(&ThemeState::Submit);
@@ -622,14 +635,17 @@ pub trait Theme {
         let symbol = if is_outro {
             bar_color.apply_to(S_CONNECT_LEFT).to_string()
         } else {
-            self.state_symbol(&ThemeState::Submit)
+            symbol.to_string()
         };
 
         // Render the header.
         let header = format!(
-            "{symbol}  {prompt} {horizontal_bar}{corner}\n",
-            horizontal_bar =
-                bar_color.apply_to(S_BAR_H.to_string().repeat(width - display_width(prompt))),
+            "{symbol}{prompt}{horizontal_bar}{corner}\n",
+            horizontal_bar = bar_color.apply_to(
+                S_BAR_H
+                    .to_string()
+                    .repeat(2 + width - display_width(&prompt))
+            ),
             corner = bar_color.apply_to(S_CORNER_TOP_RIGHT),
         );
 
@@ -642,7 +658,7 @@ pub trait Theme {
                     "{bar}  {line}{spaces}{bar}\n",
                     bar = bar_color.apply_to(S_BAR),
                     line = text_color.apply_to(line),
-                    spaces = " ".repeat(width - display_width(line) + 1)
+                    spaces = " ".repeat(width - display_width(line))
                 )
             })
             .collect::<String>();
@@ -650,23 +666,34 @@ pub trait Theme {
         // Render the footer. Depending on whether or not this is an outro note,
         // we'll either use the bar end or the connecting left bar.
         let footer = if is_outro {
-            bar_color
-                .apply_to(format!(
-                    "{S_BAR_END}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n",
-                    horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
-                ))
-                .to_string()
+            bar_color.apply_to(format!(
+                "{S_BAR_END}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n",
+                horizontal_bar = S_BAR_H.to_string().repeat(width + 2),
+            ))
         } else {
-            bar_color
-                .apply_to(format!(
-                    "{S_CONNECT_LEFT}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n{bar}\n",
-                    horizontal_bar = S_BAR_H.to_string().repeat(width + 3),
-                    bar = bar_color.apply_to(S_BAR),
-                ))
-                .to_string()
-        };
+            bar_color.apply_to(format!(
+                "{S_CONNECT_LEFT}{horizontal_bar}{S_CORNER_BOTTOM_RIGHT}\n{bar}\n",
+                horizontal_bar = S_BAR_H.to_string().repeat(width + 2),
+                bar = bar_color.apply_to(S_BAR),
+            ))
+        }
+        .to_string();
 
         header + &body + &footer
+    }
+
+    /// Returns the multiline note message rendering, taking into account whether
+    /// or not it's an inline vs. outro note.
+    ///
+    /// Note: keeping this method for backward compatibility after introducing the
+    /// [`Theme::format_note_with_symbol`].
+    fn format_note_generic(&self, is_outro: bool, prompt: &str, message: &str) -> String {
+        let symbol = if prompt.is_empty() {
+            self.remark_symbol()
+        } else {
+            self.state_symbol(&ThemeState::Submit)
+        };
+        self.format_note_with_symbol(is_outro, &symbol, prompt, message)
     }
 
     /// Formats an inline note message.

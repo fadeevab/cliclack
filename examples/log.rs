@@ -8,8 +8,6 @@ fn main() -> std::io::Result<()> {
     log::error("This is an error")?;
     log::success("This is a success")?;
     log::info("This is an info")?;
-    log::step("This is a submitted step")?;
-    outro_cancel("Like it's cancelled")?;
-
-    Ok(())
+    log::step("This is a multiline step...\n\nstruct Type {\n    field: u8\n}")?;
+    outro_cancel("Like it's cancelled")
 }

@@ -151,7 +151,7 @@
 //!
 //! The [`Input::autocomplete`] method enables autocompletion of the input text by suggestions.
 //!
-//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="50%">
+//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-autocomplete.gif" width="40%">
 //!
 //! ```
 //! # fn test() -> std::io::Result<()> {
@@ -235,6 +235,8 @@
 //!
 //! Plain text output without any interaction.
 //!
+//! <img src="https://github.com/fadeevab/cliclack/raw/main/media/cliclack-logs.gif" width="40%">
+//!
 //! ```
 //! # fn test() -> std::io::Result<()> {
 //! use cliclack::log;
@@ -243,6 +245,15 @@
 //! log::warning("Something is wrong")?;
 //! log::error("Something is terribly wrong")?;
 //! # Ok(())
+//! # }
+//! # test().ok(); // Ignoring I/O runtime errors.
+//! ```
+//!
+//! You can also use multiline note boxes.
+//!
+//! ```
+//! # fn test() -> std::io::Result<()> {
+//! cliclack::note("Next steps", "1. Do this\n2. Do that\n3. 🚀")
 //! # }
 //! # test().ok(); // Ignoring I/O runtime errors.
 //! ```
@@ -411,6 +422,8 @@ pub fn multi_progress(prompt: impl Display) -> MultiProgress {
 }
 
 /// Prints a note message.
+///
+/// If `prompt` is empty, the message will be printed without a symbol.
 pub fn note(prompt: impl Display, message: impl Display) -> io::Result<()> {
     term_write(
         THEME
@@ -434,36 +447,48 @@ pub mod log {
     }
 
     /// Prints a remark message.
+    ///
+    /// The message can be multiline.
     pub fn remark(text: impl Display) -> io::Result<()> {
         let symbol = THEME.read().unwrap().remark_symbol();
         log(text, symbol)
     }
 
-    /// Prints an info message.
+    /// Prints a info message.
+    ///
+    /// The message can be multiline.
     pub fn info(text: impl Display) -> io::Result<()> {
         let symbol = THEME.read().unwrap().info_symbol();
         log(text, symbol)
     }
 
     /// Prints a warning message.
+    ///
+    /// The message can be multiline.
     pub fn warning(message: impl Display) -> io::Result<()> {
         let symbol = THEME.read().unwrap().warning_symbol();
         log(message, symbol)
     }
 
-    /// Prints an error message.
+    /// Prints a error message.
+    ///
+    /// The message can be multiline.
     pub fn error(message: impl Display) -> io::Result<()> {
         let symbol = THEME.read().unwrap().error_symbol();
         log(message, symbol)
     }
 
     /// Prints a success message.
+    ///
+    /// The message can be multiline.
     pub fn success(message: impl Display) -> io::Result<()> {
         let symbol = THEME.read().unwrap().active_symbol();
         log(message, symbol)
     }
 
     /// Prints a submitted step message.
+    ///
+    /// The message can be multiline.
     pub fn step(message: impl Display) -> io::Result<()> {
         let symbol = THEME.read().unwrap().submit_symbol();
         log(message, symbol)
