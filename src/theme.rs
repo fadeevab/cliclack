@@ -623,6 +623,9 @@ pub trait Theme {
         prompt: &str,
         message: &str,
     ) -> String {
+        // If the prompt is visually empty, clean it up.
+        let prompt = (display_width(prompt) == 0).then(|| "").unwrap_or(prompt);
+
         // Wrap text to fit terminal width, accounting for box border overhead.
         let prompt = termwrap(prompt, 7);
         let message = termwrap(message, 6);
@@ -729,7 +732,7 @@ pub trait Theme {
     /// Note: keeping this method for backward compatibility after introducing the
     /// [`Theme::format_note_with_symbol`].
     fn format_note_generic(&self, is_outro: bool, prompt: &str, message: &str) -> String {
-        let symbol = if prompt.is_empty() {
+        let symbol = if display_width(prompt) == 0 {
             self.remark_symbol()
         } else {
             self.state_symbol(&ThemeState::Submit)
@@ -802,10 +805,21 @@ pub fn reset_theme() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use console::{strip_ansi_codes, style};
 
     #[test]
     fn format_note() {
         // A simple backward compatibility check.
         ClackTheme.format_note("my prompt", "my message");
+    }
+
+    #[test]
+    fn format_note_with_styled_empty_prompt() {
+        let prompt = style("").blue().to_string();
+        let rendered = ClackTheme.format_note(&prompt, "my message");
+        let rendered = strip_ansi_codes(&rendered);
+
+        assert!(!rendered.contains('◇'));
+        assert!(rendered.starts_with('├'));
     }
 }
