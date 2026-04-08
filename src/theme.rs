@@ -34,6 +34,15 @@ const S_ERROR: Emoji = Emoji("■", "x");
 const S_SPINNER: Emoji = Emoji("◒◐◓◑", "•oO0");
 const S_PROGRESS: Emoji = Emoji("■□", "#-");
 
+/// Wraps text lines to fit the current terminal width minus the given padding.
+pub fn termwrap(text: &str, padding: u16) -> String {
+    let width = console::Term::stderr().size().1;
+    text.lines()
+        .map(|line| textwrap::fill(line, width.saturating_sub(padding) as usize))
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
 /// The state of the prompt rendering.
 pub enum ThemeState {
     /// The prompt is active.
@@ -614,18 +623,9 @@ pub trait Theme {
         prompt: &str,
         message: &str,
     ) -> String {
-        // Handle an empty prompt.
-        let (prompt, message) = if prompt.is_empty() {
-            // Visually, omitting an empty line inside of the block above the message.
-            (String::new(), message.to_string() + "\n")
-        } else {
-            // Add spaces around the prompt and a new line above the message (below the header).
-            (format!("  {prompt} "), format!("\n{message}\n"))
-        };
-        let width = message
-            .split('\n')
-            .fold(0usize, |acc, line| (display_width(line) + 2).max(acc))
-            .max(display_width(&prompt));
+        // Wrap text to fit terminal width, accounting for box border overhead.
+        let prompt = termwrap(prompt, 7);
+        let message = termwrap(message, 6);
 
         let bar_color = self.bar_color(&ThemeState::Submit);
         let text_color = self.input_style(&ThemeState::Submit);
@@ -638,16 +638,57 @@ pub trait Theme {
             symbol.to_string()
         };
 
-        // Render the header.
-        let header = format!(
-            "{symbol}{prompt}{horizontal_bar}{corner}\n",
+        let prompt_lines: Vec<&str> = prompt.lines().collect();
+
+        // Handle an empty prompt.
+        let message = if prompt.is_empty() {
+            // Visually, omitting an empty line inside of the block above the message.
+            message.to_string() + "\n"
+        } else {
+            // Add a new line above the message (below the header).
+            format!("\n{message}\n")
+        };
+
+        // The "header line" is the last prompt line.
+        let last_header_line = prompt_lines
+            .last()
+            .map(|l| format!("  {l} "))
+            .unwrap_or_default();
+
+        let width = message
+            .split('\n')
+            .fold(0usize, |acc, line| (display_width(line) + 2).max(acc))
+            .max(display_width(&last_header_line));
+
+        // Render preamble lines (all but last): symbol on first, bar on the rest.
+        let mut header = prompt_lines
+            .iter()
+            .take(prompt_lines.len().saturating_sub(1))
+            .enumerate()
+            .map(|(i, line)| {
+                if i == 0 {
+                    format!("{symbol}  {line}\n")
+                } else {
+                    format!("{bar}  {line}\n", bar = bar_color.apply_to(S_BAR))
+                }
+            })
+            .collect::<String>();
+
+        // The box-top line: symbol (or bar for multi-line prompt) + header_line + bars + corner.
+        let left_symbol = if prompt_lines.len() > 1 {
+            bar_color.apply_to(S_BAR).to_string()
+        } else {
+            symbol.clone()
+        };
+        header.push_str(&format!(
+            "{left_symbol}{last_header_line}{horizontal_bar}{corner}\n",
             horizontal_bar = bar_color.apply_to(
                 S_BAR_H
                     .to_string()
-                    .repeat(2 + width - display_width(&prompt))
+                    .repeat(2 + width - display_width(&last_header_line))
             ),
             corner = bar_color.apply_to(S_CORNER_TOP_RIGHT),
-        );
+        ));
 
         // Render the body, with multi-line support.
         #[allow(clippy::format_collect)]
