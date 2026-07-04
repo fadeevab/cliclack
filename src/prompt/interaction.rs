@@ -98,7 +98,7 @@ pub trait PromptInteraction<T> {
                 _ => {}
             }
 
-            match term.read_key() {
+            match term.read_key_raw() {
                 Ok(Key::Escape) => {
                     state = State::Cancel;
 
@@ -107,6 +107,8 @@ pub trait PromptInteraction<T> {
                         state = State::Active;
                     }
                 }
+
+                Ok(Key::CtrlC) => state = State::Cancel,
 
                 Ok(key) => {
                     // Emacs-style keybindings.
