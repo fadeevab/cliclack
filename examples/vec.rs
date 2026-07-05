@@ -1,9 +1,6 @@
 use console::style;
 
 fn main() -> std::io::Result<()> {
-    // Set a no-op Ctrl-C to make it behave as `Esc` (see the basic example).
-    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
-
     cliclack::clear_screen()?;
 
     cliclack::intro(style(" create-app ").on_cyan().black())?;

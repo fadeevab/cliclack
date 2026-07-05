@@ -14,8 +14,7 @@ const TOTAL_BYTES: u64 = 5_000_000;
 fn main() -> std::io::Result<()> {
     let (tx, rx) = channel();
 
-    // Set a no-op Ctrl-C handler which allows to catch
-    // `ErrorKind::Interrupted` error on `term.read_key()`.
+    // Set a no-op Ctrl-C handler to stop the simulation loop.
     ctrlc::set_handler(move || {
         tx.send(Message::Interrupt).ok();
     })

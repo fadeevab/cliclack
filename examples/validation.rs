@@ -10,9 +10,6 @@ fn check_username_is_available(x: &String) -> Result<(), &'static str> {
 }
 
 fn main() -> std::io::Result<()> {
-    // Set a no-op Ctrl-C to make it behave as `Esc` (see the basic example for details).
-    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
-
     cliclack::clear_screen()?;
     cliclack::intro(style(" interactive validation ").on_cyan().black())?;
 

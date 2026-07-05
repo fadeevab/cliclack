@@ -4,8 +4,6 @@ use cliclack::{clear_screen, intro, outro, outro_cancel, spinner};
 use console::{style, Key, Term};
 
 fn main() -> std::io::Result<()> {
-    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
-
     clear_screen()?;
     intro(style(" multiline support ").on_cyan().black())?;
 

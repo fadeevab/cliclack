@@ -36,9 +36,7 @@
 //!
 //! ## Cancellation
 //!
-//! `Esc` cancels the prompt sequence with a nice message.
-//! `Ctrl+C` will be handled gracefully (same as `Esc`) if you set up a Ctrl+C
-//! handler, eg. with the `ctrlc` crate.
+//! `Esc`/`Ctrl-C` cancels the prompt sequence with a nice message.
 //!
 //! # Components
 //!

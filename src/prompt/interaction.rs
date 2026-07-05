@@ -170,7 +170,7 @@ pub trait PromptInteraction<T> {
                     state = self.on(&Event::Key(key));
                 }
 
-                // Handle Ctrl-C as a cancel event.
+                // Legacy handling of Ctrl-C as a cancel event. Might not be needed, but keeping it to be safe.
                 Err(e) if e.kind() == io::ErrorKind::Interrupted => state = State::Cancel,
 
                 // Don't handle other errors, just break the loop and propagate

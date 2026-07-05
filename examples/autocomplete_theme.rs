@@ -27,8 +27,6 @@ impl Theme for AutocompleteTheme {
 }
 
 fn main() -> io::Result<()> {
-    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
-
     cliclack::set_theme(AutocompleteTheme);
 
     cliclack::clear_screen()?;

@@ -22,9 +22,6 @@ impl Theme for MagentaTheme {
 }
 
 fn main() -> std::io::Result<()> {
-    // Set a no-op Ctrl-C to make it behave as `Esc` (see the basic example).
-    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
-
     set_theme(MagentaTheme);
 
     intro(style(" theme ").on_magenta().black())?;

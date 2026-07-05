@@ -2,8 +2,6 @@ use console::style;
 use std::io;
 
 fn main() -> io::Result<()> {
-    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
-
     cliclack::clear_screen()?;
 
     cliclack::intro(style(" autocomplete ").on_cyan().black())?;

@@ -1,11 +1,7 @@
-use std::io;
-
 use cliclack::{clear_screen, intro, log, outro, outro_cancel, spinner};
 use console::{style, Key, Term};
 
 fn main() -> std::io::Result<()> {
-    ctrlc::set_handler(move || {}).expect("setting Ctrl-C handler");
-
     clear_screen()?;
     intro(style(" spinner ").on_cyan().black())?;
     log::remark("Press Esc, Enter, or Ctrl-C")?;
@@ -15,7 +11,7 @@ fn main() -> std::io::Result<()> {
 
     let term = Term::stderr();
     loop {
-        match term.read_key() {
+        match term.read_key_raw() {
             Ok(Key::Escape) => {
                 spinner.cancel("Installation");
                 outro_cancel("Cancelled")?;
@@ -24,7 +20,7 @@ fn main() -> std::io::Result<()> {
                 spinner.stop("Installation");
                 outro("Done!")?;
             }
-            Err(e) if e.kind() == io::ErrorKind::Interrupted => {
+            Ok(Key::CtrlC) => {
                 spinner.error("Installation");
                 outro_cancel("Interrupted")?;
             }
