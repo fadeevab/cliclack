@@ -132,7 +132,13 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
         let Event::Key(key) = event;
 
         if let Some(state) = self.filter.on(key, &self.items) {
-            if self.filter.items().is_empty() || self.cursor > self.filter.items().len() - 1 {
+            if matches!(state, State::Active) {
+                // Reset the view so that filtering a paginated list starts
+                // from the first match instead of keeping a stale offset.
+                self.cursor = 0;
+                self.page.start = 0;
+            } else if self.filter.items().is_empty() || self.cursor > self.filter.items().len() - 1
+            {
                 self.cursor = 0;
             }
             return state;
@@ -265,5 +271,29 @@ mod test {
             "No items added to the list",
             result.unwrap_err().to_string()
         );
+    }
+
+    #[test]
+    fn filter_mode_resets_pagination() {
+        let items: Vec<(String, String, String)> = (0..6)
+            .map(|i| (format!("val{i}"), format!("Item {i}"), String::new()))
+            .collect();
+
+        let mut multi = MultiSelect::new("Test")
+            .items(&items)
+            .filter_mode()
+            .max_rows(3);
+        multi.filter.set(multi.items.to_vec());
+
+        // Simulate scrolling to page 2
+        multi.cursor = 3;
+        multi.page.start = 3;
+
+        // Simulate typing a character to trigger filtering
+        let key = Key::Char('a');
+        let _ = multi.on(&Event::Key(key));
+
+        assert_eq!(multi.cursor, 0);
+        assert_eq!(multi.page.start, 0);
     }
 }
