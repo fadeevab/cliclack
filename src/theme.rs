@@ -27,6 +27,9 @@ const S_CORNER_TOP_RIGHT: Emoji = Emoji("╮", "+");
 const S_CONNECT_LEFT: Emoji = Emoji("├", "+");
 const S_CORNER_BOTTOM_RIGHT: Emoji = Emoji("╯", "+");
 
+const S_ARROW_UP: Emoji = Emoji("↑", "^");
+const S_ARROW_DOWN: Emoji = Emoji("↓", "v");
+
 const S_INFO: Emoji = Emoji("●", "•");
 const S_WARN: Emoji = Emoji("▲", "!");
 const S_ERROR: Emoji = Emoji("■", "x");
@@ -314,6 +317,30 @@ pub trait Theme {
     /// Formats the footer for the autocomplete prompt (like `└◇ {message}`).
     fn format_footer_for_autocomplete(&self, state: &ThemeState, message: &str) -> String {
         self.format_footer_with_message(state, message)
+    }
+
+    /// Formats the scroll indicator arrows for a paginated list's footer.
+    fn format_scroll_indicator(&self, state: &ThemeState, has_above: bool, has_below: bool) -> String {
+        if !has_above && !has_below {
+            return String::new();
+        }
+
+        let highlighted = Style::new().cyan();
+        let muted = Style::new().dim();
+        let slash = self.bar_color(state).apply_to('/');
+
+        let up = if has_above {
+            highlighted.apply_to(S_ARROW_UP)
+        } else {
+            muted.apply_to(S_ARROW_UP)
+        };
+        let down = if has_below {
+            highlighted.apply_to(S_ARROW_DOWN)
+        } else {
+            muted.apply_to(S_ARROW_DOWN)
+        };
+
+        format!("{up}{slash}{down}")
     }
 
     /// Formats the input cursor with the given style adding frame bars around.

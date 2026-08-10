@@ -134,6 +134,7 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
         if let Some(state) = self.filter.on(key, &self.items) {
             if self.filter.items().is_empty() || self.cursor > self.filter.items().len() - 1 {
                 self.cursor = 0;
+                self.page.start = 0;
             }
             return state;
         }
@@ -231,18 +232,28 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
                 .filter(|i| i.borrow().selected)
                 .count();
 
-        // Render the footer with a hint about the number of selected items.
-        let footer = if not_rendered_items > 0 {
-            theme.format_footer_with_message(
-                &state.into(),
-                &format!(
-                    "{not_rendered_items} selected item{s} not displayed",
-                    s = if not_rendered_items > 1 { "s" } else { "" }
-                ),
+        let selection_message = if not_rendered_items > 0 {
+            format!(
+                "{not_rendered_items} selected item{s} not displayed",
+                s = if not_rendered_items > 1 { "s" } else { "" }
             )
         } else {
-            theme.format_footer(&state.into())
+            String::new()
         };
+
+        let has_above = self.page.start > 0;
+        let has_below = self.page.start.saturating_add(self.page.height) < items_to_render.len();
+        let scroll_indicator = theme.format_scroll_indicator(&state.into(), has_above, has_below);
+
+        let footer_message = [scroll_indicator, selection_message]
+            .into_iter()
+            .filter(|s| !s.is_empty())
+            .collect::<Vec<_>>()
+            .join("  ");
+
+        // Render the footer with a hint about the scroll position and the
+        // number of selected items.
+        let footer = theme.format_footer_with_message(&state.into(), &footer_message);
 
         header + &filter_line + &items_render + &footer
     }

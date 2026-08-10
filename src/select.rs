@@ -123,6 +123,7 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         if let Some(state) = self.filter.on(key, &self.items) {
             if self.filter.items().is_empty() || self.cursor > self.filter.items().len() - 1 {
                 self.cursor = 0;
+                self.view.start = 0;
             }
             return state;
         }
@@ -159,7 +160,12 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
         let theme = THEME.read().unwrap();
 
         let header_display = theme.format_header(&state.into(), &self.prompt);
-        let footer_display = theme.format_footer(&state.into());
+
+        let has_above = self.view.start > 0;
+        let has_below =
+            self.view.start.saturating_add(self.view.height) < self.filter.items().len();
+        let scroll_indicator = theme.format_scroll_indicator(&state.into(), has_above, has_below);
+        let footer_display = theme.format_footer_with_message(&state.into(), &scroll_indicator);
 
         let filter_display = if let Some(input) = &self.filter.input() {
             match state {
