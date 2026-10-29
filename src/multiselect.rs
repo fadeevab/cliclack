@@ -76,6 +76,8 @@ where
     }
 
     /// Sets the initially selected values.
+    ///
+    /// The first matching item in list order receives focus and is scrolled into view.
     pub fn initial_values(mut self, value: Vec<T>) -> Self {
         self.initial_values = Some(value);
         self
@@ -109,6 +111,11 @@ where
 
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<Vec<T>> {
+        self.prepare()?;
+        <Self as PromptInteraction<Vec<T>>>::interact(self)
+    }
+
+    fn prepare(&mut self) -> io::Result<()> {
         if self.items.is_empty() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -121,9 +128,16 @@ where
                     item.borrow_mut().selected = true;
                 }
             }
+            self.cursor = self
+                .items
+                .iter()
+                .position(|item| initial_values.contains(&item.borrow().value))
+                .unwrap_or(self.cursor);
+            // Keep the first initial selection within the visible rows.
+            self.page.start = (self.cursor + 1).saturating_sub(self.page.height);
         }
         self.filter.set(self.items.to_vec());
-        <Self as PromptInteraction<Vec<T>>>::interact(self)
+        Ok(())
     }
 }
 
@@ -225,10 +239,10 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
         }
 
         let not_rendered_items = self.items.iter().filter(|i| i.borrow().selected).count()
-            - self
-                .filter
-                .items()
+            - items_to_render
                 .iter()
+                .skip(self.page.start)
+                .take(self.page.height)
                 .filter(|i| i.borrow().selected)
                 .count();
 
@@ -267,6 +281,157 @@ impl<T: Clone> PromptInteraction<Vec<T>> for MultiSelect<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn select_with_items() -> MultiSelect<usize> {
+        let mut select = MultiSelect::new("Choose values");
+        for index in 0..25 {
+            select = select.item(index, format!("Value {index:02}"), "");
+        }
+        select
+    }
+
+    #[test]
+    fn first_initial_selection_is_visible() {
+        for (initial_values, height, expected_cursor, expected_start) in [
+            (None, 7, 0, 0),
+            (Some(vec![]), 7, 0, 0),
+            (Some(vec![0]), 7, 0, 0),
+            (Some(vec![6]), 7, 6, 0),
+            (Some(vec![7]), 7, 7, 1),
+            (Some(vec![20]), 7, 20, 14),
+            (Some(vec![24]), 7, 24, 18),
+            (Some(vec![20]), 1, 20, 20),
+            (Some(vec![20]), usize::MAX, 20, 0),
+            (Some(vec![25]), 7, 0, 0),
+            (Some(vec![25, 24, 20, 20]), 7, 20, 14),
+            (Some(vec![24, 2, 20]), 7, 2, 0),
+            (Some((0..25).rev().collect()), 7, 0, 0),
+        ] {
+            let values = initial_values.as_deref().unwrap_or_default();
+            let expected_values: Vec<_> = (0..25).filter(|value| values.contains(value)).collect();
+            let mut select = select_with_items().max_rows(height).required(false);
+            if let Some(values) = initial_values {
+                select = select.initial_values(values);
+            }
+            select.prepare().unwrap();
+
+            assert_eq!(select.cursor, expected_cursor);
+            assert_eq!(select.page.start, expected_start);
+            assert_eq!(select.page.height, height);
+
+            let active = select.render(&State::Active);
+            for index in 0..25 {
+                let visible = index >= expected_start && index - expected_start < height;
+                assert_eq!(active.contains(&format!("Value {index:02}")), visible);
+            }
+
+            let state = select.on(&Event::Key(Key::Enter));
+            assert!(matches!(&state, State::Submit(values) if *values == expected_values));
+            if !expected_values.is_empty() {
+                assert!(select
+                    .render(&state)
+                    .contains(&format!("Value {expected_cursor:02}")));
+            }
+        }
+    }
+
+    #[test]
+    fn navigate_and_toggle_from_first_initial_selection() {
+        for (key, expected_cursor, expected_start, expected_values) in [
+            (None, 20, 14, vec![24]),
+            (Some(Key::ArrowUp), 19, 14, vec![19, 20, 24]),
+            (Some(Key::ArrowDown), 21, 15, vec![20, 21, 24]),
+        ] {
+            let mut select = select_with_items().max_rows(7).initial_values(vec![24, 20]);
+            select.prepare().unwrap();
+
+            if let Some(key) = key {
+                assert!(matches!(select.on(&Event::Key(key)), State::Active));
+            }
+            assert_eq!(select.cursor, expected_cursor);
+            assert_eq!(select.page.start, expected_start);
+            assert!(select
+                .render(&State::Active)
+                .contains(&format!("Value {expected_cursor:02}")));
+
+            assert!(matches!(
+                select.on(&Event::Key(Key::Char(' '))),
+                State::Active
+            ));
+            let state = select.on(&Event::Key(Key::Enter));
+            assert!(matches!(&state, State::Submit(values) if *values == expected_values));
+        }
+    }
+
+    #[test]
+    fn hidden_selection_message_counts_items_outside_the_visible_page() {
+        for (start, height, filtered_indices, expected_hidden) in [
+            (0, 7, None, 2),
+            (14, 7, None, 2),
+            (18, 7, None, 1),
+            (0, usize::MAX, None, 0),
+            (0, 7, Some(vec![2]), 2),
+            (0, 7, Some(vec![2, 20, 24]), 0),
+            (0, 1, Some(vec![2, 20]), 2),
+            (1, 1, Some(vec![2, 20]), 2),
+            (0, 7, Some(vec![]), 3),
+        ] {
+            let mut select = select_with_items()
+                .max_rows(height)
+                .initial_values(vec![2, 20, 24]);
+            select.prepare().unwrap();
+            select.page.start = start;
+            if let Some(indices) = filtered_indices {
+                select.filter.set(
+                    indices
+                        .iter()
+                        .map(|&index| Rc::clone(&select.items[index]))
+                        .collect(),
+                );
+            }
+
+            let active = select.render(&State::Active);
+            if expected_hidden == 0 {
+                assert!(!active.contains("selected item"));
+            } else {
+                let noun = if expected_hidden == 1 {
+                    "item"
+                } else {
+                    "items"
+                };
+                assert!(
+                    active.contains(&format!("{expected_hidden} selected {noun} not displayed"))
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn filtering_resets_focus_and_view_without_changing_selections() {
+        let mut select = select_with_items()
+            .max_rows(7)
+            .initial_values(vec![24, 20])
+            .filter_mode();
+        select.prepare().unwrap();
+
+        // The interaction loop updates the input before dispatching the key.
+        select.input().unwrap().insert('0');
+        assert!(matches!(
+            select.on(&Event::Key(Key::Char('0'))),
+            State::Active
+        ));
+        assert!(!select.filter.items().is_empty());
+        assert!(select.filter.items().len() < 20);
+        assert_eq!(select.cursor, 0);
+        assert_eq!(select.page.start, 0);
+        let label = select.filter.items()[0].borrow().label.clone();
+        let active = select.render(&State::Active);
+        assert!(active.contains(&label));
+        assert!(active.contains("2 selected items not displayed"));
+
+        let state = select.on(&Event::Key(Key::Enter));
+        assert!(matches!(&state, State::Submit(values) if *values == vec![20, 24]));
+    }
 
     #[test]
     fn empty_list() {
