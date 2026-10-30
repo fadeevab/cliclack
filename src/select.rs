@@ -98,6 +98,11 @@ where
 
     /// Starts the prompt interaction.
     pub fn interact(&mut self) -> io::Result<T> {
+        self.prepare()?;
+        <Self as PromptInteraction<T>>::interact(self)
+    }
+
+    fn prepare(&mut self) -> io::Result<()> {
         if self.items.is_empty() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -110,9 +115,11 @@ where
                 .iter()
                 .position(|item| item.borrow().value == *initial_value)
                 .unwrap_or(self.cursor);
+            // Keep the initial selection within the visible rows.
+            self.view.start = (self.cursor + 1).saturating_sub(self.view.height);
         }
         self.filter.set(self.items.to_vec());
-        <Self as PromptInteraction<T>>::interact(self)
+        Ok(())
     }
 }
 
@@ -201,6 +208,95 @@ impl<T: Clone> PromptInteraction<T> for Select<T> {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    fn select_with_items() -> Select<usize> {
+        let mut select = Select::new("Choose a value");
+        for index in 0..25 {
+            select = select.item(index, format!("Value {index:02}"), "");
+        }
+        select
+    }
+
+    #[test]
+    fn initial_selection_is_visible() {
+        for (initial_value, height, expected_cursor, expected_start) in [
+            (None, 7, 0, 0),
+            (Some(0), 7, 0, 0),
+            (Some(6), 7, 6, 0),
+            (Some(7), 7, 7, 1),
+            (Some(20), 7, 20, 14),
+            (Some(24), 7, 24, 18),
+            (Some(20), 1, 20, 20),
+            (Some(20), usize::MAX, 20, 0),
+            (Some(25), 7, 0, 0),
+        ] {
+            let mut select = select_with_items().max_rows(height);
+            if let Some(value) = initial_value {
+                select = select.initial_value(value);
+            }
+            select.prepare().unwrap();
+
+            assert_eq!(select.cursor, expected_cursor);
+            assert_eq!(select.view.start, expected_start);
+
+            let active = select.render(&State::Active);
+            for index in 0..25 {
+                let visible = index >= expected_start && index - expected_start < height;
+                assert_eq!(active.contains(&format!("Value {index:02}")), visible);
+            }
+
+            let state = select.on(&Event::Key(Key::Enter));
+            assert!(matches!(&state, State::Submit(value) if *value == expected_cursor));
+            let submitted = select.render(&state);
+            assert!(submitted.contains(&format!("Value {expected_cursor:02}")));
+            assert_eq!(submitted.matches("Value ").count(), 1);
+        }
+    }
+
+    #[test]
+    fn navigate_from_initial_selection() {
+        for (key, expected_cursor, expected_start) in
+            [(Key::ArrowUp, 19, 14), (Key::ArrowDown, 21, 15)]
+        {
+            let mut select = select_with_items().max_rows(7).initial_value(20);
+            select.prepare().unwrap();
+
+            assert!(matches!(select.on(&Event::Key(key)), State::Active));
+            assert_eq!(select.cursor, expected_cursor);
+            assert_eq!(select.view.start, expected_start);
+            assert!(select
+                .render(&State::Active)
+                .contains(&format!("Value {expected_cursor:02}")));
+
+            let state = select.on(&Event::Key(Key::Enter));
+            assert!(matches!(&state, State::Submit(value) if *value == expected_cursor));
+            assert!(select
+                .render(&state)
+                .contains(&format!("Value {expected_cursor:02}")));
+        }
+    }
+
+    #[test]
+    fn filtering_resets_initial_selection_and_view() {
+        let mut select = select_with_items()
+            .max_rows(7)
+            .initial_value(20)
+            .filter_mode();
+        select.prepare().unwrap();
+
+        // The interaction loop updates the input before dispatching the key.
+        select.input().unwrap().insert('0');
+        assert!(matches!(
+            select.on(&Event::Key(Key::Char('0'))),
+            State::Active
+        ));
+        assert!(!select.filter.items().is_empty());
+        assert!(select.filter.items().len() < 20);
+        assert_eq!(select.cursor, 0);
+        assert_eq!(select.view.start, 0);
+        let label = select.filter.items()[0].borrow().label.clone();
+        assert!(select.render(&State::Active).contains(&label));
+    }
 
     #[test]
     fn empty_list() {

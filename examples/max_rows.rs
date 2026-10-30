@@ -10,6 +10,7 @@ fn main() -> std::io::Result<()> {
     let selected = cliclack::select("Select an item")
         .items(&items)
         .max_rows(10) // Specify the maximum number of rows
+        .initial_value("Item 17".to_string())
         .filter_mode() // Try filtering on "1"
         .interact()?;
 
